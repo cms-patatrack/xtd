@@ -32,4 +32,5 @@
 *.app
 
 # Tests
-test/*/bin
+/test/*/bin
+/test/external/

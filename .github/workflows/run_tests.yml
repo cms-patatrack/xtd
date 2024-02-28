@@ -10,12 +10,7 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Download Catch2
-      run: |
-        wget https://github.com/catchorg/Catch2/releases/download/v2.13.6/catch.hpp -O include/catch.hpp
-
     - name: Build and Run Tests
       working-directory: test
       run: |
-        make sinTest
-        make runsinTest
+        make all
