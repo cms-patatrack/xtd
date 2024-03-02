@@ -7,6 +7,8 @@
 #pragma once
 
 #include "internal/defines.h"
+#include <cmath>
+#include <type_traits>
 
 namespace xtd {
 
@@ -53,9 +55,8 @@ namespace xtd {
   /* Computes the sine of arg (measured in radians),
    * in double precision.
    */
-  template <typename T, typename = std::is_integer_v<T>>
-  XTD_DEVICE_FUNCTION
-  inline constexpr double sin(T arg) {
+  template <typename T, typename = std::enable_if_t<std::is_integral_v<T>>>
+  XTD_DEVICE_FUNCTION inline constexpr double sin(T arg) {
     return sin(static_cast<double>(arg));
   }
 
@@ -63,17 +64,14 @@ namespace xtd {
    * in single precision.
    */
   XTD_DEVICE_FUNCTION
-  inline constexpr float sinf(float arg) {
-    return sin(arg);
-  }
+  inline constexpr float sinf(float arg) { return sin(arg); }
 
   /* Computes the sine of arg (measured in radians),
    * in single precision.
    */
-  template <typename T, typename = std::is_integer_v<T>>
-  XTD_DEVICE_FUNCTION
-  inline constexpr double sinf(T arg) {
+  template <typename T, typename = std::enable_if_t<std::is_integral_v<T>>>
+  XTD_DEVICE_FUNCTION inline constexpr double sinf(T arg) {
     return sin(static_cast<float>(arg));
   }
 
-}  // namespace xtd
+} // namespace xtd

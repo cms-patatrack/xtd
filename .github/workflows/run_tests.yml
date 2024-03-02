@@ -1,0 +1,16 @@
+name: RunUnitTest
+
+on: [push, pull_request]
+
+jobs:
+  run-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Build and Run Tests
+      working-directory: test
+      run: |
+        make all
