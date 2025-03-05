@@ -13,8 +13,7 @@ namespace xtd {
   /* Computes the sine of arg (measured in radians),
    * in single precision.
    */
-  XTD_DEVICE_FUNCTION
-  inline constexpr float sin(float arg) {
+  XTD_DEVICE_FUNCTION inline constexpr float sin(float arg) {
 #if defined(XTD_TARGET_CUDA)
     // CUDA device code
     return ::sin(arg);
@@ -33,8 +32,7 @@ namespace xtd {
   /* Computes the sine of arg (measured in radians),
    * in double precision.
    */
-  XTD_DEVICE_FUNCTION
-  inline constexpr double sin(double arg) {
+  XTD_DEVICE_FUNCTION inline constexpr double sin(double arg) {
 #if defined(XTD_TARGET_CUDA)
     // CUDA device code
     return ::sin(arg);
@@ -54,25 +52,20 @@ namespace xtd {
    * in double precision.
    */
   template <typename T, typename = std::is_integer_v<T>>
-  XTD_DEVICE_FUNCTION
-  inline constexpr double sin(T arg) {
+  XTD_DEVICE_FUNCTION inline constexpr double sin(T arg) {
     return sin(static_cast<double>(arg));
   }
 
   /* Computes the sine of arg (measured in radians),
    * in single precision.
    */
-  XTD_DEVICE_FUNCTION
-  inline constexpr float sinf(float arg) {
-    return sin(arg);
-  }
+  XTD_DEVICE_FUNCTION inline constexpr float sinf(float arg) { return sin(arg); }
 
   /* Computes the sine of arg (measured in radians),
    * in single precision.
    */
   template <typename T, typename = std::is_integer_v<T>>
-  XTD_DEVICE_FUNCTION
-  inline constexpr double sinf(T arg) {
+  XTD_DEVICE_FUNCTION inline constexpr double sinf(T arg) {
     return sin(static_cast<float>(arg));
   }
 
