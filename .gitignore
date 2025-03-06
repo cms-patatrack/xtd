@@ -34,3 +34,6 @@
 # Tests
 /test/*/bin
 /test/external/
+
+# CMake build folders
+*/build*
