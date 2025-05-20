@@ -13,7 +13,7 @@
 #include <catch.hpp>
 
 // xtd headers
-#include "math/sin.h"
+#include "xtd/math/sin.h"
 
 // test headers
 #include "common/cpu_test.h"

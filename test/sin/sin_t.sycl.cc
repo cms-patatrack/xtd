@@ -18,7 +18,7 @@
 #include <sycl/sycl.hpp>
 
 // xtd headers
-#include "math/sin.h"
+#include "xtd/math/sin.h"
 
 // test headers
 #include "common/sycl_test.h"

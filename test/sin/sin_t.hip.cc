@@ -20,7 +20,7 @@ using namespace std::literals;
 #include <hip/hip_runtime.h>
 
 // xtd headers
-#include "math/sin.h"
+#include "xtd/math/sin.h"
 
 // test headers
 #include "common/hip_check.h"
