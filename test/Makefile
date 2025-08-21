@@ -2,6 +2,12 @@
 
 all: build run
 
+# makefile tricks
+define newline
+
+
+endef
+
 # gcc
 CXX := g++
 GCC_TOOLCHAIN := $(abspath $(dir $(shell which $(CXX)))/..)
@@ -19,7 +25,7 @@ LDFLAGS := -O2 -fPIC -pthread -Wl,-E -lstdc++fs -ldl
 CUDA_BASE := /usr/local/cuda
 ifeq ($(wildcard $(CUDA_BASE)),)
   # CUDA platform not found
-  $(warning Cannot find an NVIDIA CUDA installation at $(CUDA_BASE))
+  $(info Cannot find an NVIDIA CUDA installation at $(CUDA_BASE), the CUDA tests will not be built.)
   CUDA_BASE :=
 else
 # CUDA platform at $(CUDA_BASE)
@@ -43,7 +49,7 @@ endif
 ROCM_BASE := /opt/rocm
 ifeq ($(wildcard $(ROCM_BASE)),)
   # ROCm platform not found
-  $(warning Cannot find an AMD ROCm installation at $(ROCM_BASE))
+  $(info Cannot find an AMD ROCm installation at $(ROCM_BASE), the ROCm tests will not be built.)
   ROCM_BASE :=
 else
   # ROCm platform at $(ROCM_BASE)
@@ -55,13 +61,55 @@ else
   HIPCC_LDFLAGS := $(LDFLAGS) --target=$(GCC_TARGET) --gcc-toolchain=$(GCC_TOOLCHAIN)
 endif
 
-# oneAPI
-ONEAPI_BASE := /opt/intel/oneapi
-ifeq ($(wildcard $(ONEAPI_BASE)),)
-  # Intel oneAPI not available
-  $(warning Cannot find an Intel oneAPI installation at $(ONEAPI_BASE))
-  ONEAPI_BASE :=
-else
+# Intel oneAPI
+# look for the oneAPI installation in
+#   - the directory specified by ONEAPI_BASE, if set; for example calling:
+#       make ONEAPI_BASE=/opt/intel/oneapi
+#   - the directory specified by ONEAPI_ROOT, if set; this is usually set by
+#       . /opt/intel/oneapi/setvars.sh
+#   - /opt/intel/oneapi; this is the default value
+
+# if ONEAPI_BASE is set and not empty, check if it points to a valid oneAPI installation
+ifneq ($(ONEAPI_BASE),)
+  ifneq ($(wildcard $(ONEAPI_BASE)/setvars.sh),)
+    # found Intel oneAPI at $(ONEAPI_BASE)
+    $(info Found an Intel oneAPI installation at $(ONEAPI_BASE))
+  else
+    # Intel oneAPI not found at $(ONEAPI_BASE), set ONEAPI_BASE to an empty value
+    $(info Cannot find an Intel oneAPI installation at $(ONEAPI_BASE), the oneAPI tests will not be built.)
+    ONEAPI_BASE :=
+  endif
+endif
+
+# if ONEAPI_BASE is not set (not just empty) and ONEAPI_ROOT is set and not empty, check if it points to a valid oneAPI installation
+ifeq ($(origin ONEAPI_BASE), undefined)
+  ifdef ONEAPI_ROOT
+    ifneq ($(wildcard $(ONEAPI_ROOT)/setvars.sh),)
+      # found Intel oneAPI at $(ONEAPI_ROOT)
+      ONEAPI_BASE := $(ONEAPI_ROOT)
+      $(info Found an Intel oneAPI installation at $(ONEAPI_BASE))
+    endif
+  endif
+endif
+
+# if ONEAPI_BASE is not set (not just empty), look for a valid oneAPI installation at /opt/intel/oneapi
+ifeq ($(origin ONEAPI_BASE), undefined)
+  ifneq ($(wildcard /opt/intel/oneapi/setvars.sh),)
+    # found Intel oneAPI at /opt/intel/oneapi
+    ONEAPI_BASE := /opt/intel/oneapi
+    $(info Found an Intel oneAPI installation at $(ONEAPI_BASE))
+  endif
+endif
+
+# if ONEAPI_BASE is set and not empty, check if the environment has been setup
+ifneq ($(ONEAPI_BASE),)
+  ifeq ($(shell which sycl-ls 2> /dev/null),)
+    # Intel oneAPI environment not setup
+    $(info The Intel oneAPI environment has not been setup. Please run:$(newline)    . $(ONEAPI_BASE)/setvars.sh$(newline)before running make.$(newline)Alternatively, disable oneAPI detection setting ONEAPI_BASE to an empty value, for eample:$(newline)    make ONEAPI_BASE=$(newline))
+    ONEAPI_BASE :=
+  endif
+endif
+ifneq ($(ONEAPI_BASE),)
   SYCL_BASE         := $(ONEAPI_BASE)/compiler/latest
   SYCL_LIBDIR       := $(SYCL_BASE)/lib
   SYCL_CXX          := $(SYCL_BASE)/bin/icpx
@@ -72,7 +120,7 @@ else
 
   # Check for Intel GPU existence
   SYCL_LS := $(shell mktemp)
-  $(shell sycl-ls > $(SYCL_LS))
+  $(shell which sycl-ls > /dev/null 2>&1 && sycl-ls > $(SYCL_LS))
   INTEL_GPU_EXISTS := $(shell cat $(SYCL_LS) | grep -c ext_oneapi_level_zero)
   # Set AOT_INTEL_TARGETS based on the conditions
   ifneq ($(INTEL_GPU_EXISTS),0)
