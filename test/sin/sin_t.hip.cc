@@ -7,7 +7,9 @@
 // C++ standard headers
 #include <cmath>
 #include <iostream>
+#include <string>
 #include <vector>
+using namespace std::literals;
 
 // Catch2 headers
 #define CATCH_CONFIG_MAIN
@@ -38,7 +40,8 @@ TEST_CASE("xtd::sin", "[sin][hip]") {
   for (int device = 0; device < deviceCount; ++device) {
     hipDeviceProp_t properties;
     HIP_CHECK(hipGetDeviceProperties(&properties, device));
-    SECTION(std::format("HIP GPU {}: {}", device, properties.name)) {
+    std::string section = "HIP GPU "s + std::to_string(device) + ": "s + properties.name;
+    SECTION(section) {
       // set the current GPU
       HIP_CHECK(hipSetDevice(device));
 

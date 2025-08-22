@@ -33,18 +33,18 @@ TEST_CASE("xtd::sin", "[sin][cpu]") {
     test<double, int, xtd::sin, std::sin>(values);
   }
 
-  // Note: GCC prior to v14.1 does not provide std::sinf().
-  // As a workarund, test_f() uses std::sin() with an explicit cast to float.
+  // Note: GCC prior to v14.1 and clang prior to v19.1 do not provide std::sinf().
+  // As a workarund, use C sinf().
 
   SECTION("float xtd::sinf(float)") {
-    test_f<float, float, xtd::sinf, std::sin>(values);
+    test_f<float, float, xtd::sinf, ::sinf>(values);
   }
 
   SECTION("float xtd::sinf(double)") {
-    test_f<float, double, xtd::sinf, std::sin>(values);
+    test_f<float, double, xtd::sinf, ::sinf>(values);
   }
 
   SECTION("float xtd::sinf(int)") {
-    test_f<float, int, xtd::sinf, std::sin>(values);
+    test_f<float, int, xtd::sinf, ::sinf>(values);
   }
 }

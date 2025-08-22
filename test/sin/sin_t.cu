@@ -7,7 +7,9 @@
 // C++ standard headers
 #include <cmath>
 #include <iostream>
+#include <string>
 #include <vector>
+using namespace std::literals;
 
 // Catch2 headers
 #define CATCH_CONFIG_MAIN
@@ -38,7 +40,8 @@ TEST_CASE("xtd::sin", "[sin][cuda]") {
   for (int device = 0; device < deviceCount; ++device) {
     cudaDeviceProp properties;
     CUDA_CHECK(cudaGetDeviceProperties(&properties, device));
-    SECTION(std::format("CUDA GPU {}: {}", device, properties.name)) {
+    std::string section = "CUDA GPU "s + std::to_string(device) + ": "s + properties.name;
+    SECTION(section) {
       // set the current GPU
       CUDA_CHECK(cudaSetDevice(device));
 
@@ -58,19 +61,19 @@ TEST_CASE("xtd::sin", "[sin][cuda]") {
         test<double, int, xtd::sin, std::sin>(queue, values);
       }
 
-      // Note: GCC prior to v14.1 does not provide std::sinf().
-      // As a workarund, test_f() uses std::sin() with an explicit cast to float.
+      // Note: GCC prior to v14.1 and clang prior to v19.1 do not provide std::sinf().
+      // As a workarund, use C sinf().
 
       SECTION("float xtd::sinf(float)") {
-        test_f<float, float, xtd::sinf, std::sin>(queue, values);
+        test_f<float, float, xtd::sinf, ::sinf>(queue, values);
       }
 
       SECTION("float xtd::sinf(double)") {
-        test_f<float, double, xtd::sinf, std::sin>(queue, values);
+        test_f<float, double, xtd::sinf, ::sinf>(queue, values);
       }
 
       SECTION("float xtd::sinf(int)") {
-        test_f<float, int, xtd::sinf, std::sin>(queue, values);
+        test_f<float, int, xtd::sinf, ::sinf>(queue, values);
       }
 
       CUDA_CHECK(cudaStreamDestroy(queue));

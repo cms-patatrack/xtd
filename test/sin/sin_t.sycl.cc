@@ -45,16 +45,19 @@ TEST_CASE("xtd::sin", "[sin][sycl]") {
               test<double, int, xtd::sin, std::sin>(queue, values);
             }
 
+            // Note: clang prior to v19.1 does not provide std::sinf().
+            // As a workarund, use C sinf().
+
             SECTION("float xtd::sinf(float)") {
-              test_f<float, float, xtd::sinf, std::sinf>(queue, values);
+              test_f<float, float, xtd::sinf, ::sinf>(queue, values);
             }
 
             SECTION("float xtd::sinf(double)") {
-              test_f<float, double, xtd::sinf, std::sinf>(queue, values);
+              test_f<float, double, xtd::sinf, ::sinf>(queue, values);
             }
 
             SECTION("float xtd::sinf(int)") {
-              test_f<float, int, xtd::sinf, std::sinf>(queue, values);
+              test_f<float, int, xtd::sinf, ::sinf>(queue, values);
             }
 
           } catch (sycl::exception const &e) {
