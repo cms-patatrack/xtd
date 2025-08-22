@@ -81,7 +81,7 @@ ifneq ($(ONEAPI_BASE),)
   else
     # Intel oneAPI not found at $(ONEAPI_BASE), set ONEAPI_BASE to an empty value
     $(info Cannot find an Intel oneAPI installation at $(ONEAPI_BASE), the oneAPI tests will not be built.)
-    ONEAPI_BASE :=
+    override ONEAPI_BASE :=
   endif
 endif
 
@@ -110,7 +110,7 @@ ifneq ($(ONEAPI_BASE),)
   ifeq ($(shell which sycl-ls 2> /dev/null),)
     # Intel oneAPI environment not setup
     $(info The Intel oneAPI environment has not been setup. Please run:$(newline)    . $(ONEAPI_BASE)/setvars.sh$(newline)before running make.$(newline)Alternatively, disable oneAPI detection setting ONEAPI_BASE to an empty value, for eample:$(newline)    make ONEAPI_BASE=$(newline))
-    ONEAPI_BASE :=
+    override ONEAPI_BASE :=
   endif
 endif
 ifneq ($(ONEAPI_BASE),)
