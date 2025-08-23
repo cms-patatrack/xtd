@@ -4,18 +4,19 @@
  * SPDX-License-Identifier: MPL-2.0
  */
 
+#pragma once
+
 // C++ standard headers
 #include <vector>
-
-// Catch2 headers
-#define CATCH_CONFIG_NO_POSIX_SIGNALS
-#include <catch.hpp>
 
 // SYCL headers
 #include <sycl/sycl.hpp>
 
+// test headers
+#include "compare.h"
+
 template <typename ResultType, typename InputType, ResultType (*XtdFunc)(InputType), ResultType (*StdFunc)(InputType)>
-void test(sycl::queue queue, std::vector<double> const& values) {
+inline void test(sycl::queue queue, std::vector<double> const& values) {
   int size = values.size();
 
   // convert the input data to the type to be tested and copy them to the GPU
@@ -43,12 +44,12 @@ void test(sycl::queue queue, std::vector<double> const& values) {
   // compare the xtd results with the std reference results
   for (int i = 0; i < size; ++i) {
     ResultType reference = StdFunc(input_h[i]);
-    CHECK_THAT(result_h[i], Catch::Matchers::WithinULP(reference, 1));
+    compare(result_h[i], reference);
   }
 }
 
 template <typename ResultType, typename InputType, ResultType (*XtdFunc)(InputType), ResultType (*StdFunc)(float)>
-void test_f(sycl::queue queue, std::vector<double> const& values) {
+inline void test_f(sycl::queue queue, std::vector<double> const& values) {
   int size = values.size();
 
   // convert the input data to the type to be tested and copy them to the GPU
@@ -76,6 +77,6 @@ void test_f(sycl::queue queue, std::vector<double> const& values) {
   // compare the xtd results with the std reference results
   for (int i = 0; i < size; ++i) {
     ResultType reference = StdFunc(static_cast<float>(input_h[i]));
-    CHECK_THAT(result_h[i], Catch::Matchers::WithinULP(reference, 1));
+    compare(result_h[i], reference);
   }
 }
