@@ -25,17 +25,18 @@ using namespace std::literals;
 // test headers
 #include "common/cuda_check.h"
 #include "common/cuda_test.h"
+#include "common/math_inputs.h"
 
 TEST_CASE("xtd::sin", "[sin][cuda]") {
+  std::vector<double> values = generate_input_values();
+
   int deviceCount;
   cudaError_t cudaStatus = cudaGetDeviceCount(&deviceCount);
 
   if (cudaStatus != cudaSuccess || deviceCount == 0) {
-    std::cout << "No NVIDIA GPUs found, the test will be skipped." << std::endl;
+    std::cout << "No NVIDIA GPUs found, the test will be skipped.\n\n";
     exit(EXIT_SUCCESS);
   }
-
-  std::vector<double> values{-1., 0., M_PI / 2, M_PI, 42.};
 
   for (int device = 0; device < deviceCount; ++device) {
     cudaDeviceProp properties;

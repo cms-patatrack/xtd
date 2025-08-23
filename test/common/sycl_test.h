@@ -12,6 +12,10 @@
 // SYCL headers
 #include <sycl/sycl.hpp>
 
+// Catch2 headers
+#define CATCH_CONFIG_NO_POSIX_SIGNALS
+#include <catch.hpp>
+
 // test headers
 #include "compare.h"
 
@@ -43,8 +47,12 @@ inline void test(sycl::queue queue, std::vector<double> const& values) {
 
   // compare the xtd results with the std reference results
   for (int i = 0; i < size; ++i) {
+    INFO(input_h[i]);
     ResultType reference = StdFunc(input_h[i]);
-    compare(result_h[i], reference);
+    // Note: even compiling with -fp-model=precise -fimf-max-error=1
+    // some SYCL math functions differ from the std results by 2 ULPs
+    // when running on the OpenCL CPU device.
+    compare<float>(result_h[i], reference, 2);
   }
 }
 
@@ -76,7 +84,11 @@ inline void test_f(sycl::queue queue, std::vector<double> const& values) {
 
   // compare the xtd results with the std reference results
   for (int i = 0; i < size; ++i) {
+    INFO(input_h[i]);
     ResultType reference = StdFunc(static_cast<float>(input_h[i]));
-    compare(result_h[i], reference);
+    // Note: even compiling with -fp-model=precise -fimf-max-error=1
+    // some SYCL math functions differ from the std resuklts by 2 ULPs
+    // when running on the OpenCL CPU device.
+    compare<float>(result_h[i], reference, 2);
   }
 }

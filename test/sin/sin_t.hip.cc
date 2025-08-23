@@ -25,17 +25,18 @@ using namespace std::literals;
 // test headers
 #include "common/hip_check.h"
 #include "common/hip_test.h"
+#include "common/math_inputs.h"
 
 TEST_CASE("xtd::sin", "[sin][hip]") {
+  std::vector<double> values = generate_input_values();
+
   int deviceCount;
   hipError_t hipStatus = hipGetDeviceCount(&deviceCount);
 
   if (hipStatus != hipSuccess || deviceCount == 0) {
-    std::cout << "No AMD GPUs found, the test will be skipped." << std::endl;
+    std::cout << "No AMD GPUs found, the test will be skipped.\n\n";
     exit(EXIT_SUCCESS);
   }
-
-  std::vector<double> values{-1., 0., M_PI / 2, M_PI, 42.};
 
   for (int device = 0; device < deviceCount; ++device) {
     hipDeviceProp_t properties;
