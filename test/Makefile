@@ -13,6 +13,7 @@ define newline
 endef
 
 space := $() $()
+comma := $(),$()
 
 # gcc
 CXX := g++
@@ -55,6 +56,9 @@ else
   $(eval $(call CUFLAGS_template,$(CUDA_ARCH),))
   NVCC_COMMON := -std=c++20 -O3 -g $(NVCC_FLAGS) -ccbin $(CXX) --compiler-options '$(HOST_CXXFLAGS)'
   CUDA_CUFLAGS := $(NVCC_COMMON)
+
+  # Make sure the tests can find the CUDA libraries
+  export LD_LIBRARY_PATH := $(CUDA_LIBDIR):$(LD_LIBRARY_PATH)
 endif
 
 # ROCm
@@ -77,6 +81,9 @@ else
   ROCM_HIPCC := $(ROCM_BASE)/bin/hipcc
   HIPCC_CXXFLAGS := -fno-gpu-rdc $(foreach ARCH,$(ROCM_ARCH),--offload-arch=$(ARCH)) $(filter-out $(LLVM_UNSUPPORTED_CXXFLAGS),$(CXXFLAGS)) --target=$(GCC_TARGET) --gcc-toolchain=$(GCC_TOOLCHAIN) -I$(ROCM_BASE)/include/hip -Wno-unused-result
   HIPCC_LDFLAGS := $(LDFLAGS) --target=$(GCC_TARGET) --gcc-toolchain=$(GCC_TOOLCHAIN)
+
+  # Make sure the tests can find the ROCm libraries
+  export LD_LIBRARY_PATH := $(ROCM_LIBDIR):$(LD_LIBRARY_PATH)
 endif
 
 # Intel oneAPI
@@ -131,7 +138,7 @@ ifneq ($(ONEAPI_BASE),)
   SYCL_BASE         := $(ONEAPI_BASE)/compiler/latest
   SYCL_LIBDIR       := $(SYCL_BASE)/lib
   SYCL_CXX          := $(SYCL_BASE)/bin/icpx
-  SYCL_CXXFLAGS     := $(filter-out $(LLVM_UNSUPPORTED_CXXFLAGS),$(CXXFLAGS)) $(SYCL_FLAGS)
+  SYCL_CXXFLAGS     := $(filter-out $(LLVM_UNSUPPORTED_CXXFLAGS),$(CXXFLAGS))
   SYCL_LDFLAGS      :=
   SYCL_TARGETS      := spir64_x86_64 spir64
   ifdef CUDA_BASE
@@ -159,7 +166,7 @@ ifneq ($(ONEAPI_BASE),)
       SYCL_ROCM_FLAGS := --rocm-path=$(ROCM_BASE)
     endif
   endif
-  SYCL_FLAGS        := -fsycl -fsycl-targets=$(subst $(space),:,$(SYCL_TARGETS)) $(SYCL_CUDA_FLAGS) $(SYCL_ROCM_FLAGS) -fp-model=precise
+  SYCL_FLAGS        := -fsycl -fsycl-targets=$(subst $(space),$(comma),$(SYCL_TARGETS)) $(SYCL_CUDA_FLAGS) $(SYCL_ROCM_FLAGS) -fp-model=precise
 
   # Check for Intel GPU existence
   #SYCL_LS := $(shell mktemp)
@@ -221,8 +228,8 @@ $(1)/bin/$(1)_t_sycl: $(1)/$(1)_t.sycl.cc | $(1)/bin
 	@if [ -z "$(ONEAPI_BASE)" ]; then \
 		echo "Error: ONEAPI_BASE not set. Skipping $@"; \
 	else \
-		echo "$(SYCL_CXX) $(SYCL_CXXFLAGS) $(SYCL_LDFLAGS) $(SYCL_TARGETS) $(LIB_INCLUDE) $$< -o $$@"; \
-		$(SYCL_CXX) $(SYCL_CXXFLAGS) $(SYCL_LDFLAGS) $(SYCL_TARGETS) $(LIB_INCLUDE) $$< -o $$@; \
+		echo "$(SYCL_CXX) $(SYCL_CXXFLAGS) $(SYCL_LDFLAGS) $(SYCL_FLAGS) $(LIB_INCLUDE) $$< -o $$@"; \
+		$(SYCL_CXX) $(SYCL_CXXFLAGS) $(SYCL_LDFLAGS) $(SYCL_FLAGS) $(LIB_INCLUDE) $$< -o $$@; \
 	fi
 
 # List of test executables
