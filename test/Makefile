@@ -2,6 +2,8 @@
 # Authors: Andrea Bocci <andrea.bocci@cern.ch>, Aurora Perego <aurora.perego@cern.ch>, Simone Balducci <simone.balducci@cern.ch>
 # SPDX-License-Identifier: MPL-2.0
 
+.DELETE_ON_ERROR:
+
 .PHONY: all
 all: run
 
