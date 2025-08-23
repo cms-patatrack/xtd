@@ -4,21 +4,20 @@
  * SPDX-License-Identifier: MPL-2.0
  */
 
+#pragma once
+
 // C++ standard headers
 #include <vector>
-
-// Catch2 headers
-#define CATCH_CONFIG_NO_POSIX_SIGNALS
-#include <catch.hpp>
 
 // CUDA headers
 #include <cuda_runtime.h>
 
 // test headers
+#include "compare.h"
 #include "cuda_check.h"
 
 template <typename ResultType, typename InputType, ResultType (*XtdFunc)(InputType)>
-__global__ void kernel(InputType const* input, ResultType* result, int size) {
+__global__ static void kernel(InputType const* input, ResultType* result, int size) {
   const int thread = blockDim.x * blockIdx.x + threadIdx.x;
   const int stride = blockDim.x * gridDim.x;
   for (int i = thread; i < size; i += stride) {
@@ -27,7 +26,7 @@ __global__ void kernel(InputType const* input, ResultType* result, int size) {
 }
 
 template <typename ResultType, typename InputType, ResultType (*XtdFunc)(InputType), ResultType (*StdFunc)(InputType)>
-void test(cudaStream_t queue, std::vector<double> const& values) {
+inline void test(cudaStream_t queue, std::vector<double> const& values) {
   int size = values.size();
 
   // convert the input data to the type to be tested and copy them to the GPU
@@ -55,12 +54,12 @@ void test(cudaStream_t queue, std::vector<double> const& values) {
   // compare the xtd results with std reference results
   for (int i = 0; i < size; ++i) {
     ResultType reference = StdFunc(input_h[i]);
-    CHECK_THAT(result_h[i], Catch::Matchers::WithinULP(reference, 1));
+    compare(result_h[i], reference);
   }
 }
 
 template <typename ResultType, typename InputType, ResultType (*XtdFunc)(InputType), ResultType (*StdFunc)(float)>
-void test_f(cudaStream_t queue, std::vector<double> const& values) {
+inline void test_f(cudaStream_t queue, std::vector<double> const& values) {
   int size = values.size();
 
   // convert the input data to the type to be tested and copy them to the GPU
@@ -88,6 +87,6 @@ void test_f(cudaStream_t queue, std::vector<double> const& values) {
   // compare the xtd results with std reference results
   for (int i = 0; i < size; ++i) {
     ResultType reference = StdFunc(static_cast<float>(input_h[i]));
-    CHECK_THAT(result_h[i], Catch::Matchers::WithinULP(reference, 1));
+    compare(result_h[i], reference);
   }
 }
