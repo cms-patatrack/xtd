@@ -17,6 +17,9 @@
 // SYCL headers
 #include <sycl/sycl.hpp>
 
+// mpfr::real headers
+#include <real.hpp>
+
 // xtd headers
 #include "xtd/math/sin.h"
 
@@ -35,30 +38,27 @@ TEST_CASE("xtd::sin", "[sin][sycl]") {
             sycl::queue queue{device, sycl::property::queue::in_order()};
 
             SECTION("float xtd::sin(float)") {
-              test<float, float, xtd::sin, std::sin>(queue, values);
+              test<float, float, xtd::sin, mpfr::sin>(queue, values, 2);
             }
 
             SECTION("double xtd::sin(double)") {
-              test<double, double, xtd::sin, std::sin>(queue, values);
+              test<double, double, xtd::sin, mpfr::sin>(queue, values, 1);
             }
 
             SECTION("double xtd::sin(int)") {
-              test<double, int, xtd::sin, std::sin>(queue, values);
+              test<double, int, xtd::sin, mpfr::sin>(queue, values, 1);
             }
 
-            // Note: clang prior to v19.1 does not provide std::sinf().
-            // As a workarund, use C sinf().
-
             SECTION("float xtd::sinf(float)") {
-              test_f<float, float, xtd::sinf, ::sinf>(queue, values);
+              test_f<float, float, xtd::sinf, mpfr::sin>(queue, values, 2);
             }
 
             SECTION("float xtd::sinf(double)") {
-              test_f<float, double, xtd::sinf, ::sinf>(queue, values);
+              test_f<float, double, xtd::sinf, mpfr::sin>(queue, values, 2);
             }
 
             SECTION("float xtd::sinf(int)") {
-              test_f<float, int, xtd::sinf, ::sinf>(queue, values);
+              test_f<float, int, xtd::sinf, mpfr::sin>(queue, values, 2);
             }
 
           } catch (sycl::exception const &e) {

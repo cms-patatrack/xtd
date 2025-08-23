@@ -30,6 +30,15 @@
 #define XTD_TARGET_CPU
 #endif
 
-#if defined(__SYCL_DEVICE_ONLY__)
+// backend runtime include files
+#if defined(XTD_TARGET_CUDA)
+#include <cuda_runtime.h>
+#endif
+
+#if defined(XTD_TARGET_HIP)
+#include <hip/hip_runtime.h>
+#endif
+
+#if defined(XTD_TARGET_SYCL)
 #include <sycl/sycl.hpp>
 #endif

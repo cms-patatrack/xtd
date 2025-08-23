@@ -12,6 +12,9 @@
 #define CATCH_CONFIG_MAIN
 #include <catch.hpp>
 
+// mpfr::real headers
+#include <real.hpp>
+
 // xtd headers
 #include "xtd/math/sin.h"
 
@@ -23,29 +26,26 @@ TEST_CASE("xtd::sin", "[sin][cpu]") {
   std::vector<double> values = generate_input_values();
 
   SECTION("float xtd::sin(float)") {
-    test<float, float, xtd::sin, std::sin>(values);
+    test<float, float, xtd::sin, mpfr::sin>(values, 1);
   }
 
   SECTION("double xtd::sin(double)") {
-    test<double, double, xtd::sin, std::sin>(values);
+    test<double, double, xtd::sin, mpfr::sin>(values, 1);
   }
 
   SECTION("double xtd::sin(int)") {
-    test<double, int, xtd::sin, std::sin>(values);
+    test<double, int, xtd::sin, mpfr::sin>(values, 1);
   }
 
-  // Note: GCC prior to v14.1 and clang prior to v19.1 do not provide std::sinf().
-  // As a workarund, use C sinf().
-
   SECTION("float xtd::sinf(float)") {
-    test_f<float, float, xtd::sinf, ::sinf>(values);
+    test_f<float, float, xtd::sinf, mpfr::sin>(values, 1);
   }
 
   SECTION("float xtd::sinf(double)") {
-    test_f<float, double, xtd::sinf, ::sinf>(values);
+    test_f<float, double, xtd::sinf, mpfr::sin>(values, 1);
   }
 
   SECTION("float xtd::sinf(int)") {
-    test_f<float, int, xtd::sinf, ::sinf>(values);
+    test_f<float, int, xtd::sinf, mpfr::sin>(values, 1);
   }
 }

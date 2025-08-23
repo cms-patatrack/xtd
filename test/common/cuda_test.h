@@ -12,9 +12,17 @@
 // CUDA headers
 #include <cuda_runtime.h>
 
+// mpfr::real headers
+#include <real.hpp>
+
 // test headers
 #include "compare.h"
 #include "cuda_check.h"
+
+static constexpr auto single_prec = 24;
+static constexpr auto double_prec = 53;
+using mpfr_single = mpfr::real<single_prec, MPFR_RNDN>;
+using mpfr_double = mpfr::real<double_prec, MPFR_RNDN>;
 
 template <typename ResultType, typename InputType, ResultType (*XtdFunc)(InputType)>
 __global__ static void kernel(InputType const* input, ResultType* result, int size) {
@@ -25,8 +33,13 @@ __global__ static void kernel(InputType const* input, ResultType* result, int si
   }
 }
 
-template <typename ResultType, typename InputType, ResultType (*XtdFunc)(InputType), ResultType (*StdFunc)(InputType)>
-inline void test(cudaStream_t queue, std::vector<double> const& values) {
+template <
+    typename ResultType,
+    typename InputType,
+    ResultType (*XtdFunc)(InputType),
+    typename std::enable_if<mpfr::type_traits<mpfr_double, mpfr_double, true>::enable_math_funcs,
+                            const mpfr_double>::type (*RefFunc)(const mpfr_double&)>
+inline void test(cudaStream_t queue, std::vector<double> const& values, int ulps = 0) {
   int size = values.size();
 
   // convert the input data to the type to be tested and copy them to the GPU
@@ -53,13 +66,20 @@ inline void test(cudaStream_t queue, std::vector<double> const& values) {
 
   // compare the xtd results with std reference results
   for (int i = 0; i < size; ++i) {
-    ResultType reference = StdFunc(input_h[i]);
-    compare(result_h[i], reference);
+    INFO(input_h[i]);
+    ResultType reference;
+    RefFunc(static_cast<mpfr_double>(input_h[i])).conv(reference);
+    compare(result_h[i], reference, ulps);
   }
 }
 
-template <typename ResultType, typename InputType, ResultType (*XtdFunc)(InputType), ResultType (*StdFunc)(float)>
-inline void test_f(cudaStream_t queue, std::vector<double> const& values) {
+template <
+    typename ResultType,
+    typename InputType,
+    ResultType (*XtdFunc)(InputType),
+    typename std::enable_if<mpfr::type_traits<mpfr_single, mpfr_single, true>::enable_math_funcs,
+                            const mpfr_single>::type (*RefFunc)(const mpfr_single&)>
+inline void test_f(cudaStream_t queue, std::vector<double> const& values, int ulps = 0) {
   int size = values.size();
 
   // convert the input data to the type to be tested and copy them to the GPU
@@ -86,7 +106,9 @@ inline void test_f(cudaStream_t queue, std::vector<double> const& values) {
 
   // compare the xtd results with std reference results
   for (int i = 0; i < size; ++i) {
-    ResultType reference = StdFunc(static_cast<float>(input_h[i]));
-    compare(result_h[i], reference);
+    INFO(input_h[i]);
+    ResultType reference;
+    RefFunc(static_cast<mpfr_single>(input_h[i])).conv(reference);
+    compare(result_h[i], reference, ulps);
   }
 }

@@ -12,6 +12,9 @@
 // SYCL headers
 #include <sycl/sycl.hpp>
 
+// mpfr::real headers
+#include <real.hpp>
+
 // Catch2 headers
 #define CATCH_CONFIG_NO_POSIX_SIGNALS
 #include <catch.hpp>
@@ -19,8 +22,18 @@
 // test headers
 #include "compare.h"
 
-template <typename ResultType, typename InputType, ResultType (*XtdFunc)(InputType), ResultType (*StdFunc)(InputType)>
-inline void test(sycl::queue queue, std::vector<double> const& values) {
+static constexpr auto single_prec = 24;
+static constexpr auto double_prec = 53;
+using mpfr_single = mpfr::real<single_prec, MPFR_RNDN>;
+using mpfr_double = mpfr::real<double_prec, MPFR_RNDN>;
+
+template <
+    typename ResultType,
+    typename InputType,
+    ResultType (*XtdFunc)(InputType),
+    typename std::enable_if<mpfr::type_traits<mpfr_double, mpfr_double, true>::enable_math_funcs,
+                            const mpfr_double>::type (*RefFunc)(const mpfr_double&)>
+inline void test(sycl::queue queue, std::vector<double> const& values, int ulps = 0) {
   int size = values.size();
 
   // convert the input data to the type to be tested and copy them to the GPU
@@ -48,16 +61,19 @@ inline void test(sycl::queue queue, std::vector<double> const& values) {
   // compare the xtd results with the std reference results
   for (int i = 0; i < size; ++i) {
     INFO(input_h[i]);
-    ResultType reference = StdFunc(input_h[i]);
-    // Note: even compiling with -fp-model=precise -fimf-max-error=1
-    // some SYCL math functions differ from the std results by 2 ULPs
-    // when running on the OpenCL CPU device.
-    compare<float>(result_h[i], reference, 2);
+    ResultType reference;
+    RefFunc(static_cast<mpfr_double>(input_h[i])).conv(reference);
+    compare<float>(result_h[i], reference, ulps);
   }
 }
 
-template <typename ResultType, typename InputType, ResultType (*XtdFunc)(InputType), ResultType (*StdFunc)(float)>
-inline void test_f(sycl::queue queue, std::vector<double> const& values) {
+template <
+    typename ResultType,
+    typename InputType,
+    ResultType (*XtdFunc)(InputType),
+    typename std::enable_if<mpfr::type_traits<mpfr_single, mpfr_single, true>::enable_math_funcs,
+                            const mpfr_single>::type (*RefFunc)(const mpfr_single&)>
+inline void test_f(sycl::queue queue, std::vector<double> const& values, int ulps = 0) {
   int size = values.size();
 
   // convert the input data to the type to be tested and copy them to the GPU
@@ -85,10 +101,8 @@ inline void test_f(sycl::queue queue, std::vector<double> const& values) {
   // compare the xtd results with the std reference results
   for (int i = 0; i < size; ++i) {
     INFO(input_h[i]);
-    ResultType reference = StdFunc(static_cast<float>(input_h[i]));
-    // Note: even compiling with -fp-model=precise -fimf-max-error=1
-    // some SYCL math functions differ from the std resuklts by 2 ULPs
-    // when running on the OpenCL CPU device.
-    compare<float>(result_h[i], reference, 2);
+    ResultType reference;
+    RefFunc(static_cast<mpfr_single>(input_h[i])).conv(reference);
+    compare<float>(result_h[i], reference, ulps);
   }
 }

@@ -29,47 +29,44 @@ endef
 space := $() $()
 comma := $(),$()
 
-# gcc
-CXX := g++
-GCC_TOOLCHAIN := $(abspath $(dir $(shell which $(CXX)))/..)
-GCC_TARGET    := $(shell $(CXX) -dumpmachine)
+# compilation flags used by all compilers and backends
+COMMON_CXXFLAGS := -std=c++20 -O2 -g
+
 # Catch2 needs -Wno-unused-variable
-HOST_CXXFLAGS := -O2 -fPIC -pthread -march=native -Wall -Wextra -Werror -Wfatal-errors -Wno-unused-variable
+# mpfr::real needs -Wno-unused-parameter -Wno-self-assign-overloaded
+HOST_CXXFLAGS := -march=native -Wall -Wextra -Werror -Wfatal-errors -Wno-unused-variable -Wno-unused-parameter -Wno-self-assign-overloaded
 
 # Compiler flags supported by GCC but not by the LLVM-based compilers (clang, hipcc, icpx, etc.)
 LLVM_UNSUPPORTED_CXXFLAGS := --param vect-max-version-for-alias-checks=50 -Werror=format-contains-nul -Wno-non-template-friend -Werror=return-local-addr -Werror=unused-but-set-variable
 
-CXXFLAGS := -std=c++20 $(HOST_CXXFLAGS) -g
-LDFLAGS := -O2 -fPIC -pthread -Wl,-E -lstdc++fs -ldl
+# gcc
+CXX           := g++
+GCC_TOOLCHAIN := $(abspath $(dir $(shell which $(CXX)))/..)
+GCC_TARGET    := $(shell $(CXX) -dumpmachine)
+CXXFLAGS      := $(COMMON_CXXFLAGS) $(HOST_CXXFLAGS)
+LDFLAGS       :=
+$(info Using $(CXX) host compiler installation at $(GCC_TOOLCHAIN) for target $(GCC_TARGET))
 
 # CUDA
 CUDA_BASE := /usr/local/cuda
 # default to the list of all supported major architectures
 CUDA_ARCH := 50 60 70 80 90 100 120
-ifeq ($(wildcard $(CUDA_BASE)),)
+ifeq ($(wildcard $(CUDA_BASE)/bin/nvcc),)
   # CUDA platform not found
   $(info Cannot find an NVIDIA CUDA installation at $(CUDA_BASE), the CUDA tests will not be built.)
-  CUDA_BASE :=
+  override CUDA_BASE :=
 else
-# CUDA platform at $(CUDA_BASE)
-  CUDA_LIBDIR := $(CUDA_BASE)/lib64
-  CUDA_DEPS := $(CUDA_LIBDIR)/libcudart.so
+  # CUDA platform at $(CUDA_BASE)
+  $(info Using NVIDIA CUDA installation at $(CUDA_BASE), $(strip $(shell $(CUDA_BASE)/bin/nvcc --version | grep release | cut -d, -f2-)))
+  CUDA_NVCC     := $(CUDA_BASE)/bin/nvcc
+  CUDA_LIBDIR   := $(CUDA_BASE)/lib64
   # detect the architecture of the NVIDIA GPUs in the system
   CUDA_DETECTED_ARCH := $(shell $(CUDA_BASE)/bin/__nvcc_device_query 2> /dev/null)
   ifneq ($(CUDA_DETECTED_ARCH),)
     CUDA_ARCH := $(CUDA_DETECTED_ARCH)
   endif
-  CUDA_CXXFLAGS := -I$(CUDA_BASE)/include
-  CUDA_LDFLAGS := -L$(CUDA_LIBDIR) -lcudart -lcudadevrt
-  CUDA_NVCC := $(CUDA_BASE)/bin/nvcc
-  define CUFLAGS_template
-    $(2)NVCC_FLAGS := $$(foreach ARCH,$(1),-gencode arch=compute_$$(ARCH),code=[sm_$$(ARCH),compute_$$(ARCH)]) -Wno-deprecated-gpu-targets -Xcudafe --diag_suppress=esa_on_defaulted_function_ignored --expt-relaxed-constexpr --expt-extended-lambda --generate-line-info --source-in-ptx --display-error-number --threads $$(words $(1)) --cudart=shared
-    $(2)NVCC_COMMON := -std=c++20 -O3 -g $$($(2)NVCC_FLAGS) -ccbin $(CXX) --compiler-options '$(HOST_CXXFLAGS)'
-    $(2)CUDA_CUFLAGS := $$($(2)NVCC_COMMON)
-  endef
-  $(eval $(call CUFLAGS_template,$(CUDA_ARCH),))
-  NVCC_COMMON := -std=c++20 -O3 -g $(NVCC_FLAGS) -ccbin $(CXX) --compiler-options '$(HOST_CXXFLAGS)'
-  CUDA_CUFLAGS := $(NVCC_COMMON)
+  CUDA_CXXFLAGS := $(COMMON_CXXFLAGS) $(foreach ARCH,$(CUDA_ARCH),-gencode arch=compute_$(ARCH),code=[sm_$(ARCH),compute_$(ARCH)]) -Wno-deprecated-gpu-targets -Xcudafe --diag_suppress=esa_on_defaulted_function_ignored --prec-div true --prec-sqrt true --fmad true --expt-relaxed-constexpr --extended-lambda --generate-line-info --source-in-ptx --display-error-number --threads $(words $(CUDA_ARCH)) -ccbin $(CXX) --compiler-options '$(HOST_CXXFLAGS)' -I$(CUDA_BASE)/include
+  CUDA_LDFLAGS  := -L$(CUDA_LIBDIR) -lcudart -lcudadevrt --cudart=shared $(LDFLAGS)
 
   # Make sure the tests can find the CUDA libraries
   export LD_LIBRARY_PATH := $(CUDA_LIBDIR):$(LD_LIBRARY_PATH)
@@ -79,22 +76,22 @@ endif
 ROCM_BASE := /opt/rocm
 # default to the list of all supported architectures
 ROCM_ARCH := gfx900 gfx906 gfx908 gfx90a gfx942 gfx1030 gfx1100 gfx1101 gfx1200 gfx1201
-ifeq ($(wildcard $(ROCM_BASE)),)
+ifeq ($(wildcard $(ROCM_BASE)/bin/hipcc),)
   # ROCm platform not found
   $(info Cannot find an AMD ROCm installation at $(ROCM_BASE), the ROCm tests will not be built.)
-  ROCM_BASE :=
+  override ROCM_BASE :=
 else
   # ROCm platform at $(ROCM_BASE)
+  $(info Using AMD ROCm installation at $(ROCM_BASE), version $(strip $(shell $(ROCM_BASE)/bin/hipcc --version | grep 'HIP version' | cut -d: -f2-)))
   ROCM_LIBDIR := $(ROCM_BASE)/lib
-  ROCM_DEPS := $(ROCM_LIBDIR)/libamdhip64.so
   # detect the architecture of the AMD GPUs in the system
   ROCM_DETECTED_ARCH := $(shell $(ROCM_BASE)/lib/llvm/bin/amdgpu-arch 2> /dev/null | sort -u)
   ifneq ($(ROCM_DETECTED_ARCH),)
     ROCM_ARCH := $(ROCM_DETECTED_ARCH)
   endif
-  ROCM_HIPCC := $(ROCM_BASE)/bin/hipcc
-  HIPCC_CXXFLAGS := -fno-gpu-rdc $(foreach ARCH,$(ROCM_ARCH),--offload-arch=$(ARCH)) $(filter-out $(LLVM_UNSUPPORTED_CXXFLAGS),$(CXXFLAGS)) --target=$(GCC_TARGET) --gcc-toolchain=$(GCC_TOOLCHAIN) -I$(ROCM_BASE)/include/hip -Wno-unused-result
-  HIPCC_LDFLAGS := $(LDFLAGS) --target=$(GCC_TARGET) --gcc-toolchain=$(GCC_TOOLCHAIN)
+  ROCM_HIPCC     := $(ROCM_BASE)/bin/hipcc
+  ROCM_CXXFLAGS := $(filter-out $(LLVM_UNSUPPORTED_CXXFLAGS),$(CXXFLAGS)) $(foreach ARCH,$(ROCM_ARCH),--offload-arch=$(ARCH)) -fhip-fp32-correctly-rounded-divide-sqrt --target=$(GCC_TARGET) --gcc-toolchain=$(GCC_TOOLCHAIN) -I$(ROCM_BASE)/include/hip
+  ROCM_LDFLAGS  := $(LDFLAGS)
 
   # Make sure the tests can find the ROCm libraries
   export LD_LIBRARY_PATH := $(ROCM_LIBDIR):$(LD_LIBRARY_PATH)
@@ -112,7 +109,7 @@ endif
 ifneq ($(ONEAPI_BASE),)
   ifneq ($(wildcard $(ONEAPI_BASE)/setvars.sh),)
     # found Intel oneAPI at $(ONEAPI_BASE)
-    $(info Found an Intel oneAPI installation at $(ONEAPI_BASE))
+    $(info Using Intel oneAPI installation at $(ONEAPI_BASE))
   else
     # Intel oneAPI not found at $(ONEAPI_BASE), set ONEAPI_BASE to an empty value
     $(info Cannot find an Intel oneAPI installation at $(ONEAPI_BASE), the oneAPI tests will not be built.)
@@ -126,7 +123,7 @@ ifeq ($(origin ONEAPI_BASE), undefined)
     ifneq ($(wildcard $(ONEAPI_ROOT)/setvars.sh),)
       # found Intel oneAPI at $(ONEAPI_ROOT)
       ONEAPI_BASE := $(ONEAPI_ROOT)
-      $(info Found an Intel oneAPI installation at $(ONEAPI_BASE))
+      $(info Using Intel oneAPI installation at $(ONEAPI_BASE), version $(strip $(shell $(ONEAPI_BASE)/compiler/latest/bin/icpx --version | sed -n -e's#Intel(R) oneAPI DPC++/C++ Compiler##p')))
     endif
   endif
 endif
@@ -136,7 +133,7 @@ ifeq ($(origin ONEAPI_BASE), undefined)
   ifneq ($(wildcard /opt/intel/oneapi/setvars.sh),)
     # found Intel oneAPI at /opt/intel/oneapi
     ONEAPI_BASE := /opt/intel/oneapi
-    $(info Found an Intel oneAPI installation at $(ONEAPI_BASE))
+    $(info Using Intel oneAPI installation at $(ONEAPI_BASE))
   endif
 endif
 
@@ -152,8 +149,6 @@ ifneq ($(ONEAPI_BASE),)
   SYCL_BASE         := $(ONEAPI_BASE)/compiler/latest
   SYCL_LIBDIR       := $(SYCL_BASE)/lib
   SYCL_CXX          := $(SYCL_BASE)/bin/icpx
-  SYCL_CXXFLAGS     := $(filter-out $(LLVM_UNSUPPORTED_CXXFLAGS),$(CXXFLAGS))
-  SYCL_LDFLAGS      :=
   SYCL_TARGETS      := spir64_x86_64 spir64
   ifdef CUDA_BASE
     ifneq ($(wildcard $(SYCL_LIBDIR)/libur_adapter_cuda.so),)
@@ -180,7 +175,8 @@ ifneq ($(ONEAPI_BASE),)
       SYCL_ROCM_FLAGS := --rocm-path=$(ROCM_BASE)
     endif
   endif
-  SYCL_FLAGS        := -fsycl -fsycl-targets=$(subst $(space),$(comma),$(SYCL_TARGETS)) $(SYCL_CUDA_FLAGS) $(SYCL_ROCM_FLAGS) -fp-model=precise
+  SYCL_CXXFLAGS     := $(filter-out $(LLVM_UNSUPPORTED_CXXFLAGS),$(CXXFLAGS)) -fsycl -fsycl-targets=$(subst $(space),$(comma),$(SYCL_TARGETS)) $(SYCL_CUDA_FLAGS) $(SYCL_ROCM_FLAGS) -fp-model=precise
+  SYCL_LDFLAGS      := $(LDFLAGS)
 
   # Check for Intel GPU existence
   #SYCL_LS := $(shell mktemp)
@@ -197,22 +193,44 @@ endif
 
 # xtd
 XTD_BASE := $(realpath $(dir $(realpath $(lastword $(MAKEFILE_LIST))))/..)
+$(info Using xtd library at $(XTD_BASE))
+LIB_CFLAGS  := -I$(XTD_BASE)/include -I$(XTD_BASE)/test
+LIB_LDFLAGS :=
+
+# external libraries downloaded and installed locally
+EXTERNAL_BASE := $(XTD_BASE)/test/external
 
 # external Catch2 library
-CATCH2_INCLUDE := $(XTD_BASE)/test/external/catch2/include/catch.hpp
+CATCH2_INCLUDE := $(EXTERNAL_BASE)/catch2/include/catch.hpp
+$(info Using Catch2 library at $(EXTERNAL_BASE)/catch2)
+LIB_CFLAGS  += -I$(patsubst %/,%,$(dir $(CATCH2_INCLUDE)))
+LIB_LDFLAGS +=
 
 .PHONY: external_catch2
 external_catch2: $(CATCH2_INCLUDE)
 
 $(CATCH2_INCLUDE):
 	mkdir -p $(dir $@)
-	wget https://github.com/catchorg/Catch2/releases/download/v2.13.10/catch.hpp -O $@
+	curl -s -S -L https://github.com/catchorg/Catch2/releases/download/v2.13.10/catch.hpp -o $@
 
-LIB_INCLUDE := -I$(XTD_BASE)/include -I$(XTD_BASE)/test -I$(dir $(CATCH2_INCLUDE))
+# external mpfr::real library
+MPFR_REAL_INCLUDE := $(EXTERNAL_BASE)/mpfr_real_v0.0.9-alpha/real.hpp
+$(info Using mpfr::real library at $(EXTERNAL_BASE)/mpfr_real_v0.0.9-alpha)
+LIB_CFLAGS  += -I$(patsubst %/,%,$(dir $(MPFR_REAL_INCLUDE)))
+LIB_LDFLAGS += -lmpfr
+
+.PHONY: external_mpfr_real
+external_mpfr_real: $(MPFR_REAL_INCLUDE)
+
+$(MPFR_REAL_INCLUDE):
+	mkdir -p $(dir $@)
+	curl -s -S -L https://www.chschneider.eu/programming/mpfr_real/mpfr_real_v0.0.9-alpha.tar.gz | tar xz -C $(EXTERNAL_BASE)
+
+$(info -------------------------------------------------------------------------------)
 
 # xtd tests
 SUBDIRS := $(wildcard $(XTD_BASE)/test/*/)
-TARGETS_ALL := $(filter-out common, $(filter-out external, $(notdir $(patsubst %/,%,$(SUBDIRS)))))
+TARGETS_ALL := $(filter-out common external, $(notdir $(patsubst %/,%,$(SUBDIRS))))
 
 define TEST_template
 build: build_$(1)
@@ -221,7 +239,7 @@ build: build_$(1)
 build_$(1): prereq_$(1)
 
 .PHONY: prereq_$(1)
-prereq_$(1): external_catch2 $(1)/bin
+prereq_$(1): external_catch2 external_mpfr_real $(1)/bin
 
 run: run_$(1)
 
@@ -244,7 +262,7 @@ build_$(1): build_$(1)_cpu
 build_$(1)_cpu: $(1)/bin/$(1)_t_cc
 
 $(1)/bin/$(1)_t_cc: $(1)/$(1)_t.cc | prereq_$(1)
-	$(CXX) $(CXXFLAGS) $(LIB_INCLUDE) $$< -o $$@
+	$(CXX) $(CXXFLAGS) $(LIB_CFLAGS) $$< $(LDFLAGS) $(LIB_LDFLAGS) -o $$@
 
 run_$(1): run_$(1)_cpu
 
@@ -260,7 +278,7 @@ build_$(1): build_$(1)_cuda
 build_$(1)_cuda: $(1)/bin/$(1)_t_cuda
 
 $(1)/bin/$(1)_t_cuda: $(1)/$(1)_t.cu | prereq_$(1)
-	$(CUDA_NVCC) $(CUDA_CXXFLAGS) $(CUDA_LDFLAGS) $(CUDA_CUFLAGS) $(LIB_INCLUDE) $$< -o $$@
+	$(CUDA_NVCC) $(CUDA_CXXFLAGS) $(LIB_CFLAGS) $$< $(CUDA_LDFLAGS) $(LIB_LDFLAGS) -o $$@
 
 run_$(1): run_$(1)_cuda
 
@@ -277,7 +295,7 @@ build_$(1): build_$(1)_hip
 build_$(1)_hip: $(1)/bin/$(1)_t_hip
 
 $(1)/bin/$(1)_t_hip: $(1)/$(1)_t.hip.cc | prereq_$(1)
-	$(ROCM_HIPCC) $(HIPCC_CXXFLAGS) $(HIPCC_LDFLAGS) $(LIB_INCLUDE) $$< -o $$@
+	$(ROCM_HIPCC) $(ROCM_CXXFLAGS) $(LIB_CFLAGS) $$< $(ROCM_LDFLAGS) $(LIB_LDFLAGS) -o $$@
 
 run_$(1): run_$(1)_hip
 
@@ -294,7 +312,7 @@ build_$(1): build_$(1)_sycl
 build_$(1)_sycl: $(1)/bin/$(1)_t_sycl
 
 $(1)/bin/$(1)_t_sycl: $(1)/$(1)_t.sycl.cc | prereq_$(1)
-	$(SYCL_CXX) $(SYCL_CXXFLAGS) $(SYCL_LDFLAGS) $(SYCL_FLAGS) $(LIB_INCLUDE) $$< -o $$@
+	$(SYCL_CXX) $(SYCL_CXXFLAGS) $(LIB_CFLAGS) $$< $(SYCL_LDFLAGS) $(LIB_LDFLAGS) -o $$@
 
 run_$(1): run_$(1)_sycl
 
