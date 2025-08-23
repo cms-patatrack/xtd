@@ -22,9 +22,10 @@
 
 // test headers
 #include "common/sycl_test.h"
+#include "common/math_inputs.h"
 
 TEST_CASE("xtd::sin", "[sin][sycl]") {
-  std::vector<double> values{-1., 0., M_PI / 2, M_PI, 42.};
+  std::vector<double> values = generate_input_values();
 
   for (const auto &platform : sycl::platform::get_platforms()) {
     SECTION(platform.get_info<sycl::info::platform::name>()) {

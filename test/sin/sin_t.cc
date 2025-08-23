@@ -17,9 +17,10 @@
 
 // test headers
 #include "common/cpu_test.h"
+#include "common/math_inputs.h"
 
 TEST_CASE("xtd::sin", "[sin][cpu]") {
-  std::vector<double> values{-1., 0., M_PI / 2, M_PI, 42.};
+  std::vector<double> values = generate_input_values();
 
   SECTION("float xtd::sin(float)") {
     test<float, float, xtd::sin, std::sin>(values);
