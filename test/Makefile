@@ -12,6 +12,8 @@ define newline
 
 endef
 
+space := $() $()
+
 # gcc
 CXX := g++
 GCC_TOOLCHAIN := $(abspath $(dir $(shell which $(CXX)))/..)
@@ -27,6 +29,8 @@ LDFLAGS := -O2 -fPIC -pthread -Wl,-E -lstdc++fs -ldl
 
 # CUDA
 CUDA_BASE := /usr/local/cuda
+# default to the list of all supported major architectures
+CUDA_ARCH := 50 60 70 80 90 100 120
 ifeq ($(wildcard $(CUDA_BASE)),)
   # CUDA platform not found
   $(info Cannot find an NVIDIA CUDA installation at $(CUDA_BASE), the CUDA tests will not be built.)
@@ -35,7 +39,11 @@ else
 # CUDA platform at $(CUDA_BASE)
   CUDA_LIBDIR := $(CUDA_BASE)/lib64
   CUDA_DEPS := $(CUDA_LIBDIR)/libcudart.so
-  CUDA_ARCH := 60 70 80
+  # detect the architecture of the NVIDIA GPUs in the system
+  CUDA_DETECTED_ARCH := $(shell $(CUDA_BASE)/bin/__nvcc_device_query 2> /dev/null)
+  ifneq ($(CUDA_DETECTED_ARCH),)
+    CUDA_ARCH := $(CUDA_DETECTED_ARCH)
+  endif
   CUDA_CXXFLAGS := -I$(CUDA_BASE)/include
   CUDA_LDFLAGS := -L$(CUDA_LIBDIR) -lcudart -lcudadevrt
   CUDA_NVCC := $(CUDA_BASE)/bin/nvcc
@@ -51,6 +59,8 @@ endif
 
 # ROCm
 ROCM_BASE := /opt/rocm
+# default to the list of all supported architectures
+ROCM_ARCH := gfx900 gfx906 gfx908 gfx90a gfx942 gfx1030 gfx1100 gfx1101 gfx1200 gfx1201
 ifeq ($(wildcard $(ROCM_BASE)),)
   # ROCm platform not found
   $(info Cannot find an AMD ROCm installation at $(ROCM_BASE), the ROCm tests will not be built.)
@@ -59,7 +69,11 @@ else
   # ROCm platform at $(ROCM_BASE)
   ROCM_LIBDIR := $(ROCM_BASE)/lib
   ROCM_DEPS := $(ROCM_LIBDIR)/libamdhip64.so
-  ROCM_ARCH := gfx900 gfx90a gfx1030
+  # detect the architecture of the AMD GPUs in the system
+  ROCM_DETECTED_ARCH := $(shell $(ROCM_BASE)/lib/llvm/bin/amdgpu-arch 2> /dev/null | sort -u)
+  ifneq ($(ROCM_DETECTED_ARCH),)
+    ROCM_ARCH := $(ROCM_DETECTED_ARCH)
+  endif
   ROCM_HIPCC := $(ROCM_BASE)/bin/hipcc
   HIPCC_CXXFLAGS := -fno-gpu-rdc $(foreach ARCH,$(ROCM_ARCH),--offload-arch=$(ARCH)) $(filter-out $(LLVM_UNSUPPORTED_CXXFLAGS),$(CXXFLAGS)) --target=$(GCC_TARGET) --gcc-toolchain=$(GCC_TOOLCHAIN) -I$(ROCM_BASE)/include/hip -Wno-unused-result
   HIPCC_LDFLAGS := $(LDFLAGS) --target=$(GCC_TARGET) --gcc-toolchain=$(GCC_TOOLCHAIN)
@@ -117,10 +131,35 @@ ifneq ($(ONEAPI_BASE),)
   SYCL_BASE         := $(ONEAPI_BASE)/compiler/latest
   SYCL_LIBDIR       := $(SYCL_BASE)/lib
   SYCL_CXX          := $(SYCL_BASE)/bin/icpx
-  SYCL_FLAGS        := -fsycl -fp-model=precise
-  SYCL_CXXFLAGS     := $(filter-out $(LLVM_UNSUPPORTED_CXXFLAGS),$(CXXFLAGS)) $(SYCL_FLAGS) -Wno-unused-variable
+  SYCL_CXXFLAGS     := $(filter-out $(LLVM_UNSUPPORTED_CXXFLAGS),$(CXXFLAGS)) $(SYCL_FLAGS)
   SYCL_LDFLAGS      :=
-  SYCL_TARGETS      := -fsycl-targets=spir64_x86_64,spir64,nvptx64-nvidia-cuda,amdgcn-amd-amdhsa -Xsycl-target-backend=amdgcn-amd-amdhsa "--offload-arch=gfx1100"
+  SYCL_TARGETS      := spir64_x86_64 spir64
+  ifdef CUDA_BASE
+    ifneq ($(wildcard $(SYCL_LIBDIR)/libur_adapter_cuda.so),)
+      # Note: as of oneAPI 2025.2 icpx can target a single CUDA architecture.
+      # If the syntax
+      #   -fsycl-targets=nvptx64-nvidia-cuda -Xsycl-target-backend=nvptx64-nvidia-cuda --offload-arch=sm_80 -Xsycl-target-backend=nvptx64-nvidia-cuda --offload-arch=sm_90
+      # is used, the backend compiler is invoked only once for the first architecture (sm_80), and the others are ignored.
+      # If the sytnax
+      #   -fsycl-targets=nvidia_gpu_sm_80,nvidia_gpu_sm_90
+      # is used, the backend compiler is invoked multiple times, but always for the first architecture (sm_80).
+      # See https://github.com/intel/llvm/issues/16424 for some examples.
+      #SYCL_TARGETS    += $(foreach SM,$(CUDA_ARCH),nvidia_gpu_sm_$(SM))
+      # To avoid inconsistencies, we build the tests only for the first CUDA architecture.
+      SYCL_TARGETS    += nvidia_gpu_sm_$(firstword $(CUDA_ARCH))
+      SYCL_CUDA_FLAGS := --cuda-path=$(CUDA_BASE)
+    endif
+  endif
+  ifdef ROCM_BASE
+    ifneq ($(wildcard $(SYCL_LIBDIR)/libur_adapter_hip.so),)
+      # Note: the same issue described above for NVIDIA GPUs applies to AMD GPUs
+      #SYCL_TARGETS    += $(foreach GFX,$(ROCM_ARCH),amd_gpu_$(GFX))
+      # To avoid inconsistencies, we build the tests only for the first ROCm architecture.
+      SYCL_TARGETS    += amd_gpu_$(firstword $(ROCM_ARCH))
+      SYCL_ROCM_FLAGS := --rocm-path=$(ROCM_BASE)
+    endif
+  endif
+  SYCL_FLAGS        := -fsycl -fsycl-targets=$(subst $(space),:,$(SYCL_TARGETS)) $(SYCL_CUDA_FLAGS) $(SYCL_ROCM_FLAGS) -fp-model=precise
 
   # Check for Intel GPU existence
   #SYCL_LS := $(shell mktemp)
@@ -129,8 +168,8 @@ ifneq ($(ONEAPI_BASE),)
   #$(shell rm -f $(SYCL_LS))
   #undefine SYCL_LS
 
-  # enable double precision floating point emulation for Intel GPUs
-  # see https://github.com/intel/compute-runtime/blob/master/opencl/doc/FAQ.md#feature-double-precision-emulation-fp64
+  # Enable double precision floating point emulation for Intel GPUs
+  # See https://github.com/intel/compute-runtime/blob/master/opencl/doc/FAQ.md#feature-double-precision-emulation-fp64
   export IGC_EnableDPEmulation := 1
   export OverrideDefaultFP64Settings := 1
 endif
