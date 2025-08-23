@@ -191,7 +191,7 @@ external_catch2: $(CATCH2_INCLUDE)
 
 $(CATCH2_INCLUDE):
 	mkdir -p $(dir $@)
-	wget https://github.com/catchorg/Catch2/releases/download/v2.13.8/catch.hpp -O $@
+	wget https://github.com/catchorg/Catch2/releases/download/v2.13.10/catch.hpp -O $@
 
 LIB_INCLUDE := -I$(XTD_BASE)/include -I$(XTD_BASE)/test -I$(dir $(CATCH2_INCLUDE))
 
