@@ -19,6 +19,9 @@ using namespace std::literals;
 // HIP headers
 #include <hip/hip_runtime.h>
 
+// mpfr::real headers
+#include <real.hpp>
+
 // xtd headers
 #include "xtd/math/sin.h"
 
@@ -51,28 +54,27 @@ TEST_CASE("xtd::sin", "[sin][hip]") {
       HIP_CHECK(hipStreamCreate(&queue));
 
       SECTION("float xtd::sin(float)") {
-        test<float, float, xtd::sin, std::sin>(queue, values);
+        test<float, float, xtd::sin, mpfr::sin>(queue, values, 1);
       }
 
       SECTION("double xtd::sin(double)") {
-        test<double, double, xtd::sin, std::sin>(queue, values);
+        test<double, double, xtd::sin, mpfr::sin>(queue, values, 1);
       }
 
       SECTION("double xtd::sin(int)") {
-        // Note: HIP/ROCm does not provide the std::sin() overload for integer arguments.
-        test<double, int, xtd::sin, [](int arg) { return std::sin(static_cast<double>(arg)); }>(queue, values);
+        test<double, int, xtd::sin, mpfr::sin>(queue, values, 1);
       }
 
       SECTION("float xtd::sinf(float)") {
-        test_f<float, float, xtd::sinf, std::sinf>(queue, values);
+        test_f<float, float, xtd::sinf, mpfr::sin>(queue, values, 1);
       }
 
       SECTION("float xtd::sinf(double)") {
-        test_f<float, double, xtd::sinf, std::sinf>(queue, values);
+        test_f<float, double, xtd::sinf, mpfr::sin>(queue, values, 1);
       }
 
       SECTION("float xtd::sinf(int)") {
-        test_f<float, int, xtd::sinf, std::sinf>(queue, values);
+        test_f<float, int, xtd::sinf, mpfr::sin>(queue, values, 1);
       }
 
       HIP_CHECK(hipStreamDestroy(queue));

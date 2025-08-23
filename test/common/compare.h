@@ -14,7 +14,7 @@
 #include <catch.hpp>
 
 template <std::floating_point T>
-void compare(T result, T reference, int ULPs = 1) {
+void compare(T result, T reference, int ulps = 0) {
   switch (std::fpclassify(reference)) {
     case FP_INFINITE:
       CHECK(std::isinf(result));
@@ -23,11 +23,11 @@ void compare(T result, T reference, int ULPs = 1) {
       CHECK(std::isnan(result));
       break;
     case FP_ZERO:
-      CHECK_THAT(result, Catch::Matchers::WithinULP(0., ULPs));
+      CHECK_THAT(result, Catch::Matchers::WithinULP(0., ulps));
       break;
     case FP_NORMAL:
     case FP_SUBNORMAL:
     default:
-      CHECK_THAT(result, Catch::Matchers::WithinULP(reference, ULPs));
+      CHECK_THAT(result, Catch::Matchers::WithinULP(reference, ulps));
   }
 }

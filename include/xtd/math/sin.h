@@ -26,8 +26,8 @@ namespace xtd {
     // SYCL device code
     return sycl::sin(arg);
 #else
-    // standard C++ code
-    return std::sin(arg);
+    // standard C/C++ code
+    return ::sinf(arg);
 #endif
   }
 
@@ -44,20 +44,24 @@ namespace xtd {
     // SYCL device code
     return sycl::sin(arg);
 #else
-    // standard C++ code
-    return std::sin(arg);
+    // standard C/C++ code
+    return ::sin(arg);
 #endif
   }
 
   /* Computes the sine of arg (measured in radians), in double precision.
    */
   XTD_DEVICE_FUNCTION inline constexpr double sin(std::integral auto arg) {
-    return sin(static_cast<double>(arg));
+    return xtd::sin(static_cast<double>(arg));
   }
 
   /* Computes the sine of arg (measured in radians), in single precision.
    */
-  XTD_DEVICE_FUNCTION inline constexpr float sinf(std::floating_point auto arg) { return xtd::sin(static_cast<float>(arg)); }
-  XTD_DEVICE_FUNCTION inline constexpr float sinf(std::integral auto arg) { return xtd::sin(static_cast<float>(arg)); }
+  XTD_DEVICE_FUNCTION inline constexpr float sinf(std::floating_point auto arg) {
+    return xtd::sin(static_cast<float>(arg));
+  }
+  XTD_DEVICE_FUNCTION inline constexpr float sinf(std::integral auto arg) {
+    return xtd::sin(static_cast<float>(arg));
+  }
 
 }  // namespace xtd
