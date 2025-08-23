@@ -2,9 +2,21 @@
 # Authors: Andrea Bocci <andrea.bocci@cern.ch>, Aurora Perego <aurora.perego@cern.ch>, Simone Balducci <simone.balducci@cern.ch>
 # SPDX-License-Identifier: MPL-2.0
 
-.PHONY: all build run clean
+.PHONY: all
+all: run
 
-all: build run
+.PHONY: build
+build:
+
+.PHONY: run
+run: build
+
+.PHONY: clean
+clean:
+
+.PHONY: distclean
+distclean: clean
+	rm -rf test/external
 
 # makefile tricks
 define newline
@@ -187,6 +199,7 @@ XTD_BASE := $(realpath $(dir $(realpath $(lastword $(MAKEFILE_LIST))))/..)
 # external Catch2 library
 CATCH2_INCLUDE := $(XTD_BASE)/test/external/catch2/include/catch.hpp
 
+.PHONY: external_catch2
 external_catch2: $(CATCH2_INCLUDE)
 
 $(CATCH2_INCLUDE):
@@ -200,64 +213,82 @@ SUBDIRS := $(wildcard $(XTD_BASE)/test/*/)
 TARGETS_ALL := $(filter-out common, $(filter-out external, $(notdir $(patsubst %/,%,$(SUBDIRS)))))
 
 define TEST_template
+build: build_$(1)
+
+.PHONY: build_$(1)
+build_$(1): prereq_$(1)
+
+.PHONY: prereq_$(1)
+prereq_$(1): external_catch2 $(1)/bin
+
+run: run_$(1)
+
+.PHONY: run_$(1)
+run_$(1):
+
+clean: clean_$(1)
+
+.PHONY: clean_$(1)
+clean_$(1):
+	rm -rf $(1)/bin
+
 $(1)/bin:
 	mkdir -p $(1)/bin
 
-$(1)Test: external_catch2 $(1)/bin/$(1)_t_cc $(1)/bin/$(1)_t_cuda $(1)/bin/$(1)_t_hip $(1)/bin/$(1)_t_sycl
+# CPU tests
+build_$(1): $(1)/bin/$(1)_t_cc
 
-$(1)/bin/$(1)_t_cc: $(1)/$(1)_t.cc | $(1)/bin
+$(1)/bin/$(1)_t_cc: $(1)/$(1)_t.cc | prereq_$(1)
 	$(CXX) $(CXXFLAGS) $(LIB_INCLUDE) $$< -o $$@
 
-$(1)/bin/$(1)_t_cuda: $(1)/$(1)_t.cu | $(1)/bin
-	@if [ -z "$(CUDA_BASE)" ]; then \
-		echo "Error: CUDA_BASE not set. Skipping $@"; \
-	else \
-		echo "$(CUDA_NVCC) $(CUDA_CXXFLAGS) $(CUDA_LDFLAGS) $(CUDA_CUFLAGS) $(LIB_INCLUDE) $$< -o $$@"; \
-		$(CUDA_NVCC) $(CUDA_CXXFLAGS) $(CUDA_LDFLAGS) $(CUDA_CUFLAGS) $(LIB_INCLUDE) $$< -o $$@; \
-	fi
+run_$(1): run_$(1)_cpu
 
-$(1)/bin/$(1)_t_hip: $(1)/$(1)_t.hip.cc | $(1)/bin
-	@if [ -z "$(ROCM_BASE)" ]; then \
-		echo "Error: ROCM_BASE not set. Skipping $@"; \
-	else \
-		echo "$(ROCM_HIPCC) $(HIPCC_CXXFLAGS) $(HIPCC_LDFLAGS) $(LIB_INCLUDE) $$< -o $$@"; \
-		$(ROCM_HIPCC) $(HIPCC_CXXFLAGS) $(HIPCC_LDFLAGS) $(LIB_INCLUDE) $$< -o $$@; \
-	fi
+.PHONY: run_$(1)_cpu
+run_$(1)_cpu: $(1)/bin/$(1)_t_cc
+	$$<
 
-$(1)/bin/$(1)_t_sycl: $(1)/$(1)_t.sycl.cc | $(1)/bin
-	@if [ -z "$(ONEAPI_BASE)" ]; then \
-		echo "Error: ONEAPI_BASE not set. Skipping $@"; \
-	else \
-		echo "$(SYCL_CXX) $(SYCL_CXXFLAGS) $(SYCL_LDFLAGS) $(SYCL_FLAGS) $(LIB_INCLUDE) $$< -o $$@"; \
-		$(SYCL_CXX) $(SYCL_CXXFLAGS) $(SYCL_LDFLAGS) $(SYCL_FLAGS) $(LIB_INCLUDE) $$< -o $$@; \
-	fi
+# CUDA tests
+ifdef CUDA_BASE
+build_$(1): $(1)/bin/$(1)_t_cuda
 
-# List of test executables
-$(1)_BIN := $(XTD_BASE)/test/$(1)/bin
+$(1)/bin/$(1)_t_cuda: $(1)/$(1)_t.cu | prereq_$(1)
+	$(CUDA_NVCC) $(CUDA_CXXFLAGS) $(CUDA_LDFLAGS) $(CUDA_CUFLAGS) $(LIB_INCLUDE) $$< -o $$@
 
-# Add targets
-TEST_EXECUTABLES := $(1)/bin/$(1)_t_cc
-ifdef $(CUDA_BASE)
-  TEST_EXECUTABLES += $(1)/bin/$(1)_t_cuda
-endif
-ifdef $(ROCM_BASE)
-  TEST_EXECUTABLES += $(1)/bin/$(1)_t_hip
-endif
-ifdef $(ONEAPI_BASE)
-  TEST_EXECUTABLES += $(1)/bin/$(1)_t_sycl
+run_$(1): run_$(1)_cuda
+
+.PHONY: run_$(1)_cuda
+run_$(1)_cuda: $(1)/bin/$(1)_t_cuda
+	$$<
 endif
 
-run_$(1)Test: $(TEST_EXECUTABLES)
-	@find $$($(1)_BIN) -maxdepth 1 -type f -exec echo "Running {}" \; -exec {} \; -exec echo \;
+# HIP/ROCm tests
+ifdef ROCM_BASE
+build_$(1): $(1)/bin/$(1)_t_hip
 
-clean_$(1)Test:
-	rm -rf $(1)/bin
+$(1)/bin/$(1)_t_hip: $(1)/$(1)_t.hip.cc | prereq_$(1)
+	$(ROCM_HIPCC) $(HIPCC_CXXFLAGS) $(HIPCC_LDFLAGS) $(LIB_INCLUDE) $$< -o $$@
+
+run_$(1): run_$(1)_hip
+
+.PHONY: run_$(1)_hip
+run_$(1)_hip: $(1)/bin/$(1)_t_hip
+	$$<
+endif
+
+# oneAPI tests
+ifdef ONEAPI_BASE
+build_$(1): $(1)/bin/$(1)_t_sycl
+
+$(1)/bin/$(1)_t_sycl: $(1)/$(1)_t.sycl.cc | prereq_$(1)
+	$(SYCL_CXX) $(SYCL_CXXFLAGS) $(SYCL_LDFLAGS) $(SYCL_FLAGS) $(LIB_INCLUDE) $$< -o $$@
+
+run_$(1): run_$(1)_sycl
+
+.PHONY: run_$(1)_sycl
+run_$(1)_sycl: $(1)/bin/$(1)_t_sycl
+	$$<
+endif
+
 endef
 
 $(foreach target,$(TARGETS_ALL),$(eval $(call TEST_template,$(target))))
-
-build: $(foreach target,$(TARGETS_ALL), $(target)Test)
-
-run: $(foreach target,$(TARGETS_ALL), run_$(target)Test)
-
-clean: $(foreach target,$(TARGETS_ALL), clean_$(target)Test)
