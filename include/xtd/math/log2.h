@@ -1,57 +1,67 @@
 /*
  * Copyright 2025 European Organization for Nuclear Research (CERN)
- * Authors: Simone Balducci <simone.balducci@cern.ch>
+ * Authors: Andrea Bocci <andrea.bocci@cern.ch>, Aurora Perego <aurora.perego@cern.ch>, Simone Balducci <simone.balducci@cern.ch>
  * SPDX-License-Identifier: MPL-2.0
  */
 
 #pragma once
 
-#include "xtd/internal/defines.h"
 #include <concepts>
-
-#if !defined(XTD_TARGET_CUDA) && !defined(XTD_TARGET_HIP) && !defined(XTD_TARGET_SYCL)
 #include <cmath>
-#endif
+
+#include "xtd/internal/defines.h"
 
 namespace xtd {
 
-  XTD_DEVICE_FUNCTION inline constexpr float log2(float x) {
+  /* Computes the base-2 logarithm of arg, in single precision.
+   */
+  XTD_DEVICE_FUNCTION inline constexpr float log2(float arg) {
 #if defined(XTD_TARGET_CUDA)
     // CUDA device code
-    return ::log2(x);
+    return ::log2f(arg);
 #elif defined(XTD_TARGET_HIP)
     // HIP/ROCm device code
-    return ::log2(x);
+    return ::log2f(arg);
 #elif defined(XTD_TARGET_SYCL)
     // SYCL device code
-    return sycl::log2(x);
+    return sycl::log2(arg);
 #else
-    // standard C++ code
-    return std::log2(x);
+    // standard C/C++ code
+    return ::log2f(arg);
 #endif
   }
 
-  XTD_DEVICE_FUNCTION inline constexpr double log2(double x) {
+  /* Computes the base-2 logarithm of arg, in double precision.
+   */
+  XTD_DEVICE_FUNCTION inline constexpr double log2(double arg) {
 #if defined(XTD_TARGET_CUDA)
     // CUDA device code
-    return ::log2(x);
+    return ::log2(arg);
 #elif defined(XTD_TARGET_HIP)
     // HIP/ROCm device code
-    return ::log2(x);
+    return ::log2(arg);
 #elif defined(XTD_TARGET_SYCL)
     // SYCL device code
-    return sycl::log2(x);
+    return sycl::log2(arg);
 #else
-    // standard C++ code
-    return std::log2(x);
+    // standard C/C++ code
+    return ::log2(arg);
 #endif
   }
 
-  XTD_DEVICE_FUNCTION inline constexpr float log2f(float x) { return log2(x); }
+  /* Computes the base-2 logarithm of arg, in double precision.
+   */
+  XTD_DEVICE_FUNCTION inline constexpr double log2(std::integral auto arg) {
+    return xtd::log2(static_cast<double>(arg));
+  }
 
-  template <std::integral T>
-  XTD_DEVICE_FUNCTION inline constexpr double log2(T x) {
-    return log2(static_cast<double>(x));
+  /* Computes the base-2 logarithm of arg, in single precision.
+   */
+  XTD_DEVICE_FUNCTION inline constexpr float log2f(std::floating_point auto arg) {
+    return xtd::log2(static_cast<float>(arg));
+  }
+  XTD_DEVICE_FUNCTION inline constexpr float log2f(std::integral auto arg) {
+    return xtd::log2(static_cast<float>(arg));
   }
 
 }  // namespace xtd
