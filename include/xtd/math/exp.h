@@ -1,57 +1,67 @@
 /*
  * Copyright 2025 European Organization for Nuclear Research (CERN)
- * Authors: Simone Balducci <simone.balducci@cern.ch>
+ * Authors: Andrea Bocci <andrea.bocci@cern.ch>, Aurora Perego <aurora.perego@cern.ch>, Simone Balducci <simone.balducci@cern.ch>
  * SPDX-License-Identifier: MPL-2.0
  */
 
 #pragma once
 
-#include "xtd/internal/defines.h"
 #include <concepts>
-
-#if !defined(XTD_TARGET_CUDA) && !defined(XTD_TARGET_HIP) && !defined(XTD_TARGET_SYCL)
 #include <cmath>
-#endif
+
+#include "xtd/internal/defines.h"
 
 namespace xtd {
 
-  XTD_DEVICE_FUNCTION inline constexpr float exp(float x) {
+  /* Computes the exponential value of arg, in single precision.
+   */
+  XTD_DEVICE_FUNCTION inline constexpr float exp(float arg) {
 #if defined(XTD_TARGET_CUDA)
     // CUDA device code
-    return ::exp(x);
+    return ::expf(arg);
 #elif defined(XTD_TARGET_HIP)
     // HIP/ROCm device code
-    return ::exp(x);
+    return ::expf(arg);
 #elif defined(XTD_TARGET_SYCL)
     // SYCL device code
-    return sycl::exp(x);
+    return sycl::exp(arg);
 #else
-    // standard C++ code
-    return std::exp(x);
+    // standard C/C++ code
+    return ::expf(arg);
 #endif
   }
 
-  XTD_DEVICE_FUNCTION inline constexpr double exp(double x) {
+  /* Computes the exponential value of arg, in double precision.
+   */
+  XTD_DEVICE_FUNCTION inline constexpr double exp(double arg) {
 #if defined(XTD_TARGET_CUDA)
     // CUDA device code
-    return ::exp(x);
+    return ::exp(arg);
 #elif defined(XTD_TARGET_HIP)
     // HIP/ROCm device code
-    return ::exp(x);
+    return ::exp(arg);
 #elif defined(XTD_TARGET_SYCL)
     // SYCL device code
-    return sycl::exp(x);
+    return sycl::exp(arg);
 #else
-    // standard C++ code
-    return std::exp(x);
+    // standard C/C++ code
+    return ::exp(arg);
 #endif
   }
 
-  XTD_DEVICE_FUNCTION inline constexpr float expf(float x) { return exp(x); }
+  /* Computes the exponential value of arg, in double precision.
+   */
+  XTD_DEVICE_FUNCTION inline constexpr double exp(std::integral auto arg) {
+    return xtd::exp(static_cast<double>(arg));
+  }
 
-  template <std::integral T>
-  XTD_DEVICE_FUNCTION inline constexpr double exp(T x) {
-    return exp(static_cast<double>(x));
+  /* Computes the exponential value of arg, in single precision.
+   */
+  XTD_DEVICE_FUNCTION inline constexpr float expf(std::floating_point auto arg) {
+    return xtd::exp(static_cast<float>(arg));
+  }
+  XTD_DEVICE_FUNCTION inline constexpr float expf(std::integral auto arg) {
+    return xtd::exp(static_cast<float>(arg));
   }
 
 }  // namespace xtd
