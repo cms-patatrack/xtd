@@ -7,10 +7,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - name: Install dependencies
+      run: |
+        sudo apt install -y libmpfr-dev
+
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Build and Run Tests
+    - name: Build and run tests
       working-directory: test
       run: |
         make all
