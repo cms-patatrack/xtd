@@ -1,22 +1,39 @@
 /*
  * Copyright 2025 European Organization for Nuclear Research (CERN)
- * Authors: Simone Balducci <simone.balducci@cern.ch>
+ * Authors: Andrea Bocci <andrea.bocci@cern.ch>, Aurora Perego <aurora.perego@cern.ch>, Simone Balducci <simone.balducci@cern.ch>
  * SPDX-License-Identifier: MPL-2.0
  */
 
 #pragma once
 
-#include "xtd/internal/defines.h"
 #include <concepts>
-
-#if !defined(XTD_TARGET_CUDA) && !defined(XTD_TARGET_HIP) && !defined(XTD_TARGET_SYCL)
 #include <cmath>
-#endif
+
+#include "xtd/internal/defines.h"
 
 namespace xtd {
 
-  XTD_DEVICE_FUNCTION
-  inline constexpr float tanh(float arg) {
+  /* Computes the hyperbolic tangent of arg, in single precision.
+   */
+  XTD_DEVICE_FUNCTION inline constexpr float tanh(float arg) {
+#if defined(XTD_TARGET_CUDA)
+    // CUDA device code
+    return ::tanhf(arg);
+#elif defined(XTD_TARGET_HIP)
+    // HIP/ROCm device code
+    return ::tanhf(arg);
+#elif defined(XTD_TARGET_SYCL)
+    // SYCL device code
+    return sycl::tanh(arg);
+#else
+    // standard C/C++ code
+    return ::tanhf(arg);
+#endif
+  }
+
+  /* Computes the hyperbolic tangent of arg, in double precision.
+   */
+  XTD_DEVICE_FUNCTION inline constexpr double tanh(double arg) {
 #if defined(XTD_TARGET_CUDA)
     // CUDA device code
     return ::tanh(arg);
@@ -27,34 +44,24 @@ namespace xtd {
     // SYCL device code
     return sycl::tanh(arg);
 #else
-    // stanhdard C++ code
-    return std::tanh(arg);
+    // standard C/C++ code
+    return ::tanh(arg);
 #endif
   }
 
-  XTD_DEVICE_FUNCTION
-  inline constexpr double tanh(double arg) {
-#if defined(XTD_TARGET_CUDA)
-    // CUDA device code
-    return ::tanh(arg);
-#elif defined(XTD_TARGET_HIP)
-    // HIP/ROCm device code
-    return ::tanh(arg);
-#elif defined(XTD_TARGET_SYCL)
-    // SYCL device code
-    return sycl::tanh(arg);
-#else
-    // stanhdard C++ code
-    return std::tanh(arg);
-#endif
+  /* Computes the hyperbolic tangent of arg, in double precision.
+   */
+  XTD_DEVICE_FUNCTION inline constexpr double tanh(std::integral auto arg) {
+    return xtd::tanh(static_cast<double>(arg));
   }
 
-  XTD_DEVICE_FUNCTION
-  inline constexpr float tanhf(float arg) { return tanh(arg); }
-
-  template <std::integral T>
-  XTD_DEVICE_FUNCTION inline constexpr double tanh(T arg) {
-    return tanh(static_cast<double>(arg));
+  /* Computes the hyperbolic tangent of arg, in single precision.
+   */
+  XTD_DEVICE_FUNCTION inline constexpr float tanhf(std::floating_point auto arg) {
+    return xtd::tanh(static_cast<float>(arg));
+  }
+  XTD_DEVICE_FUNCTION inline constexpr float tanhf(std::integral auto arg) {
+    return xtd::tanh(static_cast<float>(arg));
   }
 
 }  // namespace xtd
