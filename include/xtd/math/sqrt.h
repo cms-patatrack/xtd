@@ -1,57 +1,67 @@
 /*
  * Copyright 2025 European Organization for Nuclear Research (CERN)
- * Authors: Simone Balducci <simone.balducci@cern.ch>
+ * Authors: Andrea Bocci <andrea.bocci@cern.ch>, Aurora Perego <aurora.perego@cern.ch>, Simone Balducci <simone.balducci@cern.ch>
  * SPDX-License-Identifier: MPL-2.0
  */
 
 #pragma once
 
-#include "xtd/internal/defines.h"
 #include <concepts>
-
-#if !defined(XTD_TARGET_CUDA) && !defined(XTD_TARGET_HIP) && !defined(XTD_TARGET_SYCL)
 #include <cmath>
-#endif
+
+#include "xtd/internal/defines.h"
 
 namespace xtd {
 
-  XTD_DEVICE_FUNCTION inline constexpr float sqrt(float x) {
+  /* Computes the square root, in single precision.
+   */
+  XTD_DEVICE_FUNCTION inline constexpr float sqrt(float arg) {
 #if defined(XTD_TARGET_CUDA)
     // CUDA device code
-    return ::sqrt(x);
+    return ::sqrtf(arg);
 #elif defined(XTD_TARGET_HIP)
     // HIP/ROCm device code
-    return ::sqrt(x);
+    return ::sqrtf(arg);
 #elif defined(XTD_TARGET_SYCL)
     // SYCL device code
-    return sycl::sqrt(x);
+    return sycl::sqrt(arg);
 #else
-    // standard C++ code
-    return std::sqrt(x);
+    // standard C/C++ code
+    return ::sqrtf(arg);
 #endif
   }
 
-  XTD_DEVICE_FUNCTION inline constexpr double sqrt(double x) {
+  /* Computes the square root, in double precision.
+   */
+  XTD_DEVICE_FUNCTION inline constexpr double sqrt(double arg) {
 #if defined(XTD_TARGET_CUDA)
     // CUDA device code
-    return ::sqrt(x);
+    return ::sqrt(arg);
 #elif defined(XTD_TARGET_HIP)
     // HIP/ROCm device code
-    return ::sqrt(x);
+    return ::sqrt(arg);
 #elif defined(XTD_TARGET_SYCL)
     // SYCL device code
-    return sycl::sqrt(x);
+    return sycl::sqrt(arg);
 #else
-    // standard C++ code
-    return std::sqrt(x);
+    // standard C/C++ code
+    return ::sqrt(arg);
 #endif
   }
 
-  XTD_DEVICE_FUNCTION inline constexpr float sqrtf(float x) { return sqrt(x); }
+  /* Computes the square root, in double precision.
+   */
+  XTD_DEVICE_FUNCTION inline constexpr double sqrt(std::integral auto arg) {
+    return xtd::sqrt(static_cast<double>(arg));
+  }
 
-  template <std::integral T>
-  XTD_DEVICE_FUNCTION inline constexpr double sqrt(T x) {
-    return sqrt(static_cast<double>(x));
+  /* Computes the square root, in single precision.
+   */
+  XTD_DEVICE_FUNCTION inline constexpr float sqrtf(std::floating_point auto arg) {
+    return xtd::sqrt(static_cast<float>(arg));
+  }
+  XTD_DEVICE_FUNCTION inline constexpr float sqrtf(std::integral auto arg) {
+    return xtd::sqrt(static_cast<float>(arg));
   }
 
 }  // namespace xtd
