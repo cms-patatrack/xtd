@@ -27,6 +27,9 @@
 #include "common/sycl_test.h"
 #include "common/math_inputs.h"
 
+constexpr int ulps_float = 2;
+constexpr int ulps_double = 1;
+
 TEST_CASE("xtd::sin", "[sin][sycl]") {
   std::vector<double> values = generate_input_values();
 
@@ -38,27 +41,27 @@ TEST_CASE("xtd::sin", "[sin][sycl]") {
             sycl::queue queue{device, sycl::property::queue::in_order()};
 
             SECTION("float xtd::sin(float)") {
-              test<float, float, xtd::sin, mpfr::sin>(queue, values, 2);
+              test<float, float, xtd::sin, mpfr::sin>(queue, values, ulps_float);
             }
 
             SECTION("double xtd::sin(double)") {
-              test<double, double, xtd::sin, mpfr::sin>(queue, values, 1);
+              test<double, double, xtd::sin, mpfr::sin>(queue, values, ulps_double);
             }
 
             SECTION("double xtd::sin(int)") {
-              test<double, int, xtd::sin, mpfr::sin>(queue, values, 1);
+              test<double, int, xtd::sin, mpfr::sin>(queue, values, ulps_double);
             }
 
             SECTION("float xtd::sinf(float)") {
-              test_f<float, float, xtd::sinf, mpfr::sin>(queue, values, 2);
+              test_f<float, float, xtd::sinf, mpfr::sin>(queue, values, ulps_float);
             }
 
             SECTION("float xtd::sinf(double)") {
-              test_f<float, double, xtd::sinf, mpfr::sin>(queue, values, 2);
+              test_f<float, double, xtd::sinf, mpfr::sin>(queue, values, ulps_float);
             }
 
             SECTION("float xtd::sinf(int)") {
-              test_f<float, int, xtd::sinf, mpfr::sin>(queue, values, 2);
+              test_f<float, int, xtd::sinf, mpfr::sin>(queue, values, ulps_float);
             }
 
           } catch (sycl::exception const &e) {

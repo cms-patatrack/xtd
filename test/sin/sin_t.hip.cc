@@ -30,6 +30,9 @@ using namespace std::literals;
 #include "common/hip_test.h"
 #include "common/math_inputs.h"
 
+constexpr int ulps_float = 1;
+constexpr int ulps_double = 1;
+
 TEST_CASE("xtd::sin", "[sin][hip]") {
   std::vector<double> values = generate_input_values();
 
@@ -54,27 +57,27 @@ TEST_CASE("xtd::sin", "[sin][hip]") {
       HIP_CHECK(hipStreamCreate(&queue));
 
       SECTION("float xtd::sin(float)") {
-        test<float, float, xtd::sin, mpfr::sin>(queue, values, 1);
+        test<float, float, xtd::sin, mpfr::sin>(queue, values, ulps_float);
       }
 
       SECTION("double xtd::sin(double)") {
-        test<double, double, xtd::sin, mpfr::sin>(queue, values, 1);
+        test<double, double, xtd::sin, mpfr::sin>(queue, values, ulps_double);
       }
 
       SECTION("double xtd::sin(int)") {
-        test<double, int, xtd::sin, mpfr::sin>(queue, values, 1);
+        test<double, int, xtd::sin, mpfr::sin>(queue, values, ulps_double);
       }
 
       SECTION("float xtd::sinf(float)") {
-        test_f<float, float, xtd::sinf, mpfr::sin>(queue, values, 1);
+        test_f<float, float, xtd::sinf, mpfr::sin>(queue, values, ulps_float);
       }
 
       SECTION("float xtd::sinf(double)") {
-        test_f<float, double, xtd::sinf, mpfr::sin>(queue, values, 1);
+        test_f<float, double, xtd::sinf, mpfr::sin>(queue, values, ulps_float);
       }
 
       SECTION("float xtd::sinf(int)") {
-        test_f<float, int, xtd::sinf, mpfr::sin>(queue, values, 1);
+        test_f<float, int, xtd::sinf, mpfr::sin>(queue, values, ulps_float);
       }
 
       HIP_CHECK(hipStreamDestroy(queue));
