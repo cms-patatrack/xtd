@@ -27,12 +27,11 @@ static constexpr auto double_prec = 53;
 using mpfr_single = mpfr::real<single_prec, MPFR_RNDN>;
 using mpfr_double = mpfr::real<double_prec, MPFR_RNDN>;
 
-template <
-    typename ResultType,
-    typename InputType,
-    ResultType (*XtdFunc)(InputType),
-    typename std::enable_if<mpfr::type_traits<mpfr_double, mpfr_double, true>::enable_math_funcs,
-                            const mpfr_double>::type (*RefFunc)(const mpfr_double&)>
+template <typename ResultType,
+          typename InputType,
+          ResultType (*XtdFunc)(InputType),
+          typename std::enable_if<mpfr::type_traits<mpfr_double, mpfr_double, true>::enable_math_funcs,
+                                  const mpfr_double>::type (*RefFunc)(const mpfr_double&)>
 inline void test(sycl::queue queue, std::vector<double> const& values, int ulps = 0) {
   int size = values.size();
 
@@ -58,7 +57,7 @@ inline void test(sycl::queue queue, std::vector<double> const& values, int ulps 
   sycl::free(input_d, queue);
   sycl::free(result_d, queue);
 
-  // compare the xtd results with the std reference results
+  // compare the xtd results with the erence results
   for (int i = 0; i < size; ++i) {
     double input = input_h[i];
     INFO(input);
@@ -68,12 +67,11 @@ inline void test(sycl::queue queue, std::vector<double> const& values, int ulps 
   }
 }
 
-template <
-    typename ResultType,
-    typename InputType,
-    ResultType (*XtdFunc)(InputType),
-    typename std::enable_if<mpfr::type_traits<mpfr_single, mpfr_single, true>::enable_math_funcs,
-                            const mpfr_single>::type (*RefFunc)(const mpfr_single&)>
+template <typename ResultType,
+          typename InputType,
+          ResultType (*XtdFunc)(InputType),
+          typename std::enable_if<mpfr::type_traits<mpfr_single, mpfr_single, true>::enable_math_funcs,
+                                  const mpfr_single>::type (*RefFunc)(const mpfr_single&)>
 inline void test_f(sycl::queue queue, std::vector<double> const& values, int ulps = 0) {
   int size = values.size();
 
@@ -99,12 +97,47 @@ inline void test_f(sycl::queue queue, std::vector<double> const& values, int ulp
   sycl::free(input_d, queue);
   sycl::free(result_d, queue);
 
-  // compare the xtd results with the std reference results
+  // compare the xtd results with the reference results
   for (int i = 0; i < size; ++i) {
     float input = static_cast<float>(input_h[i]);
     INFO(input);
     ResultType reference;
     RefFunc(static_cast<mpfr_single>(input)).conv(reference);
     compare<float>(result_h[i], reference, ulps);
+  }
+}
+
+template <std::integral Type, Type (*XtdFunc)(Type), Type (*RefFunc)(Type)>
+inline void test_i(sycl::queue queue, std::vector<double> const& values) {
+  int size = values.size();
+
+  // convert the input data to the type to be tested and copy them to the GPU
+  std::vector<Type> input_h(values.begin(), values.end());
+  Type* input_d = sycl::malloc_device<Type>(size, queue);
+  queue.copy(input_h.data(), input_d, size);
+
+  // allocate memory for the results and fill it with zeroes
+  std::vector<Type> result_h(size, 0);
+  Type* result_d = sycl::malloc_device<Type>(size, queue);
+  queue.fill(result_d, Type{0}, size);
+
+  // execute the xtd function on the GPU
+  queue.submit([&](sycl::handler& cgh) {
+    cgh.parallel_for(sycl::range<1>(size),
+                     [=](sycl::id<1> i) { result_d[i] = static_cast<Type>(XtdFunc(input_d[i])); });
+  });
+
+  // copy the results back to the host and free the GPU memory
+  queue.copy(result_d, result_h.data(), size);
+  queue.wait();
+  sycl::free(input_d, queue);
+  sycl::free(result_d, queue);
+
+  // compare the xtd results with the reference results
+  for (int i = 0; i < size; ++i) {
+    Type input = input_h[i];
+    INFO(input);
+    Type reference = RefFunc(input);
+    compare(result_h[i], reference);
   }
 }
