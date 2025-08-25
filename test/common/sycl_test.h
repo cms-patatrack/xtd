@@ -60,9 +60,10 @@ inline void test(sycl::queue queue, std::vector<double> const& values, int ulps 
 
   // compare the xtd results with the std reference results
   for (int i = 0; i < size; ++i) {
-    INFO(input_h[i]);
+    double input = input_h[i];
+    INFO(input);
     ResultType reference;
-    RefFunc(static_cast<mpfr_double>(input_h[i])).conv(reference);
+    RefFunc(static_cast<mpfr_double>(input)).conv(reference);
     compare<float>(result_h[i], reference, ulps);
   }
 }
@@ -100,9 +101,10 @@ inline void test_f(sycl::queue queue, std::vector<double> const& values, int ulp
 
   // compare the xtd results with the std reference results
   for (int i = 0; i < size; ++i) {
-    INFO(input_h[i]);
+    float input = static_cast<float>(input_h[i]);
+    INFO(input);
     ResultType reference;
-    RefFunc(static_cast<mpfr_single>(input_h[i])).conv(reference);
+    RefFunc(static_cast<mpfr_single>(input)).conv(reference);
     compare<float>(result_h[i], reference, ulps);
   }
 }
