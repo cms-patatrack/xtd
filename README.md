@@ -142,7 +142,7 @@ erff / erf       |         4  |         4
 exp10f / exp10   |         1  |         1
 exp2f / exp2     |         1  |         1
 expf / exp       |         1  |         1
-expm1f / expm1   |         1  |         1
+expm1f / expm1   |         1  |         2†
 fmaf / fma       |         0  |         0
 fmodf / fmod     |         0  |         0
 hypotf / hypot   |         1  |         1
@@ -160,12 +160,15 @@ sincosf / sincos |         1  |         1
 sinf / sin       |         1  |         1
 sinhf / sinh     |         1  |         1
 sqrtf / sqrt     |         1  |         1
-tanf / tan       |         1  |         1
+tanf / tan       |         2‡ |         2‡
 tanhf / tanh     |         2  |         1
 tgammaf / tgamma |         6  |         6
 y0f / y0         |       n/a  |       n/a
 y1f / y1         |       n/a  |       n/a
 ynf / yn         |       n/a  |       n/a
+
+  - † 1 ULP for x ∈ [-10., +10.] according to the documentation
+  - ‡ 1 ULP for x ∈ [-1.47 π, +1.47 π] according to the documentation
 
 Note: in some cases the accuracy is documented only for a small range of values.
 
