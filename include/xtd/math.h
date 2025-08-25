@@ -21,6 +21,7 @@
 #include "math/exp.h"
 #include "math/exp2.h"
 #include "math/expm1.h"
+#include "math/fabs.h"
 #include "math/floor.h"
 #include "math/hypot.h"
 #include "math/log.h"
