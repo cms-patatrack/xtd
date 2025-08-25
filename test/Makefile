@@ -76,7 +76,7 @@ endif
 ROCM_BASE := /opt/rocm
 # default to the list of all supported architectures
 ROCM_ARCH := gfx900 gfx906 gfx908 gfx90a gfx942 gfx1030 gfx1100 gfx1101 gfx1200 gfx1201
-ifeq ($(wildcard $(ROCM_BASE)/bin/hipcc),)
+ifeq ($(wildcard $(ROCM_BASE)/lib/libhsa-runtime64.so),)
   # ROCm platform not found
   $(info Cannot find an AMD ROCm installation at $(ROCM_BASE), the ROCm tests will not be built.)
   override ROCM_BASE :=
