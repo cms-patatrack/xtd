@@ -232,6 +232,32 @@ $(info -------------------------------------------------------------------------
 SUBDIRS := $(wildcard $(XTD_BASE)/test/*/)
 TARGETS_ALL := $(filter-out common external, $(notdir $(patsubst %/,%,$(SUBDIRS))))
 
+.PHONY: build_cpu run_cpu
+build: build_cpu
+run: run_cpu
+
+# CUDA tests
+ifdef CUDA_BASE
+.PHONY: build_cuda run_cuda
+build: build_cuda
+run: run_cuda
+endif
+
+# HIP/ROCm tests
+ifdef ROCM_BASE
+.PHONY: build_hip run_hip
+build: build_hip
+run: run_hip
+endif
+
+# oneAPI tests
+ifdef ONEAPI_BASE
+.PHONY: build_sycl run_sycl
+build: build_sycl
+run: run_sycl
+endif
+
+
 define TEST_template
 build: build_$(1)
 
@@ -257,6 +283,7 @@ $(1)/bin:
 
 # CPU tests
 build_$(1): build_$(1)_cpu
+build_cpu: build_$(1)_cpu
 
 .PHONY: build_$(1)_cpu
 build_$(1)_cpu: $(1)/bin/$(1)_t_cc
@@ -265,6 +292,7 @@ $(1)/bin/$(1)_t_cc: $(1)/$(1)_t.cc | prereq_$(1)
 	$(CXX) $(CXXFLAGS) $(LIB_CFLAGS) $$< $(LDFLAGS) $(LIB_LDFLAGS) -o $$@
 
 run_$(1): run_$(1)_cpu
+run_cpu: run_$(1)_cpu
 
 .PHONY: run_$(1)_cpu
 run_$(1)_cpu: $(1)/bin/$(1)_t_cc
@@ -273,6 +301,7 @@ run_$(1)_cpu: $(1)/bin/$(1)_t_cc
 # CUDA tests
 ifdef CUDA_BASE
 build_$(1): build_$(1)_cuda
+build_cuda: build_$(1)_cuda
 
 .PHONY: build_$(1)_cuda
 build_$(1)_cuda: $(1)/bin/$(1)_t_cuda
@@ -281,6 +310,7 @@ $(1)/bin/$(1)_t_cuda: $(1)/$(1)_t.cu | prereq_$(1)
 	$(CUDA_NVCC) $(CUDA_CXXFLAGS) $(LIB_CFLAGS) $$< $(CUDA_LDFLAGS) $(LIB_LDFLAGS) -o $$@
 
 run_$(1): run_$(1)_cuda
+run_cuda: run_$(1)_cuda
 
 .PHONY: run_$(1)_cuda
 run_$(1)_cuda: $(1)/bin/$(1)_t_cuda
@@ -290,6 +320,7 @@ endif
 # HIP/ROCm tests
 ifdef ROCM_BASE
 build_$(1): build_$(1)_hip
+build_hip: build_$(1)_hip
 
 .PHONY: build_$(1)_hip
 build_$(1)_hip: $(1)/bin/$(1)_t_hip
@@ -298,6 +329,7 @@ $(1)/bin/$(1)_t_hip: $(1)/$(1)_t.hip.cc | prereq_$(1)
 	$(ROCM_HIPCC) $(ROCM_CXXFLAGS) $(LIB_CFLAGS) $$< $(ROCM_LDFLAGS) $(LIB_LDFLAGS) -o $$@
 
 run_$(1): run_$(1)_hip
+run_hip: run_$(1)_hip
 
 .PHONY: run_$(1)_hip
 run_$(1)_hip: $(1)/bin/$(1)_t_hip
@@ -307,6 +339,7 @@ endif
 # oneAPI tests
 ifdef ONEAPI_BASE
 build_$(1): build_$(1)_sycl
+build_sycl: build_$(1)_sycl
 
 .PHONY: build_$(1)_sycl
 build_$(1)_sycl: $(1)/bin/$(1)_t_sycl
@@ -315,6 +348,7 @@ $(1)/bin/$(1)_t_sycl: $(1)/$(1)_t.sycl.cc | prereq_$(1)
 	$(SYCL_CXX) $(SYCL_CXXFLAGS) $(LIB_CFLAGS) $$< $(SYCL_LDFLAGS) $(LIB_LDFLAGS) -o $$@
 
 run_$(1): run_$(1)_sycl
+run_sycl: run_$(1)_sycl
 
 .PHONY: run_$(1)_sycl
 run_$(1)_sycl: $(1)/bin/$(1)_t_sycl
