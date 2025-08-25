@@ -22,4 +22,4 @@ jobs:
     - name: Run tests
       working-directory: test
       run: |
-        make -k -j`nproc` run
+        make -k run
