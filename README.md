@@ -26,7 +26,7 @@ acosf / acos     |         1  |         1
 acoshf / acosh   |         2  |         2
 asinf / asin     |         1  |         1
 asinhf / asinh   |         2  |         2
-atan2f / atan2   |         2  |         0
+atan2f / atan2   |         2  |         1
 atanf / atan     |         1  |         1
 atanhf / atanh   |         2  |         2
 cbrtf / cbrt     |         1  |         4
@@ -49,13 +49,13 @@ log10f / log10   |         2  |         2
 log1pf / log1p   |         1  |         1
 log2f / log2     |         1  |         2
 logf / log       |         1  |         1
-pow10f / pow10   |         0  |         0
+pow10f / pow10   |       n/a  |       n/a
 powf / pow       |         1  |         1
-sincosf / sincos |         0  |         1
+sincosf / sincos |         1  |         1
 sinf / sin       |         1  |         1
 sinhf / sinh     |         2  |         2
 sqrtf / sqrt     |         0  |         0
-tanf / tan       |         1  |         0
+tanf / tan       |         1  |         1
 tanhf / tanh     |         2  |         2
 tgammaf / tgamma |         8  |         9
 y0f / y0         |         9  |         3
