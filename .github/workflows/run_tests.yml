@@ -14,7 +14,12 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Build and run tests
+    - name: Build tests
       working-directory: test
       run: |
-        make all
+        make -k -j`nproc` build
+
+    - name: Run tests
+      working-directory: test
+      run: |
+        make -k -j`nproc` run
