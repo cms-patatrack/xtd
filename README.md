@@ -38,6 +38,7 @@ exp10f / exp10   |         1  |         2
 exp2f / exp2     |         1  |         1
 expf / exp       |         1  |         1
 expm1f / expm1   |         1  |         1
+fabsf / fabs     |         0  |         0 
 fmaf / fma       |         0  |         0
 fmodf / fmod     |         0  |         0
 hypotf / hypot   |         1  |         1
@@ -87,6 +88,7 @@ exp10f / exp10   |         2† |         1
 exp2f / exp2     |         2  |         1
 expf / exp       |         2† |         1
 expm1f / expm1   |         1  |         1
+fabsf / fabs     |         0  |         0 
 fmaf / fma       |         0  |         0
 fmodf / fmod     |         0  |         0
 hypotf / hypot   |         3  |         2
@@ -143,6 +145,7 @@ exp10f / exp10   |         1  |         1
 exp2f / exp2     |         1  |         1
 expf / exp       |         1  |         1
 expm1f / expm1   |         1  |         2†
+fabsf / fabs     |         0  |         0 
 fmaf / fma       |         0  |         0
 fmodf / fmod     |         0  |         0
 hypotf / hypot   |         1  |         1
@@ -197,6 +200,7 @@ exp10f / exp10   |         1  |         1
 exp2f / exp2     |         1  |         1
 expf / exp       |         1  |         1
 expm1f / expm1   |         1  |         1
+fabsf / fabs     |         0  |         0 
 fmaf / fma       |         0  |         0
 fmodf / fmod     |         0  |         0
 hypotf / hypot   |         1  |         2
