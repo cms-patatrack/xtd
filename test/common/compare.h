@@ -34,3 +34,8 @@ void compare(T result, T reference, int ulps = 0) {
       CHECK_THAT(result, Catch::Matchers::WithinULP(reference, ulps));
   }
 }
+
+template <std::integral T>
+void compare(T result, T reference) {
+  CHECK(result == reference);
+}

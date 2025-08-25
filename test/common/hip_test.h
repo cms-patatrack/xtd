@@ -33,12 +33,11 @@ __global__ static void kernel(InputType const* input, ResultType* result, int si
   }
 }
 
-template <
-    typename ResultType,
-    typename InputType,
-    ResultType (*XtdFunc)(InputType),
-    typename std::enable_if<mpfr::type_traits<mpfr_double, mpfr_double, true>::enable_math_funcs,
-                            const mpfr_double>::type (*RefFunc)(const mpfr_double&)>
+template <typename ResultType,
+          typename InputType,
+          ResultType (*XtdFunc)(InputType),
+          typename std::enable_if<mpfr::type_traits<mpfr_double, mpfr_double, true>::enable_math_funcs,
+                                  const mpfr_double>::type (*RefFunc)(const mpfr_double&)>
 inline void test(hipStream_t queue, std::vector<double> const& values, int ulps = 0) {
   int size = values.size();
 
@@ -64,7 +63,7 @@ inline void test(hipStream_t queue, std::vector<double> const& values, int ulps 
   HIP_CHECK(hipFreeAsync(result_d, queue));
   HIP_CHECK(hipStreamSynchronize(queue));
 
-  // compare the xtd results with std reference results
+  // compare the xtd results with erence results
   for (int i = 0; i < size; ++i) {
     double input = input_h[i];
     INFO(input);
@@ -74,12 +73,11 @@ inline void test(hipStream_t queue, std::vector<double> const& values, int ulps 
   }
 }
 
-template <
-    typename ResultType,
-    typename InputType,
-    ResultType (*XtdFunc)(InputType),
-    typename std::enable_if<mpfr::type_traits<mpfr_single, mpfr_single, true>::enable_math_funcs,
-                            const mpfr_single>::type (*RefFunc)(const mpfr_single&)>
+template <typename ResultType,
+          typename InputType,
+          ResultType (*XtdFunc)(InputType),
+          typename std::enable_if<mpfr::type_traits<mpfr_single, mpfr_single, true>::enable_math_funcs,
+                                  const mpfr_single>::type (*RefFunc)(const mpfr_single&)>
 inline void test_f(hipStream_t queue, std::vector<double> const& values, int ulps = 0) {
   int size = values.size();
 
@@ -105,12 +103,47 @@ inline void test_f(hipStream_t queue, std::vector<double> const& values, int ulp
   HIP_CHECK(hipFreeAsync(result_d, queue));
   HIP_CHECK(hipStreamSynchronize(queue));
 
-  // compare the xtd results with std reference results
+  // compare the xtd results with erence results
   for (int i = 0; i < size; ++i) {
     float input = static_cast<float>(input_h[i]);
     INFO(input);
     ResultType reference;
     RefFunc(static_cast<mpfr_single>(input)).conv(reference);
     compare(result_h[i], reference, ulps);
+  }
+}
+
+template <std::integral Type, Type (*XtdFunc)(Type), Type (*RefFunc)(Type)>
+inline void test_i(hipStream_t queue, std::vector<double> const& values) {
+  int size = values.size();
+
+  // convert the input data to the type to be tested and copy them to the GPU
+  std::vector<Type> input_h(values.begin(), values.end());
+  Type* input_d;
+  HIP_CHECK(hipMallocAsync(&input_d, size * sizeof(Type), queue));
+  HIP_CHECK(hipMemcpyAsync(input_d, input_h.data(), size * sizeof(Type), hipMemcpyHostToDevice, queue));
+
+  // allocate memory for the results and fill it with zeroes
+  std::vector<Type> result_h(size, 0);
+  Type* result_d;
+  HIP_CHECK(hipMallocAsync(&result_d, size * sizeof(Type), queue));
+  HIP_CHECK(hipMemsetAsync(result_d, 0x00, size * sizeof(Type), queue));
+
+  // execute the xtd function on the GPU
+  kernel<Type, Type, XtdFunc><<<8, 32, 0, queue>>>(input_d, result_d, size);
+  HIP_CHECK(hipGetLastError());
+
+  // copy the results back to the host and free the GPU memory
+  HIP_CHECK(hipMemcpyAsync(result_h.data(), result_d, size * sizeof(Type), hipMemcpyDeviceToHost, queue));
+  HIP_CHECK(hipFreeAsync(input_d, queue));
+  HIP_CHECK(hipFreeAsync(result_d, queue));
+  HIP_CHECK(hipStreamSynchronize(queue));
+
+  // compare the xtd results with erence results
+  for (int i = 0; i < size; ++i) {
+    Type input = input_h[i];
+    INFO(input);
+    Type reference = RefFunc(input);
+    compare(result_h[i], reference);
   }
 }
