@@ -25,8 +25,11 @@ void compare(T result, T reference, int ulps = 0) {
     case FP_ZERO:
       CHECK_THAT(result, Catch::Matchers::WithinULP(0., ulps));
       break;
-    case FP_NORMAL:
     case FP_SUBNORMAL:
+      // Catch::Matchers::WithinULP does not handle properly the comparison of denormals with zero
+      CHECK_THAT(result, Catch::Matchers::WithinAbs(reference, std::numeric_limits<T>::denorm_min() * ulps));
+      break;
+    case FP_NORMAL:
     default:
       CHECK_THAT(result, Catch::Matchers::WithinULP(reference, ulps));
   }
