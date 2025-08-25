@@ -55,7 +55,7 @@ inline void test_f(std::vector<double> const& values, int ulps = 0) {
     // compare the result with the std reference
     INFO(input);
     ResultType reference;
-    RefFunc(static_cast<mpfr_single>(input)).conv(reference);
+    RefFunc(static_cast<mpfr_single>(static_cast<float>(input))).conv(reference);
     compare(result, reference, ulps);
   }
 }
