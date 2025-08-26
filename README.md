@@ -188,7 +188,7 @@ acosf / acos     |         3  |         1
 acoshf / acosh   |         2  |         2
 asinf / asin     |         4  |         1
 asinhf / asinh   |         2  |         2
-atan2f / atan2   |         3  |         1
+atan2f / atan2   |         3  |         2
 atanf / atan     |         1  |         1
 atanhf / atanh   |         2  |         3
 cbrtf / cbrt     |         1  |         1
@@ -226,4 +226,5 @@ y1f / y1         |         5  |         4
 ynf / yn         |       145  |      2000
 
   - † according to the OpenCL standard; may be affected by the `-ffast-math` compiler option.
+  - * 1 ULP according to the documentation
 
