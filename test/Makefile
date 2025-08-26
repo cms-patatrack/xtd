@@ -232,33 +232,40 @@ $(info -------------------------------------------------------------------------
 SUBDIRS := $(wildcard $(XTD_BASE)/test/*/)
 TARGETS_ALL := $(filter-out common external, $(notdir $(patsubst %/,%,$(SUBDIRS))))
 
-.PHONY: build_cpu run_cpu
+.PHONY: cpu build_cpu run_cpu
+cpu: build_cpu run_cpu
 build: build_cpu
 run: run_cpu
 
 # CUDA tests
 ifdef CUDA_BASE
-.PHONY: build_cuda run_cuda
+.PHONY: cuda build_cuda run_cuda
+cuda: build_cuda run_cuda
 build: build_cuda
 run: run_cuda
 endif
 
 # HIP/ROCm tests
 ifdef ROCM_BASE
-.PHONY: build_hip run_hip
+.PHONY: hip build_hip run_hip
+hip: build_hip run_hip
 build: build_hip
 run: run_hip
 endif
 
 # oneAPI tests
 ifdef ONEAPI_BASE
-.PHONY: build_sycl run_sycl
+.PHONY: sycl build_sycl run_sycl
+sycl: build_sycl run_sycl
 build: build_sycl
 run: run_sycl
 endif
 
 
 define TEST_template
+.PHONY: $(1)
+$(1): build_$(1) run_$(1)
+
 build: build_$(1)
 
 .PHONY: build_$(1)
