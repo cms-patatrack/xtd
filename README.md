@@ -183,15 +183,15 @@ and summarised below for the default accuracy:
 
 function         |      float |     double
 -----------------|------------|------------
-acosf / acos     |         3  |         1
+acosf / acos     |         3  |         2*
 acoshf / acosh   |         2  |         2
 asinf / asin     |         4  |         1
 asinhf / asinh   |         2  |         2
 atan2f / atan2   |         3  |         2
-atanf / atan     |         1  |         1
+atanf / atan     |         1  |         2*
 atanhf / atanh   |         2  |         3
 cbrtf / cbrt     |         1  |         1
-cosf / cos       |         2  |         1
+cosf / cos       |         2  |         3*
 coshf / cosh     |         2  |         1
 erfcf / erfc     |         3  |         3
 erff / erf       |         1  |         1
@@ -214,10 +214,10 @@ logf / log       |         1  |         1
 pow10f / pow10   |       n/a  |       n/a
 powf / pow       |         2  |         1
 sincosf / sincos |         3  |         2
-sinf / sin       |         2  |         1
+sinf / sin       |         2  |         3*
 sinhf / sinh     |         2  |         2
 sqrtf / sqrt     |         3† |         0†
-tanf / tan       |         4  |         1
+tanf / tan       |         4  |         2*
 tanhf / tanh     |         1  |         1
 tgammaf / tgamma |         3  |         9
 y0f / y0         |         4  |         6

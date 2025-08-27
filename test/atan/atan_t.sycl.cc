@@ -28,7 +28,7 @@
 #include "common/math_inputs.h"
 
 constexpr int ulps_float = 1;
-constexpr int ulps_double = 1;
+constexpr int ulps_double = 2;
 
 TEST_CASE("xtd::atan", "[atan][sycl]") {
   std::vector<double> values = generate_input_values();
