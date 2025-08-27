@@ -177,53 +177,59 @@ Note: in some cases the accuracy is documented only for a small range of values.
 
 ### Intel oneAPI
 
-The accuracy of the Intel oneAPI math functions implementation is described in
-https://www.intel.com/content/www/us/en/docs/dpcpp-cpp-compiler/developer-guide-reference/2025-2/imf-transcendental-math-functions.html
-and summarised below for the default accuracy:
+The SYCL specification does not describe the accuracy of the mathematical functions.
+Since the SYCL programming model was originally designed as a high-level model for
+the OpenCL API, the accuracy of the SYCL built-in functions is the same as the
+corresponding OpenCL functions.
+
+The accuracy of the OpenCL built-in functions is described in
+https://registry.khronos.org/OpenCL/specs/3.0-unified/html/OpenCL_C.html#relative-error-as-ulps
+and summarised below:
 
 function         |      float |     double
 -----------------|------------|------------
-acosf / acos     |         3  |         2*
-acoshf / acosh   |         2  |         2
-asinf / asin     |         4  |         1
-asinhf / asinh   |         2  |         2
-atan2f / atan2   |         3  |         2
-atanf / atan     |         1  |         2*
-atanhf / atanh   |         2  |         3
-cbrtf / cbrt     |         1  |         1
-cosf / cos       |         2  |         3*
-coshf / cosh     |         2  |         1
-erfcf / erfc     |         3  |         3
-erff / erf       |         1  |         1
-exp10f / exp10   |         1  |         1
-exp2f / exp2     |         1  |         1
-expf / exp       |         1  |         1
-expm1f / expm1   |         1  |         1
+acosf / acos     |         4  |         4
+acoshf / acosh   |         4  |         4
+asinf / asin     |         4  |         4
+asinhf / asinh   |         4  |         4
+atan2f / atan2   |         6  |         6
+atanf / atan     |         5  |         5*
+atanhf / atanh   |         5  |         5
+cbrtf / cbrt     |         2  |         2
+cosf / cos       |         4  |         4 
+coshf / cosh     |         4  |         4
+erfcf / erfc     |        16  |        16
+erff / erf       |        16  |        16
+exp10f / exp10   |         3  |         3
+exp2f / exp2     |         3  |         3
+expf / exp       |         3  |         3
+expm1f / expm1   |         3  |         3
 fabsf / fabs     |         0  |         0 
 fmaf / fma       |         0  |         0
+fmaxf / fmax     |         0  |         0
+fminf / fmin     |         0  |         0
 fmodf / fmod     |         0  |         0
-hypotf / hypot   |         1  |         2
-j0f / j0         |         3  |         4
-j1f / j1         |         3  |         4
-jnf / jn         |        80  |      2700
-lgammaf / lgamma |         3  |         4
-log10f / log10   |         2  |         1
-log1pf / log1p   |         1  |         1
-log2f / log2     |         1  |         1
-logf / log       |         1  |         1
+hypotf / hypot   |         4  |         4
+j0f / j0         |       n/a  |       n/a
+j1f / j1         |       n/a  |       n/a
+jnf / jn         |       n/a  |       n/a
+lgammaf / lgamma |       n/a  |       n/a
+log10f / log10   |         3  |         3
+log1pf / log1p   |         2  |         2
+log2f / log2     |         3  |         3
+logf / log       |         3  |         3
 pow10f / pow10   |       n/a  |       n/a
-powf / pow       |         2  |         1
-sincosf / sincos |         3  |         2
-sinf / sin       |         2  |         3*
-sinhf / sinh     |         2  |         2
+powf / pow       |        16  |        16
+sincosf / sincos |         4  |         4
+sinf / sin       |         4  |         4 
+sinhf / sinh     |         4  |         4
 sqrtf / sqrt     |         3† |         0†
-tanf / tan       |         4  |         2*
-tanhf / tanh     |         1  |         1
-tgammaf / tgamma |         3  |         9
-y0f / y0         |         4  |         6
-y1f / y1         |         5  |         4
-ynf / yn         |       145  |      2000
+tanf / tan       |         5  |         5
+tanhf / tanh     |         5  |         5
+tgammaf / tgamma |        16  |        16
+y0f / y0         |       n/a  |       n/a
+y1f / y1         |       n/a  |       n/a
+ynf / yn         |       n/a  |       n/a
 
-  - † according to the OpenCL standard; may be affected by the `-ffast-math` compiler option.
-  - * 1 ULP according to the documentation
+  - † may be affected by the `-ffast-math` compiler option.
 

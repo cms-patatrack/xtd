@@ -27,8 +27,8 @@
 #include "common/sycl_test.h"
 #include "common/math_inputs.h"
 
-constexpr int ulps_float = 4;
-constexpr int ulps_double = 2;
+constexpr int ulps_float = 5;
+constexpr int ulps_double = 5;
 
 TEST_CASE("xtd::tan", "[tan][sycl]") {
   std::vector<double> values = generate_input_values();

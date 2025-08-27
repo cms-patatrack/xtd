@@ -27,8 +27,8 @@
 #include "common/sycl_test.h"
 #include "common/math_inputs.h"
 
-constexpr int ulps_float = 1;
-constexpr int ulps_double = 1;
+constexpr int ulps_float = 3;
+constexpr int ulps_double = 3;
 
 TEST_CASE("xtd::exp2", "[exp2][sycl]") {
   std::vector<double> values = generate_input_values();
