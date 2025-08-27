@@ -22,6 +22,7 @@
 #include "math/exp2.h"
 #include "math/expm1.h"
 #include "math/fabs.h"
+#include "math/fdim.h"
 #include "math/floor.h"
 #include "math/fmod.h"
 #include "math/hypot.h"
