@@ -63,7 +63,7 @@ inline void test(sycl::queue queue, std::vector<double> const& values, int ulps 
     INFO(input);
     ResultType reference;
     RefFunc(static_cast<mpfr_double>(input)).conv(reference);
-    compare<float>(result_h[i], reference, ulps);
+    compare(result_h[i], reference, ulps);
   }
 }
 
@@ -103,7 +103,7 @@ inline void test_f(sycl::queue queue, std::vector<double> const& values, int ulp
     INFO(input);
     ResultType reference;
     RefFunc(static_cast<mpfr_single>(input)).conv(reference);
-    compare<float>(result_h[i], reference, ulps);
+    compare(result_h[i], reference, ulps);
   }
 }
 
