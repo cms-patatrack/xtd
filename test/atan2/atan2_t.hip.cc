@@ -36,7 +36,7 @@ constexpr int ulps_double = 2;
 constexpr auto ref_atan2 = [](mpfr_double y, mpfr_double x) { return mpfr::atan2(y, x); };
 constexpr auto ref_atan2f = [](mpfr_single y, mpfr_single x) { return mpfr::atan2(y, x); };
 
-TEST_CASE("xtd::atan2", "[atan][hip]") {
+TEST_CASE("xtd::atan2", "[atan2][hip]") {
   std::vector<double> values = generate_input_values();
 
   int deviceCount;
