@@ -133,7 +133,7 @@ acosf / acos     |         1  |         1
 acoshf / acosh   |         1  |         1
 asinf / asin     |         2  |         1
 asinhf / asinh   |         1  |         1
-atan2f / atan2   |         1  |         1
+atan2f / atan2   |         3† |         2†
 atanf / atan     |         2  |         1
 atanhf / atanh   |         1  |         1
 cbrtf / cbrt     |         2  |         1
@@ -163,15 +163,14 @@ sincosf / sincos |         1  |         1
 sinf / sin       |         1  |         1
 sinhf / sinh     |         1  |         1
 sqrtf / sqrt     |         1  |         1
-tanf / tan       |         2‡ |         2‡
+tanf / tan       |         2† |         2†
 tanhf / tanh     |         2  |         1
 tgammaf / tgamma |         6  |         6
 y0f / y0         |       n/a  |       n/a
 y1f / y1         |       n/a  |       n/a
 ynf / yn         |       n/a  |       n/a
 
-  - † 1 ULP for x ∈ [-10., +10.] according to the documentation
-  - ‡ 1 ULP for x ∈ [-1.47 π, +1.47 π] according to the documentation
+  - † 1 ULP for a reduced input range, according to the documentation
 
 Note: in some cases the accuracy is documented only for a small range of values.
 
