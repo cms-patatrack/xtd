@@ -1,0 +1,81 @@
+/*
+ * Copyright 2025 European Organization for Nuclear Research (CERN)
+ * Authors: Andrea Bocci <andrea.bocci@cern.ch>, Aurora Perego <aurora.perego@cern.ch>
+ * SPDX-License-Identifier: MPL-2.0
+ */
+
+// C++ standard headers
+#include <cmath>
+#include <iostream>
+#include <vector>
+
+// Catch2 headers
+#define CATCH_CONFIG_MAIN
+#define CATCH_CONFIG_NO_POSIX_SIGNALS
+#include <catch.hpp>
+
+// SYCL headers
+#include <sycl/sycl.hpp>
+
+// mpfr::real headers
+#include <real.hpp>
+
+// xtd headers
+#include "xtd/math/fmod.h"
+
+// test headers
+#include "common/sycl_test2.h"
+#include "common/math_inputs.h"
+
+constexpr int ulps_float = 0;
+constexpr int ulps_double = 0;
+
+constexpr auto ref_fmod = [](mpfr_double y, mpfr_double x) { return mpfr::fmod(y, x); };
+constexpr auto ref_fmodf = [](mpfr_single y, mpfr_single x) { return mpfr::fmod(y, x); };
+
+TEST_CASE("xtd::fmod", "[fmod][sycl]") {
+  std::vector<double> values = generate_input_values();
+
+  for (const auto &platform : sycl::platform::get_platforms()) {
+    SECTION(platform.get_info<sycl::info::platform::name>()) {
+      for (const auto &device : platform.get_devices()) {
+        SECTION(device.get_info<sycl::info::device::name>()) {
+          try {
+            sycl::queue queue{device, sycl::property::queue::in_order()};
+
+            SECTION("float xtd::fmod(float, float)") {
+              test_2<float, float, xtd::fmod, ref_fmod>(queue, values, ulps_float);
+            }
+
+            SECTION("double xtd::fmod(double, double)") {
+              test_2<double, double, xtd::fmod, ref_fmod>(queue, values, ulps_double);
+            }
+
+            SECTION("double xtd::fmod(int, int)") {
+              test_2<double, int, xtd::fmod, ref_fmod>(queue, values, ulps_double);
+            }
+
+            SECTION("float xtd::fmodf(float, float)") {
+              test_2f<float, float, xtd::fmodf, ref_fmodf>(queue, values, ulps_float);
+            }
+
+            SECTION("float xtd::fmodf(double, double)") {
+              test_2f<float, double, xtd::fmodf, ref_fmodf>(queue, values, ulps_float);
+            }
+
+            SECTION("float xtd::fmodf(int, int)") {
+              test_2f<float, int, xtd::fmodf, ref_fmodf>(queue, values, ulps_float);
+            }
+
+          } catch (sycl::exception const &e) {
+            std::cerr << "SYCL exception:\n"
+                      << e.what() << "\ncaught while running on platform "
+                      << platform.get_info<sycl::info::platform::name>() << ", device "
+                      << device.get_info<sycl::info::device::name>() << '\n';
+            continue;
+          }
+        }
+      }
+    }
+  }
+}
