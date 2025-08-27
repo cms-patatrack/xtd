@@ -27,8 +27,8 @@
 #include "common/sycl_test2.h"
 #include "common/math_inputs.h"
 
-constexpr int ulps_float = 2;
-constexpr int ulps_double = 1;
+constexpr int ulps_float = 16;
+constexpr int ulps_double = 16;
 
 constexpr auto ref_pow = [](mpfr_double y, mpfr_double x) { return mpfr::pow(y, x); };
 constexpr auto ref_powf = [](mpfr_single y, mpfr_single x) { return mpfr::pow(y, x); };

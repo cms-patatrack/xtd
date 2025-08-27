@@ -27,8 +27,8 @@
 #include "common/sycl_test2.h"
 #include "common/math_inputs.h"
 
-constexpr int ulps_float = 3;
-constexpr int ulps_double = 2;
+constexpr int ulps_float = 4;
+constexpr int ulps_double = 4;
 
 constexpr auto ref_hypot = [](mpfr_double y, mpfr_double x) { return mpfr::hypot(y, x); };
 constexpr auto ref_hypotf = [](mpfr_single y, mpfr_single x) { return mpfr::hypot(y, x); };

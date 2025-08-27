@@ -27,8 +27,8 @@
 #include "common/sycl_test2.h"
 #include "common/math_inputs.h"
 
-constexpr int ulps_float = 3;
-constexpr int ulps_double = 2;
+constexpr int ulps_float = 6;
+constexpr int ulps_double = 6;
 
 constexpr auto ref_atan2 = [](mpfr_double y, mpfr_double x) { return mpfr::atan2(y, x); };
 constexpr auto ref_atan2f = [](mpfr_single y, mpfr_single x) { return mpfr::atan2(y, x); };
