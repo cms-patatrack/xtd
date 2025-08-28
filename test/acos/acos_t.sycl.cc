@@ -37,39 +37,34 @@ TEST_CASE("xtd::acos", "[acos][sycl]") {
     SECTION(platform.get_info<sycl::info::platform::name>()) {
       for (const auto &device : platform.get_devices()) {
         SECTION(device.get_info<sycl::info::device::name>()) {
-          try {
-            sycl::queue queue{device, sycl::property::queue::in_order()};
+          if (not device.has(sycl::aspect::fp64)) {
+            std::cout << "The device " << device.get_info<sycl::info::device::name>()
+                      << " does not support double precision floating point operations, some tests will be skipped.\n";
+          }
+          sycl::queue queue{device, sycl::property::queue::in_order()};
 
-            SECTION("float xtd::acos(float)") {
-              test<float, float, xtd::acos, mpfr::acos>(queue, values, ulps_float);
-            }
+          SECTION("float xtd::acos(float)") {
+            test<float, float, xtd::acos, mpfr::acos>(queue, values, ulps_float);
+          }
 
-            SECTION("double xtd::acos(double)") {
-              test<double, double, xtd::acos, mpfr::acos>(queue, values, ulps_double);
-            }
+          SECTION("double xtd::acos(double)") {
+            test<double, double, xtd::acos, mpfr::acos>(queue, values, ulps_double);
+          }
 
-            SECTION("double xtd::acos(int)") {
-              test<double, int, xtd::acos, mpfr::acos>(queue, values, ulps_double);
-            }
+          SECTION("double xtd::acos(int)") {
+            test<double, int, xtd::acos, mpfr::acos>(queue, values, ulps_double);
+          }
 
-            SECTION("float xtd::acosf(float)") {
-              test_f<float, float, xtd::acosf, mpfr::acos>(queue, values, ulps_float);
-            }
+          SECTION("float xtd::acosf(float)") {
+            test_f<float, float, xtd::acosf, mpfr::acos>(queue, values, ulps_float);
+          }
 
-            SECTION("float xtd::acosf(double)") {
-              test_f<float, double, xtd::acosf, mpfr::acos>(queue, values, ulps_float);
-            }
+          SECTION("float xtd::acosf(double)") {
+            test_f<float, double, xtd::acosf, mpfr::acos>(queue, values, ulps_float);
+          }
 
-            SECTION("float xtd::acosf(int)") {
-              test_f<float, int, xtd::acosf, mpfr::acos>(queue, values, ulps_float);
-            }
-
-          } catch (sycl::exception const &e) {
-            std::cerr << "SYCL exception:\n"
-                      << e.what() << "\ncaught while running on platform "
-                      << platform.get_info<sycl::info::platform::name>() << ", device "
-                      << device.get_info<sycl::info::device::name>() << '\n';
-            continue;
+          SECTION("float xtd::acosf(int)") {
+            test_f<float, int, xtd::acosf, mpfr::acos>(queue, values, ulps_float);
           }
         }
       }

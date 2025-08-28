@@ -37,39 +37,34 @@ TEST_CASE("xtd::cos", "[cos][sycl]") {
     SECTION(platform.get_info<sycl::info::platform::name>()) {
       for (const auto &device : platform.get_devices()) {
         SECTION(device.get_info<sycl::info::device::name>()) {
-          try {
-            sycl::queue queue{device, sycl::property::queue::in_order()};
+          if (not device.has(sycl::aspect::fp64)) {
+            std::cout << "The device " << device.get_info<sycl::info::device::name>()
+                      << " does not support double precision floating point operations, some tests will be skipped.\n";
+          }
+          sycl::queue queue{device, sycl::property::queue::in_order()};
 
-            SECTION("float xtd::cos(float)") {
-              test<float, float, xtd::cos, mpfr::cos>(queue, values, ulps_float);
-            }
+          SECTION("float xtd::cos(float)") {
+            test<float, float, xtd::cos, mpfr::cos>(queue, values, ulps_float);
+          }
 
-            SECTION("double xtd::cos(double)") {
-              test<double, double, xtd::cos, mpfr::cos>(queue, values, ulps_double);
-            }
+          SECTION("double xtd::cos(double)") {
+            test<double, double, xtd::cos, mpfr::cos>(queue, values, ulps_double);
+          }
 
-            SECTION("double xtd::cos(int)") {
-              test<double, int, xtd::cos, mpfr::cos>(queue, values, ulps_double);
-            }
+          SECTION("double xtd::cos(int)") {
+            test<double, int, xtd::cos, mpfr::cos>(queue, values, ulps_double);
+          }
 
-            SECTION("float xtd::cosf(float)") {
-              test_f<float, float, xtd::cosf, mpfr::cos>(queue, values, ulps_float);
-            }
+          SECTION("float xtd::cosf(float)") {
+            test_f<float, float, xtd::cosf, mpfr::cos>(queue, values, ulps_float);
+          }
 
-            SECTION("float xtd::cosf(double)") {
-              test_f<float, double, xtd::cosf, mpfr::cos>(queue, values, ulps_float);
-            }
+          SECTION("float xtd::cosf(double)") {
+            test_f<float, double, xtd::cosf, mpfr::cos>(queue, values, ulps_float);
+          }
 
-            SECTION("float xtd::cosf(int)") {
-              test_f<float, int, xtd::cosf, mpfr::cos>(queue, values, ulps_float);
-            }
-
-          } catch (sycl::exception const &e) {
-            std::cerr << "SYCL exception:\n"
-                      << e.what() << "\ncaught while running on platform "
-                      << platform.get_info<sycl::info::platform::name>() << ", device "
-                      << device.get_info<sycl::info::device::name>() << '\n';
-            continue;
+          SECTION("float xtd::cosf(int)") {
+            test_f<float, int, xtd::cosf, mpfr::cos>(queue, values, ulps_float);
           }
         }
       }

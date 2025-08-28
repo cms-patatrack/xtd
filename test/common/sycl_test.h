@@ -7,6 +7,9 @@
 #pragma once
 
 // C++ standard headers
+#include <cstdlib>
+#include <iostream>
+#include <type_traits>
 #include <vector>
 
 // SYCL headers
@@ -32,7 +35,14 @@ template <typename ResultType,
           ResultType (*XtdFunc)(InputType),
           typename std::enable_if<mpfr::type_traits<mpfr_double, mpfr_double, true>::enable_math_funcs,
                                   const mpfr_double>::type (*RefFunc)(const mpfr_double&)>
-inline void test(sycl::queue queue, std::vector<double> const& values, int ulps = 0) {
+inline void test(sycl::queue queue, std::vector<double> const& values, int ulps = 0) try {
+  if constexpr (std::is_same_v<InputType, double> or std::is_same_v<ResultType, double>) {
+    if (not queue.get_device().has(sycl::aspect::fp64)) {
+      INFO("The device does not support double precision floating point operations, the test will be skipped.");
+      return;
+    }
+  }
+
   int size = values.size();
 
   // convert the input data to the type to be tested and copy them to the GPU
@@ -65,6 +75,12 @@ inline void test(sycl::queue queue, std::vector<double> const& values, int ulps 
     RefFunc(static_cast<mpfr_double>(input)).conv(reference);
     compare(result_h[i], reference, ulps);
   }
+} catch (sycl::exception const& e) {
+  std::cerr << "SYCL exception:\n"
+            << e.what() << "\ncaught while running on platform "
+            << queue.get_device().get_platform().get_info<sycl::info::platform::name>() << ", device "
+            << queue.get_device().get_info<sycl::info::device::name>() << '\n';
+  std::exit(EXIT_FAILURE);
 }
 
 template <typename ResultType,
@@ -72,7 +88,14 @@ template <typename ResultType,
           ResultType (*XtdFunc)(InputType),
           typename std::enable_if<mpfr::type_traits<mpfr_single, mpfr_single, true>::enable_math_funcs,
                                   const mpfr_single>::type (*RefFunc)(const mpfr_single&)>
-inline void test_f(sycl::queue queue, std::vector<double> const& values, int ulps = 0) {
+inline void test_f(sycl::queue queue, std::vector<double> const& values, int ulps = 0) try {
+  if constexpr (std::is_same_v<InputType, double> or std::is_same_v<ResultType, double>) {
+    if (not queue.get_device().has(sycl::aspect::fp64)) {
+      INFO("The device does not support double precision floating point operations, the test will be skipped.");
+      return;
+    }
+  }
+
   int size = values.size();
 
   // convert the input data to the type to be tested and copy them to the GPU
@@ -105,10 +128,16 @@ inline void test_f(sycl::queue queue, std::vector<double> const& values, int ulp
     RefFunc(static_cast<mpfr_single>(input)).conv(reference);
     compare(result_h[i], reference, ulps);
   }
+} catch (sycl::exception const& e) {
+  std::cerr << "SYCL exception:\n"
+            << e.what() << "\ncaught while running on platform "
+            << queue.get_device().get_platform().get_info<sycl::info::platform::name>() << ", device "
+            << queue.get_device().get_info<sycl::info::device::name>() << '\n';
+  std::exit(EXIT_FAILURE);
 }
 
 template <std::integral Type, Type (*XtdFunc)(Type), Type (*RefFunc)(Type)>
-inline void test_i(sycl::queue queue, std::vector<double> const& values) {
+inline void test_i(sycl::queue queue, std::vector<double> const& values) try {
   int size = values.size();
 
   // convert the input data to the type to be tested and copy them to the GPU
@@ -140,4 +169,10 @@ inline void test_i(sycl::queue queue, std::vector<double> const& values) {
     Type reference = RefFunc(input);
     compare(result_h[i], reference);
   }
+} catch (sycl::exception const& e) {
+  std::cerr << "SYCL exception:\n"
+            << e.what() << "\ncaught while running on platform "
+            << queue.get_device().get_platform().get_info<sycl::info::platform::name>() << ", device "
+            << queue.get_device().get_info<sycl::info::device::name>() << '\n';
+  std::exit(EXIT_FAILURE);
 }

@@ -37,39 +37,34 @@ TEST_CASE("xtd::trunc", "[trunc][sycl]") {
     SECTION(platform.get_info<sycl::info::platform::name>()) {
       for (const auto &device : platform.get_devices()) {
         SECTION(device.get_info<sycl::info::device::name>()) {
-          try {
-            sycl::queue queue{device, sycl::property::queue::in_order()};
+          if (not device.has(sycl::aspect::fp64)) {
+            std::cout << "The device " << device.get_info<sycl::info::device::name>()
+                      << " does not support double precision floating point operations, some tests will be skipped.\n";
+          }
+          sycl::queue queue{device, sycl::property::queue::in_order()};
 
-            SECTION("float xtd::trunc(float)") {
-              test<float, float, xtd::trunc, mpfr::trunc>(queue, values, ulps_float);
-            }
+          SECTION("float xtd::trunc(float)") {
+            test<float, float, xtd::trunc, mpfr::trunc>(queue, values, ulps_float);
+          }
 
-            SECTION("double xtd::trunc(double)") {
-              test<double, double, xtd::trunc, mpfr::trunc>(queue, values, ulps_double);
-            }
+          SECTION("double xtd::trunc(double)") {
+            test<double, double, xtd::trunc, mpfr::trunc>(queue, values, ulps_double);
+          }
 
-            SECTION("double xtd::trunc(int)") {
-              test<double, int, xtd::trunc, mpfr::trunc>(queue, values, ulps_double);
-            }
+          SECTION("double xtd::trunc(int)") {
+            test<double, int, xtd::trunc, mpfr::trunc>(queue, values, ulps_double);
+          }
 
-            SECTION("float xtd::truncf(float)") {
-              test_f<float, float, xtd::truncf, mpfr::trunc>(queue, values, ulps_float);
-            }
+          SECTION("float xtd::truncf(float)") {
+            test_f<float, float, xtd::truncf, mpfr::trunc>(queue, values, ulps_float);
+          }
 
-            SECTION("float xtd::truncf(double)") {
-              test_f<float, double, xtd::truncf, mpfr::trunc>(queue, values, ulps_float);
-            }
+          SECTION("float xtd::truncf(double)") {
+            test_f<float, double, xtd::truncf, mpfr::trunc>(queue, values, ulps_float);
+          }
 
-            SECTION("float xtd::truncf(int)") {
-              test_f<float, int, xtd::truncf, mpfr::trunc>(queue, values, ulps_float);
-            }
-
-          } catch (sycl::exception const &e) {
-            std::cerr << "SYCL exception:\n"
-                      << e.what() << "\ncaught while running on platform "
-                      << platform.get_info<sycl::info::platform::name>() << ", device "
-                      << device.get_info<sycl::info::device::name>() << '\n';
-            continue;
+          SECTION("float xtd::truncf(int)") {
+            test_f<float, int, xtd::truncf, mpfr::trunc>(queue, values, ulps_float);
           }
         }
       }

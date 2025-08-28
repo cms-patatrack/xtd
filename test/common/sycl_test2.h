@@ -7,9 +7,11 @@
 #pragma once
 
 // C++ standard headers
-#include <string>
+#include <cstdlib>
+#include <cmath>
+#include <iostream>
+#include <type_traits>
 #include <vector>
-using namespace std::literals;
 
 // SYCL headers
 #include <sycl/sycl.hpp>
@@ -33,7 +35,14 @@ template <typename ResultType,
           typename InputType,
           ResultType (*XtdFunc)(InputType, InputType),
           mpfr_double (*RefFunc)(mpfr_double, mpfr_double)>
-inline void test_2(sycl::queue queue, std::vector<double> const& values, int ulps = 0) {
+inline void test_2(sycl::queue queue, std::vector<double> const& values, int ulps = 0) try {
+  if constexpr (std::is_same_v<InputType, double> or std::is_same_v<ResultType, double>) {
+    if (not queue.get_device().has(sycl::aspect::fp64)) {
+      INFO("The device does not support double precision floating point operations, the test will be skipped.");
+      return;
+    }
+  }
+
   int size = values.size();
   int step = std::trunc(std::sqrt(size)) - 1;
   int outs = size * size / step + 1;
@@ -69,18 +78,31 @@ inline void test_2(sycl::queue queue, std::vector<double> const& values, int ulp
     int j = k * step % size;
     double input_y = input_h[i];
     double input_x = input_h[j];
-    INFO(std::to_string(input_y) + ", "s + std::to_string(input_x));
+    INFO(input_y << ", " << input_x);
     ResultType reference;
     RefFunc(static_cast<mpfr_double>(input_y), static_cast<mpfr_double>(input_x)).conv(reference);
     compare(result_h[k], reference, ulps);
   }
+} catch (sycl::exception const& e) {
+  std::cerr << "SYCL exception:\n"
+            << e.what() << "\ncaught while running on platform "
+            << queue.get_device().get_platform().get_info<sycl::info::platform::name>() << ", device "
+            << queue.get_device().get_info<sycl::info::device::name>() << '\n';
+  std::exit(EXIT_FAILURE);
 }
 
 template <typename ResultType,
           typename InputType,
           ResultType (*XtdFunc)(InputType, InputType),
           mpfr_single (*RefFunc)(mpfr_single, mpfr_single)>
-inline void test_2f(sycl::queue queue, std::vector<double> const& values, int ulps = 0) {
+inline void test_2f(sycl::queue queue, std::vector<double> const& values, int ulps = 0) try {
+  if constexpr (std::is_same_v<InputType, double> or std::is_same_v<ResultType, double>) {
+    if (not queue.get_device().has(sycl::aspect::fp64)) {
+      INFO("The device does not support double precision floating point operations, the test will be skipped.");
+      return;
+    }
+  }
+
   int size = values.size();
   int step = std::trunc(std::sqrt(size)) - 1;
   int outs = size * size / step + 1;
@@ -116,9 +138,15 @@ inline void test_2f(sycl::queue queue, std::vector<double> const& values, int ul
     int j = k * step % size;
     float input_y = static_cast<float>(input_h[i]);
     float input_x = static_cast<float>(input_h[j]);
-    INFO(std::to_string(input_y) + ", "s + std::to_string(input_x));
+    INFO(input_y << ", " << input_x);
     ResultType reference;
     RefFunc(static_cast<mpfr_single>(input_y), static_cast<mpfr_single>(input_x)).conv(reference);
     compare(result_h[k], reference, ulps);
   }
+} catch (sycl::exception const& e) {
+  std::cerr << "SYCL exception:\n"
+            << e.what() << "\ncaught while running on platform "
+            << queue.get_device().get_platform().get_info<sycl::info::platform::name>() << ", device "
+            << queue.get_device().get_info<sycl::info::device::name>() << '\n';
+  std::exit(EXIT_FAILURE);
 }

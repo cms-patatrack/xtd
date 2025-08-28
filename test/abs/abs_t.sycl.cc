@@ -37,30 +37,26 @@ TEST_CASE("xtd::abs", "[abs][sycl]") {
     SECTION(platform.get_info<sycl::info::platform::name>()) {
       for (const auto &device : platform.get_devices()) {
         SECTION(device.get_info<sycl::info::device::name>()) {
-          try {
-            sycl::queue queue{device, sycl::property::queue::in_order()};
+          if (not device.has(sycl::aspect::fp64)) {
+            std::cout << "The device " << device.get_info<sycl::info::device::name>()
+                      << " does not support double precision floating point operations, some tests will be skipped.\n";
+          }
+          sycl::queue queue{device, sycl::property::queue::in_order()};
 
-            SECTION("float xtd::abs(float)") {
-              test<float, float, xtd::abs, mpfr::fabs>(queue, values, ulps_float);
-            }
+          SECTION("float xtd::abs(float)") {
+            test<float, float, xtd::abs, mpfr::fabs>(queue, values, ulps_float);
+          }
 
-            SECTION("double xtd::abs(double)") {
-              test<double, double, xtd::abs, mpfr::fabs>(queue, values, ulps_double);
-            }
+          SECTION("double xtd::abs(double)") {
+            test<double, double, xtd::abs, mpfr::fabs>(queue, values, ulps_double);
+          }
 
-            SECTION("int xtd::abs(int)") {
-              test_i<int, xtd::abs, std::abs>(queue, values);
-            }
+          SECTION("int xtd::abs(int)") {
+            test_i<int, xtd::abs, std::abs>(queue, values);
+          }
 
-            SECTION("long long xtd::abs(long long)") {
-              test_i<long long, xtd::abs, std::abs>(queue, values);
-            }
-          } catch (sycl::exception const &e) {
-            std::cerr << "SYCL exception:\n"
-                      << e.what() << "\ncaught while running on platform "
-                      << platform.get_info<sycl::info::platform::name>() << ", device "
-                      << device.get_info<sycl::info::device::name>() << '\n';
-            continue;
+          SECTION("long long xtd::abs(long long)") {
+            test_i<long long, xtd::abs, std::abs>(queue, values);
           }
         }
       }
