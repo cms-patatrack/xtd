@@ -37,39 +37,34 @@ TEST_CASE("xtd::sqrt", "[sqrt][sycl]") {
     SECTION(platform.get_info<sycl::info::platform::name>()) {
       for (const auto &device : platform.get_devices()) {
         SECTION(device.get_info<sycl::info::device::name>()) {
-          try {
-            sycl::queue queue{device, sycl::property::queue::in_order()};
+          if (not device.has(sycl::aspect::fp64)) {
+            std::cout << "The device " << device.get_info<sycl::info::device::name>()
+                      << " does not support double precision floating point operations, some tests will be skipped.\n";
+          }
+          sycl::queue queue{device, sycl::property::queue::in_order()};
 
-            SECTION("float xtd::sqrt(float)") {
-              test<float, float, xtd::sqrt, mpfr::sqrt>(queue, values, ulps_float);
-            }
+          SECTION("float xtd::sqrt(float)") {
+            test<float, float, xtd::sqrt, mpfr::sqrt>(queue, values, ulps_float);
+          }
 
-            SECTION("double xtd::sqrt(double)") {
-              test<double, double, xtd::sqrt, mpfr::sqrt>(queue, values, ulps_double);
-            }
+          SECTION("double xtd::sqrt(double)") {
+            test<double, double, xtd::sqrt, mpfr::sqrt>(queue, values, ulps_double);
+          }
 
-            SECTION("double xtd::sqrt(int)") {
-              test<double, int, xtd::sqrt, mpfr::sqrt>(queue, values, ulps_double);
-            }
+          SECTION("double xtd::sqrt(int)") {
+            test<double, int, xtd::sqrt, mpfr::sqrt>(queue, values, ulps_double);
+          }
 
-            SECTION("float xtd::sqrtf(float)") {
-              test_f<float, float, xtd::sqrtf, mpfr::sqrt>(queue, values, ulps_float);
-            }
+          SECTION("float xtd::sqrtf(float)") {
+            test_f<float, float, xtd::sqrtf, mpfr::sqrt>(queue, values, ulps_float);
+          }
 
-            SECTION("float xtd::sqrtf(double)") {
-              test_f<float, double, xtd::sqrtf, mpfr::sqrt>(queue, values, ulps_float);
-            }
+          SECTION("float xtd::sqrtf(double)") {
+            test_f<float, double, xtd::sqrtf, mpfr::sqrt>(queue, values, ulps_float);
+          }
 
-            SECTION("float xtd::sqrtf(int)") {
-              test_f<float, int, xtd::sqrtf, mpfr::sqrt>(queue, values, ulps_float);
-            }
-
-          } catch (sycl::exception const &e) {
-            std::cerr << "SYCL exception:\n"
-                      << e.what() << "\ncaught while running on platform "
-                      << platform.get_info<sycl::info::platform::name>() << ", device "
-                      << device.get_info<sycl::info::device::name>() << '\n';
-            continue;
+          SECTION("float xtd::sqrtf(int)") {
+            test_f<float, int, xtd::sqrtf, mpfr::sqrt>(queue, values, ulps_float);
           }
         }
       }

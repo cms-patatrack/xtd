@@ -187,8 +187,8 @@ ifneq ($(ONEAPI_BASE),)
 
   # Enable double precision floating point emulation for Intel GPUs
   # See https://github.com/intel/compute-runtime/blob/master/opencl/doc/FAQ.md#feature-double-precision-emulation-fp64
-  export IGC_EnableDPEmulation := 1
-  export OverrideDefaultFP64Settings := 1
+  #export IGC_EnableDPEmulation := 1
+  #export OverrideDefaultFP64Settings := 1
 endif
 
 # xtd

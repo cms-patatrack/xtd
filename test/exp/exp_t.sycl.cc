@@ -37,39 +37,34 @@ TEST_CASE("xtd::exp", "[exp][sycl]") {
     SECTION(platform.get_info<sycl::info::platform::name>()) {
       for (const auto &device : platform.get_devices()) {
         SECTION(device.get_info<sycl::info::device::name>()) {
-          try {
-            sycl::queue queue{device, sycl::property::queue::in_order()};
+          if (not device.has(sycl::aspect::fp64)) {
+            std::cout << "The device " << device.get_info<sycl::info::device::name>()
+                      << " does not support double precision floating point operations, some tests will be skipped.\n";
+          }
+          sycl::queue queue{device, sycl::property::queue::in_order()};
 
-            SECTION("float xtd::exp(float)") {
-              test<float, float, xtd::exp, mpfr::exp>(queue, values, ulps_float);
-            }
+          SECTION("float xtd::exp(float)") {
+            test<float, float, xtd::exp, mpfr::exp>(queue, values, ulps_float);
+          }
 
-            SECTION("double xtd::exp(double)") {
-              test<double, double, xtd::exp, mpfr::exp>(queue, values, ulps_double);
-            }
+          SECTION("double xtd::exp(double)") {
+            test<double, double, xtd::exp, mpfr::exp>(queue, values, ulps_double);
+          }
 
-            SECTION("double xtd::exp(int)") {
-              test<double, int, xtd::exp, mpfr::exp>(queue, values, ulps_double);
-            }
+          SECTION("double xtd::exp(int)") {
+            test<double, int, xtd::exp, mpfr::exp>(queue, values, ulps_double);
+          }
 
-            SECTION("float xtd::expf(float)") {
-              test_f<float, float, xtd::expf, mpfr::exp>(queue, values, ulps_float);
-            }
+          SECTION("float xtd::expf(float)") {
+            test_f<float, float, xtd::expf, mpfr::exp>(queue, values, ulps_float);
+          }
 
-            SECTION("float xtd::expf(double)") {
-              test_f<float, double, xtd::expf, mpfr::exp>(queue, values, ulps_float);
-            }
+          SECTION("float xtd::expf(double)") {
+            test_f<float, double, xtd::expf, mpfr::exp>(queue, values, ulps_float);
+          }
 
-            SECTION("float xtd::expf(int)") {
-              test_f<float, int, xtd::expf, mpfr::exp>(queue, values, ulps_float);
-            }
-
-          } catch (sycl::exception const &e) {
-            std::cerr << "SYCL exception:\n"
-                      << e.what() << "\ncaught while running on platform "
-                      << platform.get_info<sycl::info::platform::name>() << ", device "
-                      << device.get_info<sycl::info::device::name>() << '\n';
-            continue;
+          SECTION("float xtd::expf(int)") {
+            test_f<float, int, xtd::expf, mpfr::exp>(queue, values, ulps_float);
           }
         }
       }

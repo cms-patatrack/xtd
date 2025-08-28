@@ -40,39 +40,34 @@ TEST_CASE("xtd::fdim", "[fdim][sycl]") {
     SECTION(platform.get_info<sycl::info::platform::name>()) {
       for (const auto &device : platform.get_devices()) {
         SECTION(device.get_info<sycl::info::device::name>()) {
-          try {
-            sycl::queue queue{device, sycl::property::queue::in_order()};
+          if (not device.has(sycl::aspect::fp64)) {
+            std::cout << "The device " << device.get_info<sycl::info::device::name>()
+                      << " does not support double precision floating point operations, some tests will be skipped.\n";
+          }
+          sycl::queue queue{device, sycl::property::queue::in_order()};
 
-            SECTION("float xtd::fdim(float, float)") {
-              test_2<float, float, xtd::fdim, ref_fdim>(queue, values, ulps_float);
-            }
+          SECTION("float xtd::fdim(float, float)") {
+            test_2<float, float, xtd::fdim, ref_fdim>(queue, values, ulps_float);
+          }
 
-            SECTION("double xtd::fdim(double, double)") {
-              test_2<double, double, xtd::fdim, ref_fdim>(queue, values, ulps_double);
-            }
+          SECTION("double xtd::fdim(double, double)") {
+            test_2<double, double, xtd::fdim, ref_fdim>(queue, values, ulps_double);
+          }
 
-            SECTION("double xtd::fdim(int, int)") {
-              test_2<double, int, xtd::fdim, ref_fdim>(queue, values, ulps_double);
-            }
+          SECTION("double xtd::fdim(int, int)") {
+            test_2<double, int, xtd::fdim, ref_fdim>(queue, values, ulps_double);
+          }
 
-            SECTION("float xtd::fdimf(float, float)") {
-              test_2f<float, float, xtd::fdimf, ref_fdimf>(queue, values, ulps_float);
-            }
+          SECTION("float xtd::fdimf(float, float)") {
+            test_2f<float, float, xtd::fdimf, ref_fdimf>(queue, values, ulps_float);
+          }
 
-            SECTION("float xtd::fdimf(double, double)") {
-              test_2f<float, double, xtd::fdimf, ref_fdimf>(queue, values, ulps_float);
-            }
+          SECTION("float xtd::fdimf(double, double)") {
+            test_2f<float, double, xtd::fdimf, ref_fdimf>(queue, values, ulps_float);
+          }
 
-            SECTION("float xtd::fdimf(int, int)") {
-              test_2f<float, int, xtd::fdimf, ref_fdimf>(queue, values, ulps_float);
-            }
-
-          } catch (sycl::exception const &e) {
-            std::cerr << "SYCL exception:\n"
-                      << e.what() << "\ncaught while running on platform "
-                      << platform.get_info<sycl::info::platform::name>() << ", device "
-                      << device.get_info<sycl::info::device::name>() << '\n';
-            continue;
+          SECTION("float xtd::fdimf(int, int)") {
+            test_2f<float, int, xtd::fdimf, ref_fdimf>(queue, values, ulps_float);
           }
         }
       }
