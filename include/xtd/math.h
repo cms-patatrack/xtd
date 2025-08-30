@@ -6,37 +6,91 @@
 
 #pragma once
 
+// Basic operations
 #include "math/abs.h"
-#include "math/acos.h"
-#include "math/acosh.h"
-#include "math/asin.h"
-#include "math/asinh.h"
-#include "math/atan.h"
-#include "math/atan2.h"
-#include "math/atanh.h"
-#include "math/cbrt.h"
-#include "math/ceil.h"
-#include "math/cos.h"
-#include "math/cosh.h"
+#include "math/fabs.h"
+#include "math/fmod.h"
+#include "math/remainder.h"
+//remquo
+//fma
+#include "math/fmax.h"
+#include "math/fmin.h"
+#include "math/fdim.h"
+//nan
+
+// Exponential functions
 #include "math/exp.h"
 #include "math/exp2.h"
 #include "math/expm1.h"
-#include "math/fabs.h"
-#include "math/fdim.h"
-#include "math/floor.h"
-#include "math/fmax.h"
-#include "math/fmin.h"
-#include "math/fmod.h"
-#include "math/hypot.h"
 #include "math/log.h"
 #include "math/log10.h"
-#include "math/log1p.h"
 #include "math/log2.h"
+#include "math/log1p.h"
+
+// Power functions
 #include "math/pow.h"
-#include "math/remainder.h"
-#include "math/sin.h"
-#include "math/sinh.h"
 #include "math/sqrt.h"
+#include "math/cbrt.h"
+#include "math/hypot.h"
+//hypot(x,y,z)
+
+// Trigonometric functions
+#include "math/sin.h"
+#include "math/cos.h"
 #include "math/tan.h"
+#include "math/asin.h"
+#include "math/acos.h"
+#include "math/atan.h"
+#include "math/atan2.h"
+
+// Hyperbolic functions
+#include "math/sinh.h"
+#include "math/cosh.h"
 #include "math/tanh.h"
+#include "math/asinh.h"
+#include "math/acosh.h"
+#include "math/atanh.h"
+
+// Error and gamma functions
+//erf
+//erfc
+//tgamma
+//lgamma
+
+// Nearest integer floating point operations
+#include "math/ceil.h"
+#include "math/floor.h"
 #include "math/trunc.h"
+//round
+//lround
+//llround
+//nearbyint
+//rint
+//lrint
+//llrint
+
+// Floating point manipulation functions
+//frexp
+//ldexp
+//modf
+//scalbn
+//scalbln
+//ilogb
+//logb
+//nextafter
+//nexttoward
+//copysign
+
+// Classification and comparison
+//fpclassify
+//isfinite
+//isinf
+//isnan
+//isnormal
+//signbit
+//isgreater
+//isgreaterequal
+//isless
+//islessequal
+//islessgreater
+//isunordered
