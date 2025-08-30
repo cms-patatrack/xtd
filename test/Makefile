@@ -226,11 +226,17 @@ $(MPFR_REAL_INCLUDE):
 	mkdir -p $(dir $@)
 	curl -s -S -L https://www.chschneider.eu/programming/mpfr_real/mpfr_real_v0.0.9-alpha.tar.gz | tar xz -C $(EXTERNAL_BASE)
 
+bin:
+	mkdir -p bin
+
+.PHONY: prereq
+prereq: external_catch2 external_mpfr_real bin
+
 $(info -------------------------------------------------------------------------------)
 
 # xtd tests
-SUBDIRS := $(wildcard $(XTD_BASE)/test/*/)
-TARGETS_ALL := $(filter-out common external, $(notdir $(patsubst %/,%,$(SUBDIRS))))
+SUBDIRS := $(wildcard $(XTD_BASE)/test/src/*/)
+TARGETS := $(notdir $(patsubst %/,%,$(SUBDIRS)))
 
 .PHONY: cpu build_cpu run_cpu
 cpu: build_cpu run_cpu
@@ -269,10 +275,7 @@ $(1): build_$(1) run_$(1)
 build: build_$(1)
 
 .PHONY: build_$(1)
-build_$(1): prereq_$(1)
-
-.PHONY: prereq_$(1)
-prereq_$(1): external_catch2 external_mpfr_real $(1)/bin
+build_$(1): prereq
 
 run: run_$(1)
 
@@ -283,26 +286,23 @@ clean: clean_$(1)
 
 .PHONY: clean_$(1)
 clean_$(1):
-	rm -rf $(1)/bin
-
-$(1)/bin:
-	mkdir -p $(1)/bin
+	rm -f bin/$(1)_t_*
 
 # CPU tests
 build_$(1): build_$(1)_cpu
 build_cpu: build_$(1)_cpu
 
 .PHONY: build_$(1)_cpu
-build_$(1)_cpu: $(1)/bin/$(1)_t_cc
+build_$(1)_cpu: bin/$(1)_t_cc
 
-$(1)/bin/$(1)_t_cc: $(1)/$(1)_t.cc | prereq_$(1)
+bin/$(1)_t_cc: src/$(1)/$(1)_t.cc | prereq
 	$(CXX) $(CXXFLAGS) $(LIB_CFLAGS) $$< $(LDFLAGS) $(LIB_LDFLAGS) -o $$@
 
 run_$(1): run_$(1)_cpu
 run_cpu: run_$(1)_cpu
 
 .PHONY: run_$(1)_cpu
-run_$(1)_cpu: $(1)/bin/$(1)_t_cc
+run_$(1)_cpu: bin/$(1)_t_cc
 	$$<
 
 # CUDA tests
@@ -311,16 +311,16 @@ build_$(1): build_$(1)_cuda
 build_cuda: build_$(1)_cuda
 
 .PHONY: build_$(1)_cuda
-build_$(1)_cuda: $(1)/bin/$(1)_t_cuda
+build_$(1)_cuda: bin/$(1)_t_cuda
 
-$(1)/bin/$(1)_t_cuda: $(1)/$(1)_t.cu | prereq_$(1)
+bin/$(1)_t_cuda: src/$(1)/$(1)_t.cu | prereq
 	$(CUDA_NVCC) $(CUDA_CXXFLAGS) $(LIB_CFLAGS) $$< $(CUDA_LDFLAGS) $(LIB_LDFLAGS) -o $$@
 
 run_$(1): run_$(1)_cuda
 run_cuda: run_$(1)_cuda
 
 .PHONY: run_$(1)_cuda
-run_$(1)_cuda: $(1)/bin/$(1)_t_cuda
+run_$(1)_cuda: bin/$(1)_t_cuda
 	$$<
 endif
 
@@ -330,16 +330,16 @@ build_$(1): build_$(1)_hip
 build_hip: build_$(1)_hip
 
 .PHONY: build_$(1)_hip
-build_$(1)_hip: $(1)/bin/$(1)_t_hip
+build_$(1)_hip: bin/$(1)_t_hip
 
-$(1)/bin/$(1)_t_hip: $(1)/$(1)_t.hip.cc | prereq_$(1)
+bin/$(1)_t_hip: src/$(1)/$(1)_t.hip.cc | prereq
 	$(ROCM_HIPCC) $(ROCM_CXXFLAGS) $(LIB_CFLAGS) $$< $(ROCM_LDFLAGS) $(LIB_LDFLAGS) -o $$@
 
 run_$(1): run_$(1)_hip
 run_hip: run_$(1)_hip
 
 .PHONY: run_$(1)_hip
-run_$(1)_hip: $(1)/bin/$(1)_t_hip
+run_$(1)_hip: bin/$(1)_t_hip
 	$$<
 endif
 
@@ -349,19 +349,19 @@ build_$(1): build_$(1)_sycl
 build_sycl: build_$(1)_sycl
 
 .PHONY: build_$(1)_sycl
-build_$(1)_sycl: $(1)/bin/$(1)_t_sycl
+build_$(1)_sycl: bin/$(1)_t_sycl
 
-$(1)/bin/$(1)_t_sycl: $(1)/$(1)_t.sycl.cc | prereq_$(1)
+bin/$(1)_t_sycl: src/$(1)/$(1)_t.sycl.cc | prereq
 	$(SYCL_CXX) $(SYCL_CXXFLAGS) $(LIB_CFLAGS) $$< $(SYCL_LDFLAGS) $(LIB_LDFLAGS) -o $$@
 
 run_$(1): run_$(1)_sycl
 run_sycl: run_$(1)_sycl
 
 .PHONY: run_$(1)_sycl
-run_$(1)_sycl: $(1)/bin/$(1)_t_sycl
+run_$(1)_sycl: bin/$(1)_t_sycl
 	$$<
 endif
 
 endef
 
-$(foreach target,$(TARGETS_ALL),$(eval $(call TEST_template,$(target))))
+$(foreach target,$(TARGETS),$(eval $(call TEST_template,$(target))))
