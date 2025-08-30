@@ -23,7 +23,7 @@ void compare(T result, T reference, int ulps = 0) {
       CHECK(std::isnan(result));
       break;
     case FP_ZERO:
-      CHECK_THAT(result, Catch::Matchers::WithinULP(0., ulps));
+      CHECK_THAT(std::abs(result), Catch::Matchers::WithinULP(static_cast<T>(0), ulps));
       break;
     case FP_SUBNORMAL:
       // Catch::Matchers::WithinULP does not handle properly the comparison of denormals with zero
