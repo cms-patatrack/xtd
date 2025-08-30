@@ -27,7 +27,7 @@ using namespace std::literals;
 
 // test headers
 #include "common/cuda_check.h"
-#include "common/cuda_test2.h"
+#include "common/cuda_test.h"
 #include "common/math_inputs.h"
 
 constexpr int ulps_float = 2;

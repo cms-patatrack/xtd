@@ -71,3 +71,74 @@ inline void test_i(std::vector<double> const& values) {
     compare(result, reference);
   }
 }
+
+template <typename ResultType,
+          typename InputType,
+          ResultType (*XtdFunc)(InputType, InputType),
+          mpfr_double (*RefFunc)(mpfr_double, mpfr_double)>
+inline void test_2(std::vector<double> const& values, int ulps = 0) {
+  int size = values.size();
+  int step = std::trunc(std::sqrt(size)) - 1;
+  for (unsigned int k = 0; k < size * size; k += step) {
+    int i = k / size;
+    int j = k % size;
+    // convert the input data to the type to be tested
+    InputType input_y = static_cast<InputType>(values[i]);
+    InputType input_x = static_cast<InputType>(values[j]);
+    // execute the xtd function
+    ResultType result = XtdFunc(input_y, input_x);
+    // compare the result with the reference
+    ResultType reference;
+    RefFunc(static_cast<mpfr_double>(input_y), static_cast<mpfr_double>(input_x)).conv(reference);
+    INFO(std::fixed << "inputs (" << std::setprecision(std::numeric_limits<InputType>::max_digits10) << input_y << ", "
+                    << input_x << "), xtd result " << std::setprecision(std::numeric_limits<ResultType>::max_digits10)
+                    << result << " vs " << reference << '\n')
+    compare(result, reference, ulps);
+  }
+}
+
+template <typename ResultType,
+          typename InputType,
+          ResultType (*XtdFunc)(InputType, InputType),
+          mpfr_single (*RefFunc)(mpfr_single, mpfr_single)>
+inline void test_2f(std::vector<double> const& values, int ulps = 0) {
+  int size = values.size();
+  int step = std::trunc(std::sqrt(size)) - 1;
+  for (unsigned int k = 0; k < size * size; k += step) {
+    int i = k / size;
+    int j = k % size;
+    // convert the input data to the type to be tested
+    InputType input_y = static_cast<InputType>(values[i]);
+    InputType input_x = static_cast<InputType>(values[j]);
+    // execute the xtd function
+    ResultType result = XtdFunc(input_y, input_x);
+    // compare the result with the reference
+    ResultType reference;
+    RefFunc(static_cast<mpfr_single>(static_cast<float>(input_y)),
+            static_cast<mpfr_single>(static_cast<float>(input_x)))
+        .conv(reference);
+    INFO(std::fixed << "inputs (" << std::setprecision(std::numeric_limits<InputType>::max_digits10) << input_y << ", "
+                    << input_x << "), xtd result " << std::setprecision(std::numeric_limits<ResultType>::max_digits10)
+                    << result << " vs " << reference << '\n')
+    compare(result, reference, ulps);
+  }
+}
+
+template <std::integral Type, Type (*XtdFunc)(Type), Type (*RefFunc)(Type, Type)>
+inline void test_2i(std::vector<double> const& values) {
+  int size = values.size();
+  int step = std::trunc(std::sqrt(size)) - 1;
+  for (unsigned int k = 0; k < size * size; k += step) {
+    int i = k / size;
+    int j = k % size;
+    // convert the input data to the type to be tested
+    Type input_y = static_cast<Type>(values[i]);
+    Type input_x = static_cast<Type>(values[j]);
+    // execute the xtd function
+    Type result = XtdFunc(input_y, input_x);
+    // compare the xtd results with reference results
+    Type reference = RefFunc(input_y, input_x);
+    INFO("inputs (" << input_y << ", " << input_x << "), xtd result " << result << " vs " << reference << '\n')
+    compare(result, reference);
+  }
+}

@@ -65,11 +65,14 @@ inline void test(cudaStream_t queue, std::vector<double> const& values, int ulps
 
   // compare the xtd results with erence results
   for (int i = 0; i < size; ++i) {
-    double input = input_h[i];
-    INFO(input);
+    InputType input = input_h[i];
+    ResultType result = result_h[i];
     ResultType reference;
     RefFunc(static_cast<mpfr_double>(input)).conv(reference);
-    compare(result_h[i], reference, ulps);
+    INFO(std::fixed << "input " << std::setprecision(std::numeric_limits<InputType>::max_digits10) << input
+                    << ", xtd result " << std::setprecision(std::numeric_limits<ResultType>::max_digits10) << result
+                    << " vs " << reference << '\n')
+    compare(result, reference, ulps);
   }
 }
 
@@ -105,11 +108,14 @@ inline void test_f(cudaStream_t queue, std::vector<double> const& values, int ul
 
   // compare the xtd results with erence results
   for (int i = 0; i < size; ++i) {
-    float input = static_cast<float>(input_h[i]);
-    INFO(input);
+    InputType input = static_cast<InputType>(input_h[i]);
+    ResultType result = result_h[i];
     ResultType reference;
-    RefFunc(static_cast<mpfr_single>(input)).conv(reference);
-    compare(result_h[i], reference, ulps);
+    RefFunc(static_cast<mpfr_single>(static_cast<float>(input))).conv(reference);
+    INFO(std::fixed << "input " << std::setprecision(std::numeric_limits<InputType>::max_digits10) << input
+                    << ", xtd result " << std::setprecision(std::numeric_limits<ResultType>::max_digits10) << result
+                    << " vs " << reference << '\n')
+    compare(result, reference, ulps);
   }
 }
 
@@ -142,8 +148,116 @@ inline void test_i(cudaStream_t queue, std::vector<double> const& values) {
   // compare the xtd results with erence results
   for (int i = 0; i < size; ++i) {
     Type input = input_h[i];
-    INFO(input);
+    Type result = result_h[i];
     Type reference = RefFunc(input);
-    compare(result_h[i], reference);
+    INFO("input " << input << ", xtd result " << result << " vs " << reference << '\n')
+    compare(result, reference);
+  }
+}
+
+template <typename ResultType, typename InputType, ResultType (*XtdFunc)(InputType, InputType)>
+__global__ static void kernel(InputType const* input, ResultType* result, int size, int step) {
+  const int thread = blockDim.x * blockIdx.x + threadIdx.x;
+  const int stride = blockDim.x * gridDim.x;
+  for (int k = thread; k < size * size / step; k += stride) {
+    int i = k * step / size;
+    int j = k * step % size;
+    result[k] = static_cast<ResultType>(XtdFunc(input[i], input[j]));
+  }
+}
+
+template <typename ResultType,
+          typename InputType,
+          ResultType (*XtdFunc)(InputType, InputType),
+          mpfr_double (*RefFunc)(mpfr_double, mpfr_double)>
+inline void test_2(cudaStream_t queue, std::vector<double> const& values, int ulps = 0) {
+  int size = values.size();
+  int step = std::trunc(std::sqrt(size)) - 1;
+  int outs = size * size / step + 1;
+
+  // convert the input data to the type to be tested and copy them to the GPU
+  std::vector<InputType> input_h(values.begin(), values.end());
+  InputType* input_d;
+  CUDA_CHECK(cudaMallocAsync(&input_d, size * sizeof(InputType), queue));
+  CUDA_CHECK(cudaMemcpyAsync(input_d, input_h.data(), size * sizeof(InputType), cudaMemcpyHostToDevice, queue));
+
+  // allocate memory for the results and fill it with zeroes
+  std::vector<ResultType> result_h(outs, 0);
+  ResultType* result_d;
+  CUDA_CHECK(cudaMallocAsync(&result_d, outs * sizeof(ResultType), queue));
+  CUDA_CHECK(cudaMemsetAsync(result_d, 0x00, outs * sizeof(ResultType), queue));
+
+  // execute the xtd function on the GPU
+  kernel<ResultType, InputType, XtdFunc><<<8, 32, 0, queue>>>(input_d, result_d, size, step);
+  CUDA_CHECK(cudaGetLastError());
+
+  // copy the results back to the host and free the GPU memory
+  CUDA_CHECK(cudaMemcpyAsync(result_h.data(), result_d, outs * sizeof(ResultType), cudaMemcpyDeviceToHost, queue));
+  CUDA_CHECK(cudaFreeAsync(input_d, queue));
+  CUDA_CHECK(cudaFreeAsync(result_d, queue));
+  CUDA_CHECK(cudaStreamSynchronize(queue));
+
+  // compare the xtd results with erence results
+  for (int k = 0; k < size * size / step; ++k) {
+    int i = k * step / size;
+    int j = k * step % size;
+    InputType input_y = static_cast<InputType>(values[i]);
+    InputType input_x = static_cast<InputType>(values[j]);
+    ResultType result = result_h[k];
+    ResultType reference;
+    RefFunc(static_cast<mpfr_double>(input_y), static_cast<mpfr_double>(input_x)).conv(reference);
+    INFO(std::fixed << "inputs (" << std::setprecision(std::numeric_limits<InputType>::max_digits10) << input_y << ", "
+                    << input_x << "), xtd result " << std::setprecision(std::numeric_limits<ResultType>::max_digits10)
+                    << result << " vs " << reference << '\n')
+    compare(result, reference, ulps);
+  }
+}
+
+template <typename ResultType,
+          typename InputType,
+          ResultType (*XtdFunc)(InputType, InputType),
+          mpfr_single (*RefFunc)(mpfr_single, mpfr_single)>
+inline void test_2f(cudaStream_t queue, std::vector<double> const& values, int ulps = 0) {
+  int size = values.size();
+  int step = std::trunc(std::sqrt(size)) - 1;
+  int outs = size * size / step + 1;
+
+  // convert the input data to the type to be tested and copy them to the GPU
+  std::vector<InputType> input_h(values.begin(), values.end());
+  InputType* input_d;
+  CUDA_CHECK(cudaMallocAsync(&input_d, size * sizeof(InputType), queue));
+  CUDA_CHECK(cudaMemcpyAsync(input_d, input_h.data(), size * sizeof(InputType), cudaMemcpyHostToDevice, queue));
+
+  // allocate memory for the results and fill it with zeroes
+  std::vector<ResultType> result_h(outs, 0);
+  ResultType* result_d;
+  CUDA_CHECK(cudaMallocAsync(&result_d, outs * sizeof(ResultType), queue));
+  CUDA_CHECK(cudaMemsetAsync(result_d, 0x00, outs * sizeof(ResultType), queue));
+
+  // execute the xtd function on the GPU
+  kernel<ResultType, InputType, XtdFunc><<<8, 32, 0, queue>>>(input_d, result_d, size, step);
+  CUDA_CHECK(cudaGetLastError());
+
+  // copy the results back to the host and free the GPU memory
+  CUDA_CHECK(cudaMemcpyAsync(result_h.data(), result_d, outs * sizeof(ResultType), cudaMemcpyDeviceToHost, queue));
+  CUDA_CHECK(cudaFreeAsync(input_d, queue));
+  CUDA_CHECK(cudaFreeAsync(result_d, queue));
+  CUDA_CHECK(cudaStreamSynchronize(queue));
+
+  // compare the xtd results with the reference results
+  for (int k = 0; k < size * size / step; ++k) {
+    int i = k * step / size;
+    int j = k * step % size;
+    InputType input_y = static_cast<InputType>(values[i]);
+    InputType input_x = static_cast<InputType>(values[j]);
+    ResultType result = result_h[k];
+    ResultType reference;
+    RefFunc(static_cast<mpfr_single>(static_cast<float>(input_y)),
+            static_cast<mpfr_single>(static_cast<float>(input_x)))
+        .conv(reference);
+    INFO(std::fixed << "inputs (" << std::setprecision(std::numeric_limits<InputType>::max_digits10) << input_y << ", "
+                    << input_x << "), xtd result " << std::setprecision(std::numeric_limits<ResultType>::max_digits10)
+                    << result << " vs " << reference << '\n')
+    compare(result, reference, ulps);
   }
 }
