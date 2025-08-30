@@ -27,7 +27,7 @@ using namespace std::literals;
 
 // test headers
 #include "common/hip_check.h"
-#include "common/hip_test2.h"
+#include "common/hip_test.h"
 #include "common/math_inputs.h"
 
 constexpr int ulps_float = 3;

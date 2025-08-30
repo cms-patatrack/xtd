@@ -19,7 +19,7 @@
 #include "xtd/math/pow.h"
 
 // test headers
-#include "common/cpu_test2.h"
+#include "common/cpu_test.h"
 #include "common/math_inputs.h"
 
 constexpr int ulps_float = 1;

@@ -24,7 +24,7 @@
 #include "xtd/math/fmin.h"
 
 // test headers
-#include "common/sycl_test2.h"
+#include "common/sycl_test.h"
 #include "common/math_inputs.h"
 
 constexpr int ulps_float = 0;
