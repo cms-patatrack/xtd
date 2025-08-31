@@ -5,8 +5,6 @@
  */
 
 // C++ standard headers
-#include <cmath>
-#include <iostream>
 #include <string>
 #include <vector>
 using namespace std::literals;
@@ -39,12 +37,7 @@ TEST_CASE("xtd::hypot", "[hypot][cuda]") {
   std::vector<double> values = generate_input_values();
 
   int deviceCount;
-  cudaError_t cudaStatus = cudaGetDeviceCount(&deviceCount);
-
-  if (cudaStatus != cudaSuccess || deviceCount == 0) {
-    std::cout << "No NVIDIA GPUs found, the test will be skipped.\n\n";
-    exit(EXIT_SUCCESS);
-  }
+  CUDA_CHECK(cudaGetDeviceCount(&deviceCount));
 
   for (int device = 0; device < deviceCount; ++device) {
     cudaDeviceProp properties;

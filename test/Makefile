@@ -280,7 +280,7 @@ run: run_cuda
 
 CUDA_OBJ := $(foreach TARGET,$(TARGETS),tmp/$(TARGET)_t.cu.o)
 
-tmp/main.cu.o: common/main.cc | prereq
+tmp/main.cu.o: common/main.cu | prereq
 	$(CUDA_CXX) $(CUDA_CXXFLAGS) $(LIB_CFLAGS) -c $< -o $@
 
 bin/test_cuda: tmp/main.cu.o $(CUDA_OBJ) | prereq
@@ -309,7 +309,7 @@ run: run_hip
 
 ROCM_OBJ := $(foreach TARGET,$(TARGETS),tmp/$(TARGET)_t.hip.cc.o)
 
-tmp/main.hip.cc.o: common/main.cc | prereq
+tmp/main.hip.cc.o: common/main.hip.cc | prereq
 	$(ROCM_CXX) $(ROCM_CXXFLAGS) $(LIB_CFLAGS) -c $< -o $@
 
 bin/test_hip: tmp/main.hip.cc.o $(ROCM_OBJ) | prereq
@@ -338,7 +338,7 @@ run: run_sycl
 
 SYCL_OBJ := $(foreach TARGET,$(TARGETS),tmp/$(TARGET)_t.sycl.cc.o)
 
-tmp/main.sycl.cc.o: common/main.cc | prereq
+tmp/main.sycl.cc.o: common/main.sycl.cc | prereq
 	$(SYCL_CXX) $(SYCL_CXXFLAGS) $(LIB_CFLAGS) -c $< -o $@
 
 # SYCL programs must be linked with the Intel® oneAPI DPC++/C++ Compiler
