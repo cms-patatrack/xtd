@@ -15,10 +15,11 @@ run: build
 
 .PHONY: clean
 clean:
+	rm -rf tmp/ bin/
 
 .PHONY: distclean
 distclean: clean
-	rm -rf external
+	rm -rf external/
 
 # makefile tricks
 define newline
@@ -30,11 +31,11 @@ space := $() $()
 comma := $(),$()
 
 # compilation flags used by all compilers and backends
-COMMON_CXXFLAGS := -std=c++20 -O2 -g
+COMMON_FLAGS := -std=c++20 -O2 -g
 
 # Catch2 needs -Wno-unused-variable
 # mpfr::real needs -Wno-unused-parameter -Wno-self-assign-overloaded
-HOST_CXXFLAGS := -march=native -Wall -Wextra -Werror -Wfatal-errors -Wno-unused-variable -Wno-unused-parameter -Wno-self-assign-overloaded
+HOST_CXXFLAGS := -march=native -Wall -Wextra -Werror -Wfatal-errors -Wno-unused-variable -Wno-unused-parameter -Wno-self-assign-overloaded -fPIC
 
 # Compiler flags supported by GCC but not by the LLVM-based compilers (clang, hipcc, icpx, etc.)
 LLVM_UNSUPPORTED_CXXFLAGS := --param vect-max-version-for-alias-checks=50 -Werror=format-contains-nul -Wno-non-template-friend -Werror=return-local-addr -Werror=unused-but-set-variable
@@ -43,8 +44,8 @@ LLVM_UNSUPPORTED_CXXFLAGS := --param vect-max-version-for-alias-checks=50 -Werro
 CXX           := g++
 GCC_TOOLCHAIN := $(abspath $(dir $(shell which $(CXX)))/..)
 GCC_TARGET    := $(shell $(CXX) -dumpmachine)
-CXXFLAGS      := $(COMMON_CXXFLAGS) $(HOST_CXXFLAGS)
-LDFLAGS       :=
+CXXFLAGS      := $(COMMON_FLAGS) $(HOST_CXXFLAGS)
+LDFLAGS       := $(COMMON_FLAGS)
 $(info Using $(CXX) host compiler installation at $(GCC_TOOLCHAIN) for target $(GCC_TARGET))
 
 # CUDA
@@ -58,15 +59,15 @@ ifeq ($(wildcard $(CUDA_BASE)/bin/nvcc),)
 else
   # CUDA platform at $(CUDA_BASE)
   $(info Using NVIDIA CUDA installation at $(CUDA_BASE), $(strip $(shell $(CUDA_BASE)/bin/nvcc --version | grep release | cut -d, -f2-)))
-  CUDA_NVCC     := $(CUDA_BASE)/bin/nvcc
+  CUDA_CXX     := $(CUDA_BASE)/bin/nvcc
   CUDA_LIBDIR   := $(CUDA_BASE)/lib64
   # detect the architecture of the NVIDIA GPUs in the system
   CUDA_DETECTED_ARCH := $(shell $(CUDA_BASE)/bin/__nvcc_device_query 2> /dev/null)
   ifneq ($(CUDA_DETECTED_ARCH),)
     CUDA_ARCH := $(CUDA_DETECTED_ARCH)
   endif
-  CUDA_CXXFLAGS := $(COMMON_CXXFLAGS) $(foreach ARCH,$(CUDA_ARCH),-gencode arch=compute_$(ARCH),code=[sm_$(ARCH),compute_$(ARCH)]) -Wno-deprecated-gpu-targets -Xcudafe --diag_suppress=esa_on_defaulted_function_ignored --prec-div true --prec-sqrt true --fmad true --expt-relaxed-constexpr --extended-lambda --generate-line-info --source-in-ptx --display-error-number --threads $(words $(CUDA_ARCH)) -ccbin $(CXX) --compiler-options '$(HOST_CXXFLAGS)' -I$(CUDA_BASE)/include
-  CUDA_LDFLAGS  := -L$(CUDA_LIBDIR) -lcudart -lcudadevrt --cudart=shared $(LDFLAGS)
+  CUDA_CXXFLAGS := $(COMMON_FLAGS) $(foreach ARCH,$(CUDA_ARCH),-gencode arch=compute_$(ARCH),code=[sm_$(ARCH),compute_$(ARCH)]) -Wno-deprecated-gpu-targets -Xcudafe --diag_suppress=esa_on_defaulted_function_ignored --prec-div true --prec-sqrt true --fmad true --expt-relaxed-constexpr --extended-lambda --generate-line-info --source-in-ptx --display-error-number --threads $(words $(CUDA_ARCH)) -ccbin $(CXX) --compiler-options '$(HOST_CXXFLAGS)' -I$(CUDA_BASE)/include
+  CUDA_LDFLAGS  := -L$(CUDA_LIBDIR) -lcudart -lcudadevrt $(LDFLAGS)
 
   # Make sure the tests can find the CUDA libraries
   export LD_LIBRARY_PATH := $(CUDA_LIBDIR):$(LD_LIBRARY_PATH)
@@ -89,9 +90,9 @@ else
   ifneq ($(ROCM_DETECTED_ARCH),)
     ROCM_ARCH := $(ROCM_DETECTED_ARCH)
   endif
-  ROCM_HIPCC     := $(ROCM_BASE)/bin/hipcc
+  ROCM_CXX     := $(ROCM_BASE)/bin/hipcc
   ROCM_CXXFLAGS := $(filter-out $(LLVM_UNSUPPORTED_CXXFLAGS),$(CXXFLAGS)) $(foreach ARCH,$(ROCM_ARCH),--offload-arch=$(ARCH)) -fhip-fp32-correctly-rounded-divide-sqrt --target=$(GCC_TARGET) --gcc-toolchain=$(GCC_TOOLCHAIN) -I$(ROCM_BASE)/include/hip
-  ROCM_LDFLAGS  := $(LDFLAGS)
+  ROCM_LDFLAGS  := -L$(ROCM_LIBDIR) -lamdhip64 $(LDFLAGS)
 
   # Make sure the tests can find the ROCm libraries
   export LD_LIBRARY_PATH := $(ROCM_LIBDIR):$(LD_LIBRARY_PATH)
@@ -229,8 +230,11 @@ $(MPFR_REAL_INCLUDE):
 bin:
 	mkdir -p bin
 
+tmp:
+	mkdir -p tmp
+
 .PHONY: prereq
-prereq: external_catch2 external_mpfr_real bin
+prereq: external_catch2 external_mpfr_real bin tmp
 
 $(info -------------------------------------------------------------------------------)
 
@@ -238,130 +242,147 @@ $(info -------------------------------------------------------------------------
 SUBDIRS := $(wildcard $(XTD_BASE)/test/src/*/)
 TARGETS := $(notdir $(patsubst %/,%,$(SUBDIRS)))
 
-.PHONY: cpu build_cpu run_cpu
+# CPU tests
+.PHONY: cpu
 cpu: build_cpu run_cpu
+
 build: build_cpu
+
 run: run_cpu
+
+CPU_OBJ := $(foreach TARGET,$(TARGETS),tmp/$(TARGET)_t.cc.o)
+
+tmp/main.cc.o: common/main.cc | prereq
+	$(CXX) $(CXXFLAGS) $(LIB_CFLAGS) -c $< -o $@
+
+bin/test_cpu: tmp/main.cc.o $(CPU_OBJ) | prereq
+	$(CXX) $^ $(CPU_LDFLAGS) $(LIB_LDFLAGS) -o $@
+
+.PHONY: build_cpu
+build_cpu: bin/test_cpu
+
+.PHONY: run_cpu
+run_cpu: bin/test_cpu
+	$<
+
+.PHONY: clean_cpu
+clean_cpu:
+	rm -f tmp/*.cc.o bin/test_cpu
 
 # CUDA tests
 ifdef CUDA_BASE
-.PHONY: cuda build_cuda run_cuda
+.PHONY: cuda
 cuda: build_cuda run_cuda
+
 build: build_cuda
+
 run: run_cuda
+
+CUDA_OBJ := $(foreach TARGET,$(TARGETS),tmp/$(TARGET)_t.cu.o)
+
+tmp/main.cu.o: common/main.cc | prereq
+	$(CUDA_CXX) $(CUDA_CXXFLAGS) $(LIB_CFLAGS) -c $< -o $@
+
+bin/test_cuda: tmp/main.cu.o $(CUDA_OBJ) | prereq
+	$(CXX) $^ $(CUDA_LDFLAGS) $(LIB_LDFLAGS) -o $@
+
+.PHONY: build_cuda
+build_cuda: bin/test_cuda
+
+.PHONY: run_cuda
+run_cuda: bin/test_cuda
+	$<
+
+.PHONY: clean_cuda
+clean_cuda:
+	rm -f tmp/*.cu.o bin/test_cuda
 endif
 
 # HIP/ROCm tests
 ifdef ROCM_BASE
-.PHONY: hip build_hip run_hip
+.PHONY: hip
 hip: build_hip run_hip
+
 build: build_hip
+
 run: run_hip
+
+ROCM_OBJ := $(foreach TARGET,$(TARGETS),tmp/$(TARGET)_t.hip.cc.o)
+
+tmp/main.hip.cc.o: common/main.cc | prereq
+	$(ROCM_CXX) $(ROCM_CXXFLAGS) $(LIB_CFLAGS) -c $< -o $@
+
+bin/test_hip: tmp/main.hip.cc.o $(ROCM_OBJ) | prereq
+	$(CXX) $^ $(ROCM_LDFLAGS) $(LIB_LDFLAGS) -o $@
+
+.PHONY: build_hip
+build_hip: bin/test_hip
+
+.PHONY: run_hip
+run_hip: bin/test_hip
+	$<
+
+.PHONY: clean_hip
+clean_hip:
+	rm -f tmp/*.hip.cc.o bin/test_hip
 endif
 
 # oneAPI tests
 ifdef ONEAPI_BASE
-.PHONY: sycl build_sycl run_sycl
+.PHONY: sycl
 sycl: build_sycl run_sycl
+
 build: build_sycl
+
 run: run_sycl
+
+SYCL_OBJ := $(foreach TARGET,$(TARGETS),tmp/$(TARGET)_t.sycl.cc.o)
+
+tmp/main.sycl.cc.o: common/main.cc | prereq
+	$(SYCL_CXX) $(SYCL_CXXFLAGS) $(LIB_CFLAGS) -c $< -o $@
+
+# SYCL programs must be linked with the Intel® oneAPI DPC++/C++ Compiler
+bin/test_sycl: tmp/main.sycl.cc.o $(SYCL_OBJ) | prereq
+	$(SYCL_CXX) $(SYCL_CXXFLAGS) $^ $(SYCL_LDFLAGS) $(LIB_LDFLAGS) -o $@
+
+.PHONY: build_sycl
+build_sycl: bin/test_sycl
+
+.PHONY: run_sycl
+run_sycl: bin/test_sycl
+	$<
+
+.PHONY: clean_sycl
+clean_sycl:
+	rm -f tmp/*.sycl.cc.o bin/test_sycl
 endif
 
 
 define TEST_template
-.PHONY: $(1)
-$(1): build_$(1) run_$(1)
-
-build: build_$(1)
-
-.PHONY: build_$(1)
-build_$(1): prereq
-
-run: run_$(1)
-
-.PHONY: run_$(1)
-run_$(1):
-
-clean: clean_$(1)
-
-.PHONY: clean_$(1)
-clean_$(1):
-	rm -f bin/$(1)_t_*
-
 # CPU tests
-build_$(1): build_$(1)_cpu
-build_cpu: build_$(1)_cpu
+tmp/$(1)_t.cc.o: src/$(1)/$(1)_t.cc | prereq
+	$(CXX) $(CXXFLAGS) $(LIB_CFLAGS) -c $$< -o $$@
 
-.PHONY: build_$(1)_cpu
-build_$(1)_cpu: bin/$(1)_t_cc
-
-bin/$(1)_t_cc: src/$(1)/$(1)_t.cc | prereq
-	$(CXX) $(CXXFLAGS) $(LIB_CFLAGS) $$< $(LDFLAGS) $(LIB_LDFLAGS) -o $$@
-
-run_$(1): run_$(1)_cpu
-run_cpu: run_$(1)_cpu
-
-.PHONY: run_$(1)_cpu
-run_$(1)_cpu: bin/$(1)_t_cc
-	$$<
+bin/$(1)_t_cc: tmp/$(1)_t.cc.o | prereq
+	$(CXX) $$< $(LDFLAGS) $(LIB_LDFLAGS) -o $$@
 
 # CUDA tests
 ifdef CUDA_BASE
-build_$(1): build_$(1)_cuda
-build_cuda: build_$(1)_cuda
-
-.PHONY: build_$(1)_cuda
-build_$(1)_cuda: bin/$(1)_t_cuda
-
-bin/$(1)_t_cuda: src/$(1)/$(1)_t.cu | prereq
-	$(CUDA_NVCC) $(CUDA_CXXFLAGS) $(LIB_CFLAGS) $$< $(CUDA_LDFLAGS) $(LIB_LDFLAGS) -o $$@
-
-run_$(1): run_$(1)_cuda
-run_cuda: run_$(1)_cuda
-
-.PHONY: run_$(1)_cuda
-run_$(1)_cuda: bin/$(1)_t_cuda
-	$$<
+tmp/$(1)_t.cu.o: src/$(1)/$(1)_t.cu | prereq
+	$(CUDA_CXX) $(CUDA_CXXFLAGS) $(LIB_CFLAGS) -c $$< -o $$@
 endif
 
 # HIP/ROCm tests
 ifdef ROCM_BASE
-build_$(1): build_$(1)_hip
-build_hip: build_$(1)_hip
-
-.PHONY: build_$(1)_hip
-build_$(1)_hip: bin/$(1)_t_hip
-
-bin/$(1)_t_hip: src/$(1)/$(1)_t.hip.cc | prereq
-	$(ROCM_HIPCC) $(ROCM_CXXFLAGS) $(LIB_CFLAGS) $$< $(ROCM_LDFLAGS) $(LIB_LDFLAGS) -o $$@
-
-run_$(1): run_$(1)_hip
-run_hip: run_$(1)_hip
-
-.PHONY: run_$(1)_hip
-run_$(1)_hip: bin/$(1)_t_hip
-	$$<
+tmp/$(1)_t.hip.cc.o: src/$(1)/$(1)_t.hip.cc | prereq
+	$(ROCM_CXX) $(ROCM_CXXFLAGS) $(LIB_CFLAGS) -c $$< -o $$@
 endif
 
 # oneAPI tests
 ifdef ONEAPI_BASE
-build_$(1): build_$(1)_sycl
-build_sycl: build_$(1)_sycl
-
-.PHONY: build_$(1)_sycl
-build_$(1)_sycl: bin/$(1)_t_sycl
-
-bin/$(1)_t_sycl: src/$(1)/$(1)_t.sycl.cc | prereq
-	$(SYCL_CXX) $(SYCL_CXXFLAGS) $(LIB_CFLAGS) $$< $(SYCL_LDFLAGS) $(LIB_LDFLAGS) -o $$@
-
-run_$(1): run_$(1)_sycl
-run_sycl: run_$(1)_sycl
-
-.PHONY: run_$(1)_sycl
-run_$(1)_sycl: bin/$(1)_t_sycl
-	$$<
+tmp/$(1)_t.sycl.cc.o: src/$(1)/$(1)_t.sycl.cc | prereq
+	$(SYCL_CXX) $(SYCL_CXXFLAGS) $(LIB_CFLAGS) -c $$< -o $$@
 endif
-
 endef
 
 $(foreach target,$(TARGETS),$(eval $(call TEST_template,$(target))))
