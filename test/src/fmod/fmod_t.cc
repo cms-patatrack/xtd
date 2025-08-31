@@ -9,7 +9,6 @@
 #include <vector>
 
 // Catch2 headers
-#define CATCH_CONFIG_MAIN
 #include <catch.hpp>
 
 // mpfr::real headers

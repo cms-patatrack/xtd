@@ -34,3 +34,4 @@
 # Tests
 /test/bin/
 /test/external/
+/test/tmp/
