@@ -11,7 +11,6 @@
 #include <cmath>
 #include <numbers>
 #include <limits>
-#include <iostream>
 
 // std::nextafter is constexpr only in C++23 and newer
 #if __cplusplus >= 202302L

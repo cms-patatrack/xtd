@@ -5,8 +5,6 @@
  */
 
 // C++ standard headers
-#include <cmath>
-#include <iostream>
 #include <string>
 #include <vector>
 using namespace std::literals;
@@ -36,12 +34,7 @@ TEST_CASE("xtd::cosh", "[cosh][hip]") {
   std::vector<double> values = generate_input_values();
 
   int deviceCount;
-  hipError_t hipStatus = hipGetDeviceCount(&deviceCount);
-
-  if (hipStatus != hipSuccess || deviceCount == 0) {
-    std::cout << "No AMD GPUs found, the test will be skipped.\n\n";
-    exit(EXIT_SUCCESS);
-  }
+  HIP_CHECK(hipGetDeviceCount(&deviceCount));
 
   for (int device = 0; device < deviceCount; ++device) {
     hipDeviceProp_t properties;

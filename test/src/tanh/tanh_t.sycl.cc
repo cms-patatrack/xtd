@@ -36,10 +36,6 @@ TEST_CASE("xtd::tanh", "[tanh][sycl]") {
     SECTION(platform.get_info<sycl::info::platform::name>()) {
       for (const auto &device : platform.get_devices()) {
         SECTION(device.get_info<sycl::info::device::name>()) {
-          if (not device.has(sycl::aspect::fp64)) {
-            std::cout << "The device " << device.get_info<sycl::info::device::name>()
-                      << " does not support double precision floating point operations, some tests will be skipped.\n";
-          }
           sycl::queue queue{device, sycl::property::queue::in_order()};
 
           SECTION("float xtd::tanh(float)") {
