@@ -7,6 +7,8 @@
 #pragma once
 
 // C++ standard headers
+#include <iomanip>
+#include <iostream>
 #include <vector>
 
 // mpfr::real headers
