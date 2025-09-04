@@ -39,8 +39,7 @@ TEST_CASE("xtd::sin", "[sin][cuda]") {
   for (int device = 0; device < deviceCount; ++device) {
     cudaDeviceProp properties;
     CUDA_CHECK(cudaGetDeviceProperties(&properties, device));
-    std::string section = "CUDA GPU "s + std::to_string(device) + ": "s + properties.name;
-    SECTION(section) {
+    DYNAMIC_SECTION("CUDA device " << device << ": " << properties.name) {
       // set the current GPU
       CUDA_CHECK(cudaSetDevice(device));
 

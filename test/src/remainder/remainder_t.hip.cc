@@ -42,8 +42,7 @@ TEST_CASE("xtd::remainder", "[remainder][hip]") {
   for (int device = 0; device < deviceCount; ++device) {
     hipDeviceProp_t properties;
     HIP_CHECK(hipGetDeviceProperties(&properties, device));
-    std::string section = "HIP GPU "s + std::to_string(device) + ": "s + properties.name;
-    SECTION(section) {
+    DYNAMIC_SECTION("HIP device " << device << ": " << properties.name) {
       // set the current GPU
       HIP_CHECK(hipSetDevice(device));
 

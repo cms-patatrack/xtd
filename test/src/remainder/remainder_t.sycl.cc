@@ -35,10 +35,13 @@ constexpr auto ref_remainderf = [](mpfr_single y, mpfr_single x) { return mpfr::
 TEST_CASE("xtd::remainder", "[remainder][sycl]") {
   std::vector<double> values = generate_input_values();
 
+  int pid = 0;
   for (const auto &platform : sycl::platform::get_platforms()) {
-    SECTION(platform.get_info<sycl::info::platform::name>()) {
+    DYNAMIC_SECTION("SYCL platform " << ++pid << ": " << platform.get_info<sycl::info::platform::name>()) {
+      int id = 0;
       for (const auto &device : platform.get_devices()) {
-        SECTION(device.get_info<sycl::info::device::name>()) {
+        DYNAMIC_SECTION("SYCL device " << pid << '.' << ++id << ": " << device.get_info<sycl::info::device::name>()) {
+          std::string id;
           sycl::queue queue{device, sycl::property::queue::in_order()};
 
           SECTION("float xtd::remainder(float, float)") {
