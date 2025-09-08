@@ -25,6 +25,7 @@ using namespace std::literals;
 // test headers
 #include "common/hip_check.h"
 #include "common/hip_test.h"
+#include "common/hip_version.h"
 #include "common/math_inputs.h"
 
 constexpr int ulps_float = 0;
@@ -36,46 +37,47 @@ constexpr auto ref_remainderf = [](mpfr_single y, mpfr_single x) { return mpfr::
 TEST_CASE("xtd::remainder", "[remainder][hip]") {
   std::vector<double> values = generate_input_values();
 
-  int deviceCount;
-  HIP_CHECK(hipGetDeviceCount(&deviceCount));
+  DYNAMIC_SECTION("HIP platform: " << hip_version()) {
+    int deviceCount;
+    HIP_CHECK(hipGetDeviceCount(&deviceCount));
 
-  for (int device = 0; device < deviceCount; ++device) {
-    hipDeviceProp_t properties;
-    HIP_CHECK(hipGetDeviceProperties(&properties, device));
-    std::string section = "HIP GPU "s + std::to_string(device) + ": "s + properties.name;
-    SECTION(section) {
-      // set the current GPU
-      HIP_CHECK(hipSetDevice(device));
+    for (int device = 0; device < deviceCount; ++device) {
+      hipDeviceProp_t properties;
+      HIP_CHECK(hipGetDeviceProperties(&properties, device));
+      DYNAMIC_SECTION("HIP device " << device << ": " << properties.name) {
+        // set the current GPU
+        HIP_CHECK(hipSetDevice(device));
 
-      // create a HIP stream for all the asynchronous operations on this GPU
-      hipStream_t queue;
-      HIP_CHECK(hipStreamCreate(&queue));
+        // create a HIP stream for all the asynchronous operations on this GPU
+        hipStream_t queue;
+        HIP_CHECK(hipStreamCreate(&queue));
 
-      SECTION("float xtd::remainder(float, float)") {
-        test_2<float, float, xtd::remainder, ref_remainder>(queue, values, ulps_float);
+        SECTION("float xtd::remainder(float, float)") {
+          test_2<float, float, xtd::remainder, ref_remainder>(queue, values, ulps_float);
+        }
+
+        SECTION("double xtd::remainder(double, double)") {
+          test_2<double, double, xtd::remainder, ref_remainder>(queue, values, ulps_double);
+        }
+
+        SECTION("double xtd::remainder(int, int)") {
+          test_2<double, int, xtd::remainder, ref_remainder>(queue, values, ulps_double);
+        }
+
+        SECTION("float xtd::remainderf(float, float)") {
+          test_2f<float, float, xtd::remainderf, ref_remainderf>(queue, values, ulps_float);
+        }
+
+        SECTION("float xtd::remainderf(double, double)") {
+          test_2f<float, double, xtd::remainderf, ref_remainderf>(queue, values, ulps_float);
+        }
+
+        SECTION("float xtd::remainderf(int, int)") {
+          test_2f<float, int, xtd::remainderf, ref_remainderf>(queue, values, ulps_float);
+        }
+
+        HIP_CHECK(hipStreamDestroy(queue));
       }
-
-      SECTION("double xtd::remainder(double, double)") {
-        test_2<double, double, xtd::remainder, ref_remainder>(queue, values, ulps_double);
-      }
-
-      SECTION("double xtd::remainder(int, int)") {
-        test_2<double, int, xtd::remainder, ref_remainder>(queue, values, ulps_double);
-      }
-
-      SECTION("float xtd::remainderf(float, float)") {
-        test_2f<float, float, xtd::remainderf, ref_remainderf>(queue, values, ulps_float);
-      }
-
-      SECTION("float xtd::remainderf(double, double)") {
-        test_2f<float, double, xtd::remainderf, ref_remainderf>(queue, values, ulps_float);
-      }
-
-      SECTION("float xtd::remainderf(int, int)") {
-        test_2f<float, int, xtd::remainderf, ref_remainderf>(queue, values, ulps_float);
-      }
-
-      HIP_CHECK(hipStreamDestroy(queue));
     }
   }
 }

@@ -25,6 +25,7 @@ using namespace std::literals;
 // test headers
 #include "common/hip_check.h"
 #include "common/hip_test.h"
+#include "common/hip_version.h"
 #include "common/math_inputs.h"
 
 constexpr int ulps_float = 2;   // 1 ULP for x ∈ [-1.47 π, +1.47 π] according to the documentation
@@ -33,46 +34,47 @@ constexpr int ulps_double = 2;  // 1 ULP for x ∈ [-1.47 π, +1.47 π] accordin
 TEST_CASE("xtd::tan", "[tan][hip]") {
   std::vector<double> values = generate_input_values();
 
-  int deviceCount;
-  HIP_CHECK(hipGetDeviceCount(&deviceCount));
+  DYNAMIC_SECTION("HIP platform: " << hip_version()) {
+    int deviceCount;
+    HIP_CHECK(hipGetDeviceCount(&deviceCount));
 
-  for (int device = 0; device < deviceCount; ++device) {
-    hipDeviceProp_t properties;
-    HIP_CHECK(hipGetDeviceProperties(&properties, device));
-    std::string section = "HIP GPU "s + std::to_string(device) + ": "s + properties.name;
-    SECTION(section) {
-      // set the current GPU
-      HIP_CHECK(hipSetDevice(device));
+    for (int device = 0; device < deviceCount; ++device) {
+      hipDeviceProp_t properties;
+      HIP_CHECK(hipGetDeviceProperties(&properties, device));
+      DYNAMIC_SECTION("HIP device " << device << ": " << properties.name) {
+        // set the current GPU
+        HIP_CHECK(hipSetDevice(device));
 
-      // create a HIP stream for all the asynchronous operations on this GPU
-      hipStream_t queue;
-      HIP_CHECK(hipStreamCreate(&queue));
+        // create a HIP stream for all the asynchronous operations on this GPU
+        hipStream_t queue;
+        HIP_CHECK(hipStreamCreate(&queue));
 
-      SECTION("float xtd::tan(float)") {
-        test<float, float, xtd::tan, mpfr::tan>(queue, values, ulps_float);
+        SECTION("float xtd::tan(float)") {
+          test<float, float, xtd::tan, mpfr::tan>(queue, values, ulps_float);
+        }
+
+        SECTION("double xtd::tan(double)") {
+          test<double, double, xtd::tan, mpfr::tan>(queue, values, ulps_double);
+        }
+
+        SECTION("double xtd::tan(int)") {
+          test<double, int, xtd::tan, mpfr::tan>(queue, values, ulps_double);
+        }
+
+        SECTION("float xtd::tanf(float)") {
+          test_f<float, float, xtd::tanf, mpfr::tan>(queue, values, ulps_float);
+        }
+
+        SECTION("float xtd::tanf(double)") {
+          test_f<float, double, xtd::tanf, mpfr::tan>(queue, values, ulps_float);
+        }
+
+        SECTION("float xtd::tanf(int)") {
+          test_f<float, int, xtd::tanf, mpfr::tan>(queue, values, ulps_float);
+        }
+
+        HIP_CHECK(hipStreamDestroy(queue));
       }
-
-      SECTION("double xtd::tan(double)") {
-        test<double, double, xtd::tan, mpfr::tan>(queue, values, ulps_double);
-      }
-
-      SECTION("double xtd::tan(int)") {
-        test<double, int, xtd::tan, mpfr::tan>(queue, values, ulps_double);
-      }
-
-      SECTION("float xtd::tanf(float)") {
-        test_f<float, float, xtd::tanf, mpfr::tan>(queue, values, ulps_float);
-      }
-
-      SECTION("float xtd::tanf(double)") {
-        test_f<float, double, xtd::tanf, mpfr::tan>(queue, values, ulps_float);
-      }
-
-      SECTION("float xtd::tanf(int)") {
-        test_f<float, int, xtd::tanf, mpfr::tan>(queue, values, ulps_float);
-      }
-
-      HIP_CHECK(hipStreamDestroy(queue));
     }
   }
 }

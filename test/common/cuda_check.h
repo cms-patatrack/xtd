@@ -17,12 +17,12 @@
 
 namespace internal {
 
-  [[noreturn]] inline void abortOnCudaError(const char* file,
-                                            int line,
-                                            const char* cmd,
-                                            const char* error,
-                                            const char* message,
-                                            const char* description = nullptr) {
+  [[noreturn]] inline void __abort_on_cuda_error(const char* file,
+                                                 int line,
+                                                 const char* cmd,
+                                                 const char* error,
+                                                 const char* message,
+                                                 const char* description = nullptr) {
     std::ostringstream out;
     out << "\n";
     out << file << ", line " << line << ":\n";
@@ -34,11 +34,8 @@ namespace internal {
     throw std::runtime_error(out.str());
   }
 
-  inline void cudaCheck(const char* file,
-                        int line,
-                        const char* cmd,
-                        CUresult result,
-                        const char* description = nullptr) {
+  inline void __cuda_check(
+      const char* file, int line, const char* cmd, CUresult result, const char* description = nullptr) {
     if (result == CUDA_SUCCESS)
       return;
 
@@ -46,22 +43,19 @@ namespace internal {
     const char* message;
     cuGetErrorName(result, &error);
     cuGetErrorString(result, &message);
-    abortOnCudaError(file, line, cmd, error, message, description);
+    __abort_on_cuda_error(file, line, cmd, error, message, description);
   }
 
-  inline void cudaCheck(const char* file,
-                        int line,
-                        const char* cmd,
-                        cudaError_t result,
-                        const char* description = nullptr) {
+  inline void __cuda_check(
+      const char* file, int line, const char* cmd, cudaError_t result, const char* description = nullptr) {
     if (result == cudaSuccess)
       return;
 
     const char* error = cudaGetErrorName(result);
     const char* message = cudaGetErrorString(result);
-    abortOnCudaError(file, line, cmd, error, message, description);
+    __abort_on_cuda_error(file, line, cmd, error, message, description);
   }
 
 }  // namespace internal
 
-#define CUDA_CHECK(ARG, ...) (internal::cudaCheck(__FILE__, __LINE__, #ARG, (ARG), ##__VA_ARGS__))
+#define CUDA_CHECK(ARG, ...) (internal::__cuda_check(__FILE__, __LINE__, #ARG, (ARG), ##__VA_ARGS__))

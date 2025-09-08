@@ -25,6 +25,7 @@ using namespace std::literals;
 // test headers
 #include "common/cuda_check.h"
 #include "common/cuda_test.h"
+#include "common/cuda_version.h"
 #include "common/math_inputs.h"
 
 constexpr int ulps_float = 2;
@@ -36,46 +37,47 @@ constexpr auto ref_fdimf = [](mpfr_single y, mpfr_single x) -> mpfr_single { ret
 TEST_CASE("xtd::fdim", "[fdim][cuda]") {
   std::vector<double> values = generate_input_values();
 
-  int deviceCount;
-  CUDA_CHECK(cudaGetDeviceCount(&deviceCount));
+  DYNAMIC_SECTION("CUDA platform: " << cuda_version()) {
+    int deviceCount;
+    CUDA_CHECK(cudaGetDeviceCount(&deviceCount));
 
-  for (int device = 0; device < deviceCount; ++device) {
-    cudaDeviceProp properties;
-    CUDA_CHECK(cudaGetDeviceProperties(&properties, device));
-    std::string section = "CUDA GPU "s + std::to_string(device) + ": "s + properties.name;
-    SECTION(section) {
-      // set the current GPU
-      CUDA_CHECK(cudaSetDevice(device));
+    for (int device = 0; device < deviceCount; ++device) {
+      cudaDeviceProp properties;
+      CUDA_CHECK(cudaGetDeviceProperties(&properties, device));
+      DYNAMIC_SECTION("CUDA device " << device << ": " << properties.name) {
+        // set the current GPU
+        CUDA_CHECK(cudaSetDevice(device));
 
-      // create a CUDA stream for all the asynchronous operations on this GPU
-      cudaStream_t queue;
-      CUDA_CHECK(cudaStreamCreate(&queue));
+        // create a CUDA stream for all the asynchronous operations on this GPU
+        cudaStream_t queue;
+        CUDA_CHECK(cudaStreamCreate(&queue));
 
-      SECTION("float xtd::fdim(float, float)") {
-        test_2<float, float, xtd::fdim, ref_fdim>(queue, values, ulps_float);
+        SECTION("float xtd::fdim(float, float)") {
+          test_2<float, float, xtd::fdim, ref_fdim>(queue, values, ulps_float);
+        }
+
+        SECTION("double xtd::fdim(double, double)") {
+          test_2<double, double, xtd::fdim, ref_fdim>(queue, values, ulps_double);
+        }
+
+        SECTION("double xtd::fdim(int, int)") {
+          test_2<double, int, xtd::fdim, ref_fdim>(queue, values, ulps_double);
+        }
+
+        SECTION("float xtd::fdimf(float, float)") {
+          test_2f<float, float, xtd::fdimf, ref_fdimf>(queue, values, ulps_float);
+        }
+
+        SECTION("float xtd::fdimf(double, double)") {
+          test_2f<float, double, xtd::fdimf, ref_fdimf>(queue, values, ulps_float);
+        }
+
+        SECTION("float xtd::fdimf(int, int)") {
+          test_2f<float, int, xtd::fdimf, ref_fdimf>(queue, values, ulps_float);
+        }
+
+        CUDA_CHECK(cudaStreamDestroy(queue));
       }
-
-      SECTION("double xtd::fdim(double, double)") {
-        test_2<double, double, xtd::fdim, ref_fdim>(queue, values, ulps_double);
-      }
-
-      SECTION("double xtd::fdim(int, int)") {
-        test_2<double, int, xtd::fdim, ref_fdim>(queue, values, ulps_double);
-      }
-
-      SECTION("float xtd::fdimf(float, float)") {
-        test_2f<float, float, xtd::fdimf, ref_fdimf>(queue, values, ulps_float);
-      }
-
-      SECTION("float xtd::fdimf(double, double)") {
-        test_2f<float, double, xtd::fdimf, ref_fdimf>(queue, values, ulps_float);
-      }
-
-      SECTION("float xtd::fdimf(int, int)") {
-        test_2f<float, int, xtd::fdimf, ref_fdimf>(queue, values, ulps_float);
-      }
-
-      CUDA_CHECK(cudaStreamDestroy(queue));
     }
   }
 }
