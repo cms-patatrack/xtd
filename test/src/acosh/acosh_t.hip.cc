@@ -25,6 +25,7 @@ using namespace std::literals;
 // test headers
 #include "common/hip_check.h"
 #include "common/hip_test.h"
+#include "common/hip_version.h"
 #include "common/math_inputs.h"
 
 constexpr int ulps_float = 1;
@@ -33,46 +34,47 @@ constexpr int ulps_double = 1;
 TEST_CASE("xtd::acosh", "[acosh][hip]") {
   std::vector<double> values = generate_input_values();
 
-  int deviceCount;
-  HIP_CHECK(hipGetDeviceCount(&deviceCount));
+  DYNAMIC_SECTION("HIP platform: " << hip_version()) {
+    int deviceCount;
+    HIP_CHECK(hipGetDeviceCount(&deviceCount));
 
-  for (int device = 0; device < deviceCount; ++device) {
-    hipDeviceProp_t properties;
-    HIP_CHECK(hipGetDeviceProperties(&properties, device));
-    std::string section = "HIP GPU "s + std::to_string(device) + ": "s + properties.name;
-    SECTION(section) {
-      // set the current GPU
-      HIP_CHECK(hipSetDevice(device));
+    for (int device = 0; device < deviceCount; ++device) {
+      hipDeviceProp_t properties;
+      HIP_CHECK(hipGetDeviceProperties(&properties, device));
+      DYNAMIC_SECTION("HIP device " << device << ": " << properties.name) {
+        // set the current GPU
+        HIP_CHECK(hipSetDevice(device));
 
-      // create a HIP stream for all the asynchronous operations on this GPU
-      hipStream_t queue;
-      HIP_CHECK(hipStreamCreate(&queue));
+        // create a HIP stream for all the asynchronous operations on this GPU
+        hipStream_t queue;
+        HIP_CHECK(hipStreamCreate(&queue));
 
-      SECTION("float xtd::acosh(float)") {
-        test<float, float, xtd::acosh, mpfr::acosh>(queue, values, ulps_float);
+        SECTION("float xtd::acosh(float)") {
+          test<float, float, xtd::acosh, mpfr::acosh>(queue, values, ulps_float);
+        }
+
+        SECTION("double xtd::acosh(double)") {
+          test<double, double, xtd::acosh, mpfr::acosh>(queue, values, ulps_double);
+        }
+
+        SECTION("double xtd::acosh(int)") {
+          test<double, int, xtd::acosh, mpfr::acosh>(queue, values, ulps_double);
+        }
+
+        SECTION("float xtd::acoshf(float)") {
+          test_f<float, float, xtd::acoshf, mpfr::acosh>(queue, values, ulps_float);
+        }
+
+        SECTION("float xtd::acoshf(double)") {
+          test_f<float, double, xtd::acoshf, mpfr::acosh>(queue, values, ulps_float);
+        }
+
+        SECTION("float xtd::acoshf(int)") {
+          test_f<float, int, xtd::acoshf, mpfr::acosh>(queue, values, ulps_float);
+        }
+
+        HIP_CHECK(hipStreamDestroy(queue));
       }
-
-      SECTION("double xtd::acosh(double)") {
-        test<double, double, xtd::acosh, mpfr::acosh>(queue, values, ulps_double);
-      }
-
-      SECTION("double xtd::acosh(int)") {
-        test<double, int, xtd::acosh, mpfr::acosh>(queue, values, ulps_double);
-      }
-
-      SECTION("float xtd::acoshf(float)") {
-        test_f<float, float, xtd::acoshf, mpfr::acosh>(queue, values, ulps_float);
-      }
-
-      SECTION("float xtd::acoshf(double)") {
-        test_f<float, double, xtd::acoshf, mpfr::acosh>(queue, values, ulps_float);
-      }
-
-      SECTION("float xtd::acoshf(int)") {
-        test_f<float, int, xtd::acoshf, mpfr::acosh>(queue, values, ulps_float);
-      }
-
-      HIP_CHECK(hipStreamDestroy(queue));
     }
   }
 }

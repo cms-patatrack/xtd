@@ -67,7 +67,7 @@ else
     CUDA_ARCH := $(CUDA_DETECTED_ARCH)
   endif
   CUDA_CXXFLAGS := $(COMMON_FLAGS) $(foreach ARCH,$(CUDA_ARCH),-gencode arch=compute_$(ARCH),code=[sm_$(ARCH),compute_$(ARCH)]) -Wno-deprecated-gpu-targets -Xcudafe --diag_suppress=esa_on_defaulted_function_ignored --prec-div true --prec-sqrt true --fmad true --expt-relaxed-constexpr --extended-lambda --generate-line-info --source-in-ptx --display-error-number --threads $(words $(CUDA_ARCH)) -ccbin $(CXX) --compiler-options '$(HOST_CXXFLAGS)' -I$(CUDA_BASE)/include
-  CUDA_LDFLAGS  := -L$(CUDA_LIBDIR) -lcudart -lcudadevrt $(LDFLAGS)
+  CUDA_LDFLAGS  := -L$(CUDA_LIBDIR) -L$(CUDA_LIBDIR)/stubs -lcudart -lcudadevrt -lnvidia-ml -Wl,-rpath,$(CUDA_LIBDIR) $(LDFLAGS)
 
   # Make sure the tests can find the CUDA libraries
   export LD_LIBRARY_PATH := $(CUDA_LIBDIR):$(LD_LIBRARY_PATH)
@@ -92,7 +92,7 @@ else
   endif
   ROCM_CXX     := $(ROCM_BASE)/bin/hipcc
   ROCM_CXXFLAGS := $(filter-out $(LLVM_UNSUPPORTED_CXXFLAGS),$(CXXFLAGS)) $(foreach ARCH,$(ROCM_ARCH),--offload-arch=$(ARCH)) -fhip-fp32-correctly-rounded-divide-sqrt --target=$(GCC_TARGET) --gcc-toolchain=$(GCC_TOOLCHAIN) -I$(ROCM_BASE)/include/hip
-  ROCM_LDFLAGS  := -L$(ROCM_LIBDIR) -lamdhip64 $(LDFLAGS)
+  ROCM_LDFLAGS  := -L$(ROCM_LIBDIR) -lamdhip64 -lrocm_smi64 -Wl,-rpath,$(ROCM_LIBDIR) $(LDFLAGS)
 
   # Make sure the tests can find the ROCm libraries
   export LD_LIBRARY_PATH := $(ROCM_LIBDIR):$(LD_LIBRARY_PATH)
