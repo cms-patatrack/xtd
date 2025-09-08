@@ -25,6 +25,7 @@
 
 // test headers
 #include "compare.h"
+#include "halton.h"
 
 static constexpr auto single_prec = 24;
 static constexpr auto double_prec = 53;
@@ -44,7 +45,7 @@ inline void test(sycl::queue queue, std::vector<double> const& values, int ulps 
     }
   }
 
-  int size = values.size();
+  unsigned int size = values.size();
 
   // convert the input data to the type to be tested and copy them to the GPU
   std::vector<InputType> input_h(values.begin(), values.end());
@@ -69,7 +70,7 @@ inline void test(sycl::queue queue, std::vector<double> const& values, int ulps 
   sycl::free(result_d, queue);
 
   // compare the xtd results with the erence results
-  for (int i = 0; i < size; ++i) {
+  for (unsigned int i = 0; i < size; ++i) {
     double input = input_h[i];
     ResultType result = result_h[i];
     ResultType reference;
@@ -100,7 +101,7 @@ inline void test_f(sycl::queue queue, std::vector<double> const& values, int ulp
     }
   }
 
-  int size = values.size();
+  unsigned int size = values.size();
 
   // convert the input data to the type to be tested and copy them to the GPU
   std::vector<InputType> input_h(values.begin(), values.end());
@@ -125,7 +126,7 @@ inline void test_f(sycl::queue queue, std::vector<double> const& values, int ulp
   sycl::free(result_d, queue);
 
   // compare the xtd results with the reference results
-  for (int i = 0; i < size; ++i) {
+  for (unsigned int i = 0; i < size; ++i) {
     float input = static_cast<float>(input_h[i]);
     ResultType result = result_h[i];
     ResultType reference;
@@ -145,7 +146,7 @@ inline void test_f(sycl::queue queue, std::vector<double> const& values, int ulp
 
 template <std::integral Type, Type (*XtdFunc)(Type), Type (*RefFunc)(Type)>
 inline void test_i(sycl::queue queue, std::vector<double> const& values) try {
-  int size = values.size();
+  unsigned int size = values.size();
 
   // convert the input data to the type to be tested and copy them to the GPU
   std::vector<Type> input_h(values.begin(), values.end());
@@ -170,7 +171,7 @@ inline void test_i(sycl::queue queue, std::vector<double> const& values) try {
   sycl::free(result_d, queue);
 
   // compare the xtd results with the reference results
-  for (int i = 0; i < size; ++i) {
+  for (unsigned int i = 0; i < size; ++i) {
     Type input = input_h[i];
     Type result = result_h[i];
     Type reference = RefFunc(input);
@@ -197,9 +198,7 @@ inline void test_2(sycl::queue queue, std::vector<double> const& values, int ulp
     }
   }
 
-  int size = values.size();
-  int step = std::trunc(std::sqrt(size)) - 1;
-  int outs = size * size / step + 1;
+  unsigned int size = values.size();
 
   // convert the input data to the type to be tested and copy them to the GPU
   std::vector<InputType> input_h(values.begin(), values.end());
@@ -207,32 +206,32 @@ inline void test_2(sycl::queue queue, std::vector<double> const& values, int ulp
   queue.copy(input_h.data(), input_d, size);
 
   // allocate memory for the results and fill it with zeroes
-  std::vector<ResultType> result_h(outs, 0);
-  ResultType* result_d = sycl::malloc_device<ResultType>(outs, queue);
-  queue.fill(result_d, ResultType{0}, outs);
+  std::vector<ResultType> result_h(size, 0);
+  ResultType* result_d = sycl::malloc_device<ResultType>(size, queue);
+  queue.fill(result_d, ResultType{0}, size);
 
   // execute the xtd function on the GPU
   queue.submit([&](sycl::handler& cgh) {
-    cgh.parallel_for(sycl::range<1>(size * size / step), [=](sycl::id<1> k) {
-      int i = k * step / size;
-      int j = k * step % size;
-      result_d[k] = static_cast<ResultType>(XtdFunc(input_d[i], input_d[j]));
+    cgh.parallel_for(sycl::range<1>(size), [=](sycl::id<1> t) {
+      // generate a low-discrepancy deterministic sequence over [0, size)×[0, size)
+      auto [i, j] = halton<2>(static_cast<size_t>(t), size);
+      result_d[t] = static_cast<ResultType>(XtdFunc(input_d[i], input_d[j]));
     });
   });
 
   // copy the results back to the host and free the GPU memory
-  queue.copy(result_d, result_h.data(), outs);
+  queue.copy(result_d, result_h.data(), size);
   queue.wait();
   sycl::free(input_d, queue);
   sycl::free(result_d, queue);
 
   // compare the xtd results with the reference results
-  for (int k = 0; k < size * size / step; ++k) {
-    int i = k * step / size;
-    int j = k * step % size;
+  for (unsigned int t = 0; t < size; ++t) {
+    // generate a low-discrepancy deterministic sequence over [0, size)×[0, size)
+    auto [i, j] = halton<2>(t, size);
     InputType input_y = input_h[i];
     InputType input_x = input_h[j];
-    ResultType result = result_h[k];
+    ResultType result = result_h[t];
     ResultType reference;
     RefFunc(static_cast<mpfr_double>(input_y), static_cast<mpfr_double>(input_x)).conv(reference);
     INFO(std::fixed << "inputs (" << std::setprecision(std::numeric_limits<InputType>::max_digits10) << input_y << ", "
@@ -260,9 +259,7 @@ inline void test_2f(sycl::queue queue, std::vector<double> const& values, int ul
     }
   }
 
-  int size = values.size();
-  int step = std::trunc(std::sqrt(size)) - 1;
-  int outs = size * size / step + 1;
+  unsigned int size = values.size();
 
   // convert the input data to the type to be tested and copy them to the GPU
   std::vector<InputType> input_h(values.begin(), values.end());
@@ -270,32 +267,32 @@ inline void test_2f(sycl::queue queue, std::vector<double> const& values, int ul
   queue.copy(input_h.data(), input_d, size);
 
   // allocate memory for the results and fill it with zeroes
-  std::vector<ResultType> result_h(outs, 0);
-  ResultType* result_d = sycl::malloc_device<ResultType>(outs, queue);
-  queue.fill(result_d, ResultType{0}, outs);
+  std::vector<ResultType> result_h(size, 0);
+  ResultType* result_d = sycl::malloc_device<ResultType>(size, queue);
+  queue.fill(result_d, ResultType{0}, size);
 
   // execute the xtd function on the GPU
   queue.submit([&](sycl::handler& cgh) {
-    cgh.parallel_for(sycl::range<1>(size * size / step), [=](sycl::id<1> k) {
-      int i = k * step / size;
-      int j = k * step % size;
-      result_d[k] = static_cast<ResultType>(XtdFunc(input_d[i], input_d[j]));
+    cgh.parallel_for(sycl::range<1>(size), [=](sycl::id<1> t) {
+      // generate a low-discrepancy deterministic sequence over [0, size)×[0, size)
+      auto [i, j] = halton<2>(static_cast<size_t>(t), size);
+      result_d[t] = static_cast<ResultType>(XtdFunc(input_d[i], input_d[j]));
     });
   });
 
   // copy the results back to the host and free the GPU memory
-  queue.copy(result_d, result_h.data(), outs);
+  queue.copy(result_d, result_h.data(), size);
   queue.wait();
   sycl::free(input_d, queue);
   sycl::free(result_d, queue);
 
   // compare the xtd results with the reference results
-  for (int k = 0; k < size * size / step; ++k) {
-    int i = k * step / size;
-    int j = k * step % size;
+  for (unsigned int t = 0; t < size; ++t) {
+    // generate a low-discrepancy deterministic sequence over [0, size)×[0, size)
+    auto [i, j] = halton<2>(t, size);
     InputType input_y = static_cast<InputType>(input_h[i]);
     InputType input_x = static_cast<InputType>(input_h[j]);
-    ResultType result = result_h[k];
+    ResultType result = result_h[t];
     ResultType reference;
     RefFunc(static_cast<mpfr_single>(static_cast<float>(input_y)),
             static_cast<mpfr_single>(static_cast<float>(input_x)))
