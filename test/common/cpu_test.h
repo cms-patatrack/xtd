@@ -16,6 +16,7 @@
 
 // test headers
 #include "compare.h"
+#include "halton.h"
 
 static constexpr auto single_prec = 24;
 static constexpr auto double_prec = 53;
@@ -79,11 +80,10 @@ template <typename ResultType,
           ResultType (*XtdFunc)(InputType, InputType),
           mpfr_double (*RefFunc)(mpfr_double, mpfr_double)>
 inline void test_2(std::vector<double> const& values, int ulps = 0) {
-  int size = values.size();
-  int step = std::trunc(std::sqrt(size)) - 1;
-  for (unsigned int k = 0; k < size * size; k += step) {
-    int i = k / size;
-    int j = k % size;
+  unsigned int size = values.size();
+  for (unsigned int t = 0; t < size; ++t) {
+    // generate a low-discrepancy deterministic sequence over [0, size)×[0, size)
+    auto [i, j] = halton<2>(t, size);
     // convert the input data to the type to be tested
     InputType input_y = static_cast<InputType>(values[i]);
     InputType input_x = static_cast<InputType>(values[j]);
@@ -104,11 +104,10 @@ template <typename ResultType,
           ResultType (*XtdFunc)(InputType, InputType),
           mpfr_single (*RefFunc)(mpfr_single, mpfr_single)>
 inline void test_2f(std::vector<double> const& values, int ulps = 0) {
-  int size = values.size();
-  int step = std::trunc(std::sqrt(size)) - 1;
-  for (unsigned int k = 0; k < size * size; k += step) {
-    int i = k / size;
-    int j = k % size;
+  unsigned int size = values.size();
+  for (unsigned int t = 0; t < size; ++t) {
+    // generate a low-discrepancy deterministic sequence over [0, size)×[0, size)
+    auto [i, j] = halton<2>(t, size);
     // convert the input data to the type to be tested
     InputType input_y = static_cast<InputType>(values[i]);
     InputType input_x = static_cast<InputType>(values[j]);
@@ -128,11 +127,10 @@ inline void test_2f(std::vector<double> const& values, int ulps = 0) {
 
 template <std::integral Type, Type (*XtdFunc)(Type), Type (*RefFunc)(Type, Type)>
 inline void test_2i(std::vector<double> const& values) {
-  int size = values.size();
-  int step = std::trunc(std::sqrt(size)) - 1;
-  for (unsigned int k = 0; k < size * size; k += step) {
-    int i = k / size;
-    int j = k % size;
+  unsigned int size = values.size();
+  for (unsigned int t = 0; t < size; ++t) {
+    // generate a low-discrepancy deterministic sequence over [0, size)×[0, size)
+    auto [i, j] = halton<2>(t, size);
     // convert the input data to the type to be tested
     Type input_y = static_cast<Type>(values[i]);
     Type input_x = static_cast<Type>(values[j]);
