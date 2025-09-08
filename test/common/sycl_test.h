@@ -198,7 +198,7 @@ inline void test_2(sycl::queue queue, std::vector<double> const& values, int ulp
   }
 
   int size = values.size();
-  int step = std::trunc(std::sqrt(size)) - 1;
+  int step = (size / 2) * 2 - 1;
   int outs = size * size / step + 1;
 
   // convert the input data to the type to be tested and copy them to the GPU
@@ -261,7 +261,7 @@ inline void test_2f(sycl::queue queue, std::vector<double> const& values, int ul
   }
 
   int size = values.size();
-  int step = std::trunc(std::sqrt(size)) - 1;
+  int step = (size / 2) * 2 - 1;
   int outs = size * size / step + 1;
 
   // convert the input data to the type to be tested and copy them to the GPU

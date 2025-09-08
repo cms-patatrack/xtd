@@ -80,7 +80,7 @@ template <typename ResultType,
           mpfr_double (*RefFunc)(mpfr_double, mpfr_double)>
 inline void test_2(std::vector<double> const& values, int ulps = 0) {
   int size = values.size();
-  int step = std::trunc(std::sqrt(size)) - 1;
+  int step = (size / 2) * 2 - 1;
   for (unsigned int k = 0; k < size * size; k += step) {
     int i = k / size;
     int j = k % size;
@@ -105,7 +105,7 @@ template <typename ResultType,
           mpfr_single (*RefFunc)(mpfr_single, mpfr_single)>
 inline void test_2f(std::vector<double> const& values, int ulps = 0) {
   int size = values.size();
-  int step = std::trunc(std::sqrt(size)) - 1;
+  int step = (size / 2) * 2 - 1;
   for (unsigned int k = 0; k < size * size; k += step) {
     int i = k / size;
     int j = k % size;
@@ -129,7 +129,7 @@ inline void test_2f(std::vector<double> const& values, int ulps = 0) {
 template <std::integral Type, Type (*XtdFunc)(Type), Type (*RefFunc)(Type, Type)>
 inline void test_2i(std::vector<double> const& values) {
   int size = values.size();
-  int step = std::trunc(std::sqrt(size)) - 1;
+  int step = (size / 2) * 2 - 1;
   for (unsigned int k = 0; k < size * size; k += step) {
     int i = k / size;
     int j = k % size;

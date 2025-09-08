@@ -174,7 +174,7 @@ template <typename ResultType,
           mpfr_double (*RefFunc)(mpfr_double, mpfr_double)>
 inline void test_2(cudaStream_t queue, std::vector<double> const& values, int ulps = 0) {
   int size = values.size();
-  int step = std::trunc(std::sqrt(size)) - 1;
+  int step = (size / 2) * 2 - 1;
   int outs = size * size / step + 1;
 
   // convert the input data to the type to be tested and copy them to the GPU
@@ -221,7 +221,7 @@ template <typename ResultType,
           mpfr_single (*RefFunc)(mpfr_single, mpfr_single)>
 inline void test_2f(cudaStream_t queue, std::vector<double> const& values, int ulps = 0) {
   int size = values.size();
-  int step = std::trunc(std::sqrt(size)) - 1;
+  int step = (size / 2) * 2 - 1;
   int outs = size * size / step + 1;
 
   // convert the input data to the type to be tested and copy them to the GPU
