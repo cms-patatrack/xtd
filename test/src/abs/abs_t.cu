@@ -20,7 +20,7 @@ using namespace std::literals;
 #include <real.hpp>
 
 // xtd headers
-#include "xtd/math/abs.h"
+#include "xtd/stdlib/abs.h"
 
 // test headers
 #include "common/cuda_check.h"

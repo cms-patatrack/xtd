@@ -1,10 +1,10 @@
 /*
  * Copyright 2025 European Organization for Nuclear Research (CERN)
- * Authors: Simone Balducci <simone.balducci@cern.ch>
+ * Authors: Andrea Bocci <andrea.bocci@cern.ch>
  * SPDX-License-Identifier: MPL-2.0
  */
 
 #pragma once
 
-#include "xtd/math.h"
-#include "xtd/stdlib.h"
+// Miscellaneous algorithms and math
+#include "stdlib/abs.h"
