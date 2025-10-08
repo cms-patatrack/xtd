@@ -12,6 +12,7 @@
 #include <stdexcept>
 
 // ROCm headers
+#include <hip/hip_version.h>
 #include <rocm_smi/rocm_smi.h>
 
 namespace internal {
@@ -90,21 +91,30 @@ namespace internal {
       case RSMI_STATUS_REFCOUNT_OVERFLOW:
         return "RSMI_STATUS_REFCOUNT_OVERFLOW";
         break;
+#if HIP_VERSION >= 50600000
+      // ROCm 5.6.0
       case RSMI_STATUS_SETTING_UNAVAILABLE:
         return "RSMI_STATUS_SETTING_UNAVAILABLE";
         break;
       case RSMI_STATUS_AMDGPU_RESTART_ERR:
         return "RSMI_STATUS_AMDGPU_RESTART_ERR";
         break;
+#endif
+#if HIP_VERSION >= 60400000
+      // ROCm 6.4.0
       case RSMI_STATUS_DRM_ERROR:
         return "RSMI_STATUS_DRM_ERROR";
         break;
+#endif
+#if HIP_VERSION >= 60443483
+      // ROCm 6.4.1
       case RSMI_STATUS_FAIL_LOAD_MODULE:
         return "RSMI_STATUS_FAIL_LOAD_MODULE";
         break;
       case RSMI_STATUS_FAIL_LOAD_SYMBOL:
         return "RSMI_STATUS_FAIL_LOAD_SYMBOL";
         break;
+#endif
       case RSMI_STATUS_UNKNOWN_ERROR:
         return "RSMI_STATUS_UNKNOWN_ERROR";
         break;
