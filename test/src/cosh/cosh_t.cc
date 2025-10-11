@@ -21,33 +21,36 @@
 #include "common/cpu_test.h"
 #include "common/math_inputs.h"
 
-constexpr int ulps_float = 2;
+constexpr int ulps_single = 2;
 constexpr int ulps_double = 2;
+
+constexpr auto ref_function = [](mpfr_double x) { return mpfr::cosh(x); };
+constexpr auto ref_functionf = [](mpfr_single x) { return mpfr::cosh(x); };
 
 TEST_CASE("xtd::cosh", "[cosh][cpu]") {
   std::vector<double> values = generate_input_values();
 
   SECTION("float xtd::cosh(float)") {
-    test<float, float, xtd::cosh, mpfr::cosh>(values, ulps_float);
+    test_a<float, float, xtd::cosh, ref_function>(values, ulps_single);
   }
 
   SECTION("double xtd::cosh(double)") {
-    test<double, double, xtd::cosh, mpfr::cosh>(values, ulps_double);
+    test_a<double, double, xtd::cosh, ref_function>(values, ulps_double);
   }
 
   SECTION("double xtd::cosh(int)") {
-    test<double, int, xtd::cosh, mpfr::cosh>(values, ulps_double);
+    test_a<double, int, xtd::cosh, ref_function>(values, ulps_double);
   }
 
   SECTION("float xtd::coshf(float)") {
-    test_f<float, float, xtd::coshf, mpfr::cosh>(values, ulps_float);
+    test_f<float, float, xtd::coshf, ref_functionf>(values, ulps_single);
   }
 
   SECTION("float xtd::coshf(double)") {
-    test_f<float, double, xtd::coshf, mpfr::cosh>(values, ulps_float);
+    test_f<float, double, xtd::coshf, ref_functionf>(values, ulps_single);
   }
 
   SECTION("float xtd::coshf(int)") {
-    test_f<float, int, xtd::coshf, mpfr::cosh>(values, ulps_float);
+    test_f<float, int, xtd::coshf, ref_functionf>(values, ulps_single);
   }
 }

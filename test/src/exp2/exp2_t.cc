@@ -21,33 +21,36 @@
 #include "common/cpu_test.h"
 #include "common/math_inputs.h"
 
-constexpr int ulps_float = 1;
+constexpr int ulps_single = 1;
 constexpr int ulps_double = 1;
+
+constexpr auto ref_function = [](mpfr_double x) { return mpfr::exp2(x); };
+constexpr auto ref_functionf = [](mpfr_single x) { return mpfr::exp2(x); };
 
 TEST_CASE("xtd::exp2", "[exp2][cpu]") {
   std::vector<double> values = generate_input_values();
 
   SECTION("float xtd::exp2(float)") {
-    test<float, float, xtd::exp2, mpfr::exp2>(values, ulps_float);
+    test_a<float, float, xtd::exp2, ref_function>(values, ulps_single);
   }
 
   SECTION("double xtd::exp2(double)") {
-    test<double, double, xtd::exp2, mpfr::exp2>(values, ulps_double);
+    test_a<double, double, xtd::exp2, ref_function>(values, ulps_double);
   }
 
   SECTION("double xtd::exp2(int)") {
-    test<double, int, xtd::exp2, mpfr::exp2>(values, ulps_double);
+    test_a<double, int, xtd::exp2, ref_function>(values, ulps_double);
   }
 
   SECTION("float xtd::exp2f(float)") {
-    test_f<float, float, xtd::exp2f, mpfr::exp2>(values, ulps_float);
+    test_f<float, float, xtd::exp2f, ref_functionf>(values, ulps_single);
   }
 
   SECTION("float xtd::exp2f(double)") {
-    test_f<float, double, xtd::exp2f, mpfr::exp2>(values, ulps_float);
+    test_f<float, double, xtd::exp2f, ref_functionf>(values, ulps_single);
   }
 
   SECTION("float xtd::exp2f(int)") {
-    test_f<float, int, xtd::exp2f, mpfr::exp2>(values, ulps_float);
+    test_f<float, int, xtd::exp2f, ref_functionf>(values, ulps_single);
   }
 }

@@ -21,33 +21,36 @@
 #include "common/cpu_test.h"
 #include "common/math_inputs.h"
 
-constexpr int ulps_float = 1;
+constexpr int ulps_single = 1;
 constexpr int ulps_double = 1;
+
+constexpr auto ref_function = [](mpfr_double x) { return mpfr::log(x); };
+constexpr auto ref_functionf = [](mpfr_single x) { return mpfr::log(x); };
 
 TEST_CASE("xtd::log", "[log][cpu]") {
   std::vector<double> values = generate_input_values();
 
   SECTION("float xtd::log(float)") {
-    test<float, float, xtd::log, mpfr::log>(values, ulps_float);
+    test_a<float, float, xtd::log, ref_function>(values, ulps_single);
   }
 
   SECTION("double xtd::log(double)") {
-    test<double, double, xtd::log, mpfr::log>(values, ulps_double);
+    test_a<double, double, xtd::log, ref_function>(values, ulps_double);
   }
 
   SECTION("double xtd::log(int)") {
-    test<double, int, xtd::log, mpfr::log>(values, ulps_double);
+    test_a<double, int, xtd::log, ref_function>(values, ulps_double);
   }
 
   SECTION("float xtd::logf(float)") {
-    test_f<float, float, xtd::logf, mpfr::log>(values, ulps_float);
+    test_f<float, float, xtd::logf, ref_functionf>(values, ulps_single);
   }
 
   SECTION("float xtd::logf(double)") {
-    test_f<float, double, xtd::logf, mpfr::log>(values, ulps_float);
+    test_f<float, double, xtd::logf, ref_functionf>(values, ulps_single);
   }
 
   SECTION("float xtd::logf(int)") {
-    test_f<float, int, xtd::logf, mpfr::log>(values, ulps_float);
+    test_f<float, int, xtd::logf, ref_functionf>(values, ulps_single);
   }
 }

@@ -26,8 +26,11 @@
 #include "common/sycl_test.h"
 #include "common/math_inputs.h"
 
-constexpr int ulps_float = 2;
+constexpr int ulps_single = 2;
 constexpr int ulps_double = 2;
+
+constexpr auto ref_function = [](mpfr_double x) { return mpfr::log1p(x); };
+constexpr auto ref_functionf = [](mpfr_single x) { return mpfr::log1p(x); };
 
 TEST_CASE("xtd::log1p", "[log1p][sycl]") {
   std::vector<double> values = generate_input_values();
@@ -42,27 +45,27 @@ TEST_CASE("xtd::log1p", "[log1p][sycl]") {
           sycl::queue queue{device, sycl::property::queue::in_order()};
 
           SECTION("float xtd::log1p(float)") {
-            test<float, float, xtd::log1p, mpfr::log1p>(queue, values, ulps_float);
+            test_a<float, float, xtd::log1p, ref_function>(queue, values, ulps_single);
           }
 
           SECTION("double xtd::log1p(double)") {
-            test<double, double, xtd::log1p, mpfr::log1p>(queue, values, ulps_double);
+            test_a<double, double, xtd::log1p, ref_function>(queue, values, ulps_double);
           }
 
           SECTION("double xtd::log1p(int)") {
-            test<double, int, xtd::log1p, mpfr::log1p>(queue, values, ulps_double);
+            test_a<double, int, xtd::log1p, ref_function>(queue, values, ulps_double);
           }
 
           SECTION("float xtd::log1pf(float)") {
-            test_f<float, float, xtd::log1pf, mpfr::log1p>(queue, values, ulps_float);
+            test_f<float, float, xtd::log1pf, ref_functionf>(queue, values, ulps_single);
           }
 
           SECTION("float xtd::log1pf(double)") {
-            test_f<float, double, xtd::log1pf, mpfr::log1p>(queue, values, ulps_float);
+            test_f<float, double, xtd::log1pf, ref_functionf>(queue, values, ulps_single);
           }
 
           SECTION("float xtd::log1pf(int)") {
-            test_f<float, int, xtd::log1pf, mpfr::log1p>(queue, values, ulps_float);
+            test_f<float, int, xtd::log1pf, ref_functionf>(queue, values, ulps_single);
           }
         }
       }

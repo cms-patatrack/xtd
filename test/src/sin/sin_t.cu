@@ -28,8 +28,11 @@ using namespace std::literals;
 #include "common/cuda_version.h"
 #include "common/math_inputs.h"
 
-constexpr int ulps_float = 1;
+constexpr int ulps_single = 1;
 constexpr int ulps_double = 1;
+
+constexpr auto ref_function = [](mpfr_double x) { return mpfr::sin(x); };
+constexpr auto ref_functionf = [](mpfr_single x) { return mpfr::sin(x); };
 
 TEST_CASE("xtd::sin", "[sin][cuda]") {
   std::vector<double> values = generate_input_values();
@@ -50,27 +53,27 @@ TEST_CASE("xtd::sin", "[sin][cuda]") {
         CUDA_CHECK(cudaStreamCreate(&queue));
 
         SECTION("float xtd::sin(float)") {
-          test<float, float, xtd::sin, mpfr::sin>(queue, values, ulps_float);
+          test_a<float, float, xtd::sin, ref_function>(queue, values, ulps_single);
         }
 
         SECTION("double xtd::sin(double)") {
-          test<double, double, xtd::sin, mpfr::sin>(queue, values, ulps_double);
+          test_a<double, double, xtd::sin, ref_function>(queue, values, ulps_double);
         }
 
         SECTION("double xtd::sin(int)") {
-          test<double, int, xtd::sin, mpfr::sin>(queue, values, ulps_double);
+          test_a<double, int, xtd::sin, ref_function>(queue, values, ulps_double);
         }
 
         SECTION("float xtd::sinf(float)") {
-          test_f<float, float, xtd::sinf, mpfr::sin>(queue, values, ulps_float);
+          test_f<float, float, xtd::sinf, ref_functionf>(queue, values, ulps_single);
         }
 
         SECTION("float xtd::sinf(double)") {
-          test_f<float, double, xtd::sinf, mpfr::sin>(queue, values, ulps_float);
+          test_f<float, double, xtd::sinf, ref_functionf>(queue, values, ulps_single);
         }
 
         SECTION("float xtd::sinf(int)") {
-          test_f<float, int, xtd::sinf, mpfr::sin>(queue, values, ulps_float);
+          test_f<float, int, xtd::sinf, ref_functionf>(queue, values, ulps_single);
         }
 
         CUDA_CHECK(cudaStreamDestroy(queue));

@@ -32,12 +32,8 @@ static constexpr auto double_prec = 53;
 using mpfr_single = mpfr::real<single_prec, MPFR_RNDN>;
 using mpfr_double = mpfr::real<double_prec, MPFR_RNDN>;
 
-template <typename ResultType,
-          typename InputType,
-          ResultType (*XtdFunc)(InputType),
-          typename std::enable_if<mpfr::type_traits<mpfr_double, mpfr_double, true>::enable_math_funcs,
-                                  const mpfr_double>::type (*RefFunc)(const mpfr_double&)>
-inline void test(sycl::queue queue, std::vector<double> const& values, int ulps = 0) try {
+template <typename ResultType, typename InputType, ResultType (*XtdFunc)(InputType), mpfr_double (*RefFunc)(mpfr_double)>
+inline void test_a(sycl::queue queue, std::vector<double> const& values, int ulps = 0) try {
   if constexpr (std::is_same_v<InputType, double> or std::is_same_v<ResultType, double>) {
     if (not queue.get_device().has(sycl::aspect::fp64)) {
       INFO("The device does not support double precision floating point operations, the test will be skipped.");
@@ -88,11 +84,7 @@ inline void test(sycl::queue queue, std::vector<double> const& values, int ulps 
   std::exit(EXIT_FAILURE);
 }
 
-template <typename ResultType,
-          typename InputType,
-          ResultType (*XtdFunc)(InputType),
-          typename std::enable_if<mpfr::type_traits<mpfr_single, mpfr_single, true>::enable_math_funcs,
-                                  const mpfr_single>::type (*RefFunc)(const mpfr_single&)>
+template <typename ResultType, typename InputType, ResultType (*XtdFunc)(InputType), mpfr_single (*RefFunc)(mpfr_single)>
 inline void test_f(sycl::queue queue, std::vector<double> const& values, int ulps = 0) try {
   if constexpr (std::is_same_v<InputType, double> or std::is_same_v<ResultType, double>) {
     if (not queue.get_device().has(sycl::aspect::fp64)) {
@@ -190,7 +182,7 @@ template <typename ResultType,
           typename InputType,
           ResultType (*XtdFunc)(InputType, InputType),
           mpfr_double (*RefFunc)(mpfr_double, mpfr_double)>
-inline void test_2(sycl::queue queue, std::vector<double> const& values, int ulps = 0) try {
+inline void test_aa(sycl::queue queue, std::vector<double> const& values, int ulps = 0) try {
   if constexpr (std::is_same_v<InputType, double> or std::is_same_v<ResultType, double>) {
     if (not queue.get_device().has(sycl::aspect::fp64)) {
       INFO("The device does not support double precision floating point operations, the test will be skipped.");
@@ -251,7 +243,7 @@ template <typename ResultType,
           typename InputType,
           ResultType (*XtdFunc)(InputType, InputType),
           mpfr_single (*RefFunc)(mpfr_single, mpfr_single)>
-inline void test_2f(sycl::queue queue, std::vector<double> const& values, int ulps = 0) try {
+inline void test_ff(sycl::queue queue, std::vector<double> const& values, int ulps = 0) try {
   if constexpr (std::is_same_v<InputType, double> or std::is_same_v<ResultType, double>) {
     if (not queue.get_device().has(sycl::aspect::fp64)) {
       INFO("The device does not support double precision floating point operations, the test will be skipped.");

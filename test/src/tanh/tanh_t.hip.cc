@@ -28,8 +28,11 @@ using namespace std::literals;
 #include "common/hip_version.h"
 #include "common/math_inputs.h"
 
-constexpr int ulps_float = 2;
+constexpr int ulps_single = 2;
 constexpr int ulps_double = 1;
+
+constexpr auto ref_function = [](mpfr_double x) { return mpfr::tanh(x); };
+constexpr auto ref_functionf = [](mpfr_single x) { return mpfr::tanh(x); };
 
 TEST_CASE("xtd::tanh", "[tanh][hip]") {
   std::vector<double> values = generate_input_values();
@@ -50,27 +53,27 @@ TEST_CASE("xtd::tanh", "[tanh][hip]") {
         HIP_CHECK(hipStreamCreate(&queue));
 
         SECTION("float xtd::tanh(float)") {
-          test<float, float, xtd::tanh, mpfr::tanh>(queue, values, ulps_float);
+          test_a<float, float, xtd::tanh, ref_function>(queue, values, ulps_single);
         }
 
         SECTION("double xtd::tanh(double)") {
-          test<double, double, xtd::tanh, mpfr::tanh>(queue, values, ulps_double);
+          test_a<double, double, xtd::tanh, ref_function>(queue, values, ulps_double);
         }
 
         SECTION("double xtd::tanh(int)") {
-          test<double, int, xtd::tanh, mpfr::tanh>(queue, values, ulps_double);
+          test_a<double, int, xtd::tanh, ref_function>(queue, values, ulps_double);
         }
 
         SECTION("float xtd::tanhf(float)") {
-          test_f<float, float, xtd::tanhf, mpfr::tanh>(queue, values, ulps_float);
+          test_f<float, float, xtd::tanhf, ref_functionf>(queue, values, ulps_single);
         }
 
         SECTION("float xtd::tanhf(double)") {
-          test_f<float, double, xtd::tanhf, mpfr::tanh>(queue, values, ulps_float);
+          test_f<float, double, xtd::tanhf, ref_functionf>(queue, values, ulps_single);
         }
 
         SECTION("float xtd::tanhf(int)") {
-          test_f<float, int, xtd::tanhf, mpfr::tanh>(queue, values, ulps_float);
+          test_f<float, int, xtd::tanhf, ref_functionf>(queue, values, ulps_single);
         }
 
         HIP_CHECK(hipStreamDestroy(queue));

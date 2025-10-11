@@ -28,11 +28,11 @@ using namespace std::literals;
 #include "common/cuda_version.h"
 #include "common/math_inputs.h"
 
-constexpr int ulps_float = 2;
+constexpr int ulps_single = 2;
 constexpr int ulps_double = 2;
 
-constexpr auto ref_fdim = [](mpfr_double y, mpfr_double x) -> mpfr_double { return mpfr::fdim(y, x); };
-constexpr auto ref_fdimf = [](mpfr_single y, mpfr_single x) -> mpfr_single { return mpfr::fdim(y, x); };
+constexpr auto ref_function = [](mpfr_double x, mpfr_double y) -> mpfr_double { return mpfr::fdim(x, y); };
+constexpr auto ref_functionf = [](mpfr_single x, mpfr_single y) -> mpfr_single { return mpfr::fdim(x, y); };
 
 TEST_CASE("xtd::fdim", "[fdim][cuda]") {
   std::vector<double> values = generate_input_values();
@@ -53,27 +53,27 @@ TEST_CASE("xtd::fdim", "[fdim][cuda]") {
         CUDA_CHECK(cudaStreamCreate(&queue));
 
         SECTION("float xtd::fdim(float, float)") {
-          test_2<float, float, xtd::fdim, ref_fdim>(queue, values, ulps_float);
+          test_aa<float, float, xtd::fdim, ref_function>(queue, values, ulps_single);
         }
 
         SECTION("double xtd::fdim(double, double)") {
-          test_2<double, double, xtd::fdim, ref_fdim>(queue, values, ulps_double);
+          test_aa<double, double, xtd::fdim, ref_function>(queue, values, ulps_double);
         }
 
         SECTION("double xtd::fdim(int, int)") {
-          test_2<double, int, xtd::fdim, ref_fdim>(queue, values, ulps_double);
+          test_aa<double, int, xtd::fdim, ref_function>(queue, values, ulps_double);
         }
 
         SECTION("float xtd::fdimf(float, float)") {
-          test_2f<float, float, xtd::fdimf, ref_fdimf>(queue, values, ulps_float);
+          test_ff<float, float, xtd::fdimf, ref_functionf>(queue, values, ulps_single);
         }
 
         SECTION("float xtd::fdimf(double, double)") {
-          test_2f<float, double, xtd::fdimf, ref_fdimf>(queue, values, ulps_float);
+          test_ff<float, double, xtd::fdimf, ref_functionf>(queue, values, ulps_single);
         }
 
         SECTION("float xtd::fdimf(int, int)") {
-          test_2f<float, int, xtd::fdimf, ref_fdimf>(queue, values, ulps_float);
+          test_ff<float, int, xtd::fdimf, ref_functionf>(queue, values, ulps_single);
         }
 
         CUDA_CHECK(cudaStreamDestroy(queue));

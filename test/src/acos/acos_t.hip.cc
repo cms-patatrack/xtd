@@ -28,8 +28,11 @@ using namespace std::literals;
 #include "common/hip_version.h"
 #include "common/math_inputs.h"
 
-constexpr int ulps_float = 1;
+constexpr int ulps_single = 1;
 constexpr int ulps_double = 1;
+
+constexpr auto ref_function = [](mpfr_double x) { return mpfr::acos(x); };
+constexpr auto ref_functionf = [](mpfr_single x) { return mpfr::acos(x); };
 
 TEST_CASE("xtd::acos", "[acos][hip]") {
   std::vector<double> values = generate_input_values();
@@ -50,27 +53,27 @@ TEST_CASE("xtd::acos", "[acos][hip]") {
         HIP_CHECK(hipStreamCreate(&queue));
 
         SECTION("float xtd::acos(float)") {
-          test<float, float, xtd::acos, mpfr::acos>(queue, values, ulps_float);
+          test_a<float, float, xtd::acos, ref_function>(queue, values, ulps_single);
         }
 
         SECTION("double xtd::acos(double)") {
-          test<double, double, xtd::acos, mpfr::acos>(queue, values, ulps_double);
+          test_a<double, double, xtd::acos, ref_function>(queue, values, ulps_double);
         }
 
         SECTION("double xtd::acos(int)") {
-          test<double, int, xtd::acos, mpfr::acos>(queue, values, ulps_double);
+          test_a<double, int, xtd::acos, ref_function>(queue, values, ulps_double);
         }
 
         SECTION("float xtd::acosf(float)") {
-          test_f<float, float, xtd::acosf, mpfr::acos>(queue, values, ulps_float);
+          test_f<float, float, xtd::acosf, ref_functionf>(queue, values, ulps_single);
         }
 
         SECTION("float xtd::acosf(double)") {
-          test_f<float, double, xtd::acosf, mpfr::acos>(queue, values, ulps_float);
+          test_f<float, double, xtd::acosf, ref_functionf>(queue, values, ulps_single);
         }
 
         SECTION("float xtd::acosf(int)") {
-          test_f<float, int, xtd::acosf, mpfr::acos>(queue, values, ulps_float);
+          test_f<float, int, xtd::acosf, ref_functionf>(queue, values, ulps_single);
         }
 
         HIP_CHECK(hipStreamDestroy(queue));

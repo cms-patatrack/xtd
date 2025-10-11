@@ -36,12 +36,8 @@ __global__ static void kernel(InputType const* input, ResultType* result, int si
   }
 }
 
-template <typename ResultType,
-          typename InputType,
-          ResultType (*XtdFunc)(InputType),
-          typename std::enable_if<mpfr::type_traits<mpfr_double, mpfr_double, true>::enable_math_funcs,
-                                  const mpfr_double>::type (*RefFunc)(const mpfr_double&)>
-inline void test(hipStream_t queue, std::vector<double> const& values, int ulps = 0) {
+template <typename ResultType, typename InputType, ResultType (*XtdFunc)(InputType), mpfr_double (*RefFunc)(mpfr_double)>
+inline void test_a(hipStream_t queue, std::vector<double> const& values, int ulps = 0) {
   int size = values.size();
 
   // convert the input data to the type to be tested and copy them to the GPU
@@ -57,7 +53,7 @@ inline void test(hipStream_t queue, std::vector<double> const& values, int ulps 
   HIP_CHECK(hipMemsetAsync(result_d, 0x00, size * sizeof(ResultType), queue));
 
   // execute the xtd function on the GPU
-  kernel<ResultType, InputType, XtdFunc><<<8, 32, 0, queue>>>(input_d, result_d, size);
+  kernel<ResultType, InputType, XtdFunc><<<8, 64, 0, queue>>>(input_d, result_d, size);
   HIP_CHECK(hipGetLastError());
 
   // copy the results back to the host and free the GPU memory
@@ -68,22 +64,20 @@ inline void test(hipStream_t queue, std::vector<double> const& values, int ulps 
 
   // compare the xtd results with erence results
   for (int i = 0; i < size; ++i) {
+    // convert the input data to the type to be tested
     InputType input = input_h[i];
+    // compare the xtd results with reference results
     ResultType result = result_h[i];
     ResultType reference;
     RefFunc(static_cast<mpfr_double>(input)).conv(reference);
-    INFO(std::fixed << "input " << std::setprecision(std::numeric_limits<InputType>::max_digits10) << input
-                    << ", xtd result " << std::setprecision(std::numeric_limits<ResultType>::max_digits10) << result
+    INFO(std::fixed << "input (" << std::setprecision(std::numeric_limits<InputType>::max_digits10) << input
+                    << "), xtd result " << std::setprecision(std::numeric_limits<ResultType>::max_digits10) << result
                     << " vs " << reference << '\n')
     compare(result, reference, ulps);
   }
 }
 
-template <typename ResultType,
-          typename InputType,
-          ResultType (*XtdFunc)(InputType),
-          typename std::enable_if<mpfr::type_traits<mpfr_single, mpfr_single, true>::enable_math_funcs,
-                                  const mpfr_single>::type (*RefFunc)(const mpfr_single&)>
+template <typename ResultType, typename InputType, ResultType (*XtdFunc)(InputType), mpfr_single (*RefFunc)(mpfr_single)>
 inline void test_f(hipStream_t queue, std::vector<double> const& values, int ulps = 0) {
   int size = values.size();
 
@@ -100,7 +94,7 @@ inline void test_f(hipStream_t queue, std::vector<double> const& values, int ulp
   HIP_CHECK(hipMemsetAsync(result_d, 0x00, size * sizeof(ResultType), queue));
 
   // execute the xtd function on the GPU
-  kernel<ResultType, InputType, XtdFunc><<<8, 32, 0, queue>>>(input_d, result_d, size);
+  kernel<ResultType, InputType, XtdFunc><<<8, 64, 0, queue>>>(input_d, result_d, size);
   HIP_CHECK(hipGetLastError());
 
   // copy the results back to the host and free the GPU memory
@@ -111,12 +105,14 @@ inline void test_f(hipStream_t queue, std::vector<double> const& values, int ulp
 
   // compare the xtd results with erence results
   for (int i = 0; i < size; ++i) {
+    // convert the input data to the type to be tested
     InputType input = static_cast<InputType>(input_h[i]);
+    // compare the xtd results with reference results
     ResultType result = result_h[i];
     ResultType reference;
     RefFunc(static_cast<mpfr_single>(static_cast<float>(input))).conv(reference);
-    INFO(std::fixed << "input " << std::setprecision(std::numeric_limits<InputType>::max_digits10) << input
-                    << ", xtd result " << std::setprecision(std::numeric_limits<ResultType>::max_digits10) << result
+    INFO(std::fixed << "input (" << std::setprecision(std::numeric_limits<InputType>::max_digits10) << input
+                    << "), xtd result " << std::setprecision(std::numeric_limits<ResultType>::max_digits10) << result
                     << " vs " << reference << '\n')
     compare(result, reference, ulps);
   }
@@ -139,7 +135,7 @@ inline void test_i(hipStream_t queue, std::vector<double> const& values) {
   HIP_CHECK(hipMemsetAsync(result_d, 0x00, size * sizeof(Type), queue));
 
   // execute the xtd function on the GPU
-  kernel<Type, Type, XtdFunc><<<8, 32, 0, queue>>>(input_d, result_d, size);
+  kernel<Type, Type, XtdFunc><<<8, 64, 0, queue>>>(input_d, result_d, size);
   HIP_CHECK(hipGetLastError());
 
   // copy the results back to the host and free the GPU memory
@@ -150,10 +146,12 @@ inline void test_i(hipStream_t queue, std::vector<double> const& values) {
 
   // compare the xtd results with erence results
   for (int i = 0; i < size; ++i) {
+    // convert the input data to the type to be tested
     Type input = input_h[i];
+    // compare the xtd results with reference results
     Type result = result_h[i];
     Type reference = RefFunc(input);
-    INFO("input " << input << ", xtd result " << result << " vs " << reference << '\n')
+    INFO("input (" << input << "), xtd result " << result << " vs " << reference << '\n')
     compare(result, reference);
   }
 }
@@ -163,7 +161,7 @@ __global__ static void kernel(InputType const* input, ResultType* result, unsign
   const int thread = blockDim.x * blockIdx.x + threadIdx.x;
   const int stride = blockDim.x * gridDim.x;
   for (unsigned int t = thread; t < size; t += stride) {
-    // generate a low-discrepancy deterministic sequence over [0, size)×[0, size)
+    // generate a low-discrepancy deterministic sequence over [0, size)*[0, size)
     auto [i, j] = halton<2>(t, size);
     result[t] = static_cast<ResultType>(XtdFunc(input[i], input[j]));
   }
@@ -173,7 +171,7 @@ template <typename ResultType,
           typename InputType,
           ResultType (*XtdFunc)(InputType, InputType),
           mpfr_double (*RefFunc)(mpfr_double, mpfr_double)>
-inline void test_2(hipStream_t queue, std::vector<double> const& values, int ulps = 0) {
+inline void test_aa(hipStream_t queue, std::vector<double> const& values, int ulps = 0) {
   unsigned int size = values.size();
 
   // convert the input data to the type to be tested and copy them to the GPU
@@ -189,7 +187,7 @@ inline void test_2(hipStream_t queue, std::vector<double> const& values, int ulp
   HIP_CHECK(hipMemsetAsync(result_d, 0x00, size * sizeof(ResultType), queue));
 
   // execute the xtd function on the GPU
-  kernel<ResultType, InputType, XtdFunc><<<8, 32, 0, queue>>>(input_d, result_d, size);
+  kernel<ResultType, InputType, XtdFunc><<<8, 64, 0, queue>>>(input_d, result_d, size);
   HIP_CHECK(hipGetLastError());
 
   // copy the results back to the host and free the GPU memory
@@ -200,15 +198,17 @@ inline void test_2(hipStream_t queue, std::vector<double> const& values, int ulp
 
   // compare the xtd results with erence results
   for (unsigned int t = 0; t < size; ++t) {
-    // generate a low-discrepancy deterministic sequence over [0, size)×[0, size)
+    // generate a low-discrepancy deterministic sequence over [0, size)*[0, size)
     auto [i, j] = halton<2>(t, size);
-    InputType input_y = static_cast<InputType>(values[i]);
-    InputType input_x = static_cast<InputType>(values[j]);
+    // convert the input data to the type to be tested
+    InputType input_x = static_cast<InputType>(values[i]);
+    InputType input_y = static_cast<InputType>(values[j]);
     ResultType result = result_h[t];
+    // compare the xtd results with reference results
     ResultType reference;
-    RefFunc(static_cast<mpfr_double>(input_y), static_cast<mpfr_double>(input_x)).conv(reference);
-    INFO(std::fixed << "inputs (" << std::setprecision(std::numeric_limits<InputType>::max_digits10) << input_y << ", "
-                    << input_x << "), xtd result " << std::setprecision(std::numeric_limits<ResultType>::max_digits10)
+    RefFunc(static_cast<mpfr_double>(input_x), static_cast<mpfr_double>(input_y)).conv(reference);
+    INFO(std::fixed << "inputs (" << std::setprecision(std::numeric_limits<InputType>::max_digits10) << input_x << ", "
+                    << input_y << "), xtd result " << std::setprecision(std::numeric_limits<ResultType>::max_digits10)
                     << result << " vs " << reference << '\n')
     compare(result, reference, ulps);
   }
@@ -218,7 +218,7 @@ template <typename ResultType,
           typename InputType,
           ResultType (*XtdFunc)(InputType, InputType),
           mpfr_single (*RefFunc)(mpfr_single, mpfr_single)>
-inline void test_2f(hipStream_t queue, std::vector<double> const& values, int ulps = 0) {
+inline void test_ff(hipStream_t queue, std::vector<double> const& values, int ulps = 0) {
   unsigned int size = values.size();
 
   // convert the input data to the type to be tested and copy them to the GPU
@@ -234,7 +234,7 @@ inline void test_2f(hipStream_t queue, std::vector<double> const& values, int ul
   HIP_CHECK(hipMemsetAsync(result_d, 0x00, size * sizeof(ResultType), queue));
 
   // execute the xtd function on the GPU
-  kernel<ResultType, InputType, XtdFunc><<<8, 32, 0, queue>>>(input_d, result_d, size);
+  kernel<ResultType, InputType, XtdFunc><<<8, 64, 0, queue>>>(input_d, result_d, size);
   HIP_CHECK(hipGetLastError());
 
   // copy the results back to the host and free the GPU memory
@@ -245,18 +245,206 @@ inline void test_2f(hipStream_t queue, std::vector<double> const& values, int ul
 
   // compare the xtd results with the reference results
   for (unsigned int t = 0; t < size; ++t) {
-    // generate a low-discrepancy deterministic sequence over [0, size)×[0, size)
+    // generate a low-discrepancy deterministic sequence over [0, size)*[0, size)
     auto [i, j] = halton<2>(t, size);
-    InputType input_y = static_cast<InputType>(values[i]);
-    InputType input_x = static_cast<InputType>(values[j]);
+    // convert the input data to the type to be tested
+    InputType input_x = static_cast<InputType>(values[i]);
+    InputType input_y = static_cast<InputType>(values[j]);
+    // compare the xtd results with reference results
     ResultType result = result_h[t];
     ResultType reference;
-    RefFunc(static_cast<mpfr_single>(static_cast<float>(input_y)),
-            static_cast<mpfr_single>(static_cast<float>(input_x)))
+    RefFunc(static_cast<mpfr_single>(static_cast<float>(input_x)),
+            static_cast<mpfr_single>(static_cast<float>(input_y)))
         .conv(reference);
-    INFO(std::fixed << "inputs (" << std::setprecision(std::numeric_limits<InputType>::max_digits10) << input_y << ", "
-                    << input_x << "), xtd result " << std::setprecision(std::numeric_limits<ResultType>::max_digits10)
+    INFO(std::fixed << "inputs (" << std::setprecision(std::numeric_limits<InputType>::max_digits10) << input_x << ", "
+                    << input_y << "), xtd result " << std::setprecision(std::numeric_limits<ResultType>::max_digits10)
                     << result << " vs " << reference << '\n')
     compare(result, reference, ulps);
+  }
+}
+
+template <std::integral Type, Type (*XtdFunc)(Type, Type), Type (*RefFunc)(Type, Type)>
+inline void test_ii(hipStream_t queue, std::vector<double> const& values) {
+  unsigned int size = values.size();
+
+  // convert the input data to the type to be tested and copy them to the GPU
+  std::vector<Type> input_h(values.begin(), values.end());
+  Type* input_d;
+  HIP_CHECK(hipMallocAsync(&input_d, size * sizeof(Type), queue));
+  HIP_CHECK(hipMemcpyAsync(input_d, input_h.data(), size * sizeof(Type), hipMemcpyHostToDevice, queue));
+
+  // allocate memory for the results and fill it with zeroes
+  std::vector<Type> result_h(size, 0);
+  Type* result_d;
+  HIP_CHECK(hipMallocAsync(&result_d, size * sizeof(Type), queue));
+  HIP_CHECK(hipMemsetAsync(result_d, 0x00, size * sizeof(Type), queue));
+
+  // execute the xtd function on the GPU
+  kernel<Type, Type, XtdFunc><<<8, 64, 0, queue>>>(input_d, result_d, size);
+  HIP_CHECK(hipGetLastError());
+
+  // copy the results back to the host and free the GPU memory
+  HIP_CHECK(hipMemcpyAsync(result_h.data(), result_d, size * sizeof(Type), hipMemcpyDeviceToHost, queue));
+  HIP_CHECK(hipFreeAsync(input_d, queue));
+  HIP_CHECK(hipFreeAsync(result_d, queue));
+  HIP_CHECK(hipStreamSynchronize(queue));
+
+  // compare the xtd results with the reference results
+  for (unsigned int t = 0; t < size; ++t) {
+    // generate a low-discrepancy deterministic sequence over [0, size)*[0, size)
+    auto [i, j] = halton<2>(t, size);
+    // convert the input data to the type to be tested
+    Type input_x = static_cast<Type>(values[i]);
+    Type input_y = static_cast<Type>(values[j]);
+    // compare the xtd results with reference results
+    Type result = result_h[t];
+    Type reference = RefFunc(input_x, input_y);
+    INFO("inputs (" << input_x << ", " << input_y << "), xtd result " << result << " vs " << reference << '\n')
+    compare(result, reference);
+  }
+}
+
+template <typename ResultType,
+          typename InputType,
+          ResultType (*XtdFunc)(InputType, InputType, InputType),
+          mpfr_double (*RefFunc)(mpfr_double, mpfr_double, mpfr_double)>
+inline void test_aaa(hipStream_t queue, std::vector<double> const& values, int ulps = 0) {
+  unsigned int size = values.size();
+
+  // convert the input data to the type to be tested and copy them to the GPU
+  std::vector<InputType> input_h(values.begin(), values.end());
+  InputType* input_d;
+  HIP_CHECK(hipMallocAsync(&input_d, size * sizeof(InputType), queue));
+  HIP_CHECK(hipMemcpyAsync(input_d, input_h.data(), size * sizeof(InputType), hipMemcpyHostToDevice, queue));
+
+  // allocate memory for the results and fill it with zeroes
+  std::vector<ResultType> result_h(size, 0);
+  ResultType* result_d;
+  HIP_CHECK(hipMallocAsync(&result_d, size * sizeof(ResultType), queue));
+  HIP_CHECK(hipMemsetAsync(result_d, 0x00, size * sizeof(ResultType), queue));
+
+  // execute the xtd function on the GPU
+  kernel<ResultType, InputType, XtdFunc><<<8, 64, 0, queue>>>(input_d, result_d, size);
+  HIP_CHECK(hipGetLastError());
+
+  // copy the results back to the host and free the GPU memory
+  HIP_CHECK(hipMemcpyAsync(result_h.data(), result_d, size * sizeof(ResultType), hipMemcpyDeviceToHost, queue));
+  HIP_CHECK(hipFreeAsync(input_d, queue));
+  HIP_CHECK(hipFreeAsync(result_d, queue));
+  HIP_CHECK(hipStreamSynchronize(queue));
+
+  // compare the xtd results with erence results
+  for (unsigned int t = 0; t < size; ++t) {
+    // generate a low-discrepancy deterministic sequence over [0, size)*[0, size)
+    auto [i, j, k] = halton<3>(t, size);
+    // convert the input data to the type to be tested
+    InputType input_x = static_cast<InputType>(values[i]);
+    InputType input_y = static_cast<InputType>(values[j]);
+    InputType input_z = static_cast<InputType>(values[k]);
+    // compare the xtd results with reference results
+    ResultType result = result_h[t];
+    ResultType reference;
+    RefFunc(static_cast<mpfr_double>(input_x), static_cast<mpfr_double>(input_y), static_cast<mpfr_double>(input_z))
+        .conv(reference);
+    INFO(std::fixed << "inputs (" << std::setprecision(std::numeric_limits<InputType>::max_digits10) << input_x << ", "
+                    << input_y << ", " << input_z << "), xtd result "
+                    << std::setprecision(std::numeric_limits<ResultType>::max_digits10) << result << " vs " << reference
+                    << '\n')
+    compare(result, reference, ulps);
+  }
+}
+
+template <typename ResultType,
+          typename InputType,
+          ResultType (*XtdFunc)(InputType, InputType, InputType),
+          mpfr_single (*RefFunc)(mpfr_single, mpfr_single, mpfr_single)>
+inline void test_fff(hipStream_t queue, std::vector<double> const& values, int ulps = 0) {
+  unsigned int size = values.size();
+
+  // convert the input data to the type to be tested and copy them to the GPU
+  std::vector<InputType> input_h(values.begin(), values.end());
+  InputType* input_d;
+  HIP_CHECK(hipMallocAsync(&input_d, size * sizeof(InputType), queue));
+  HIP_CHECK(hipMemcpyAsync(input_d, input_h.data(), size * sizeof(InputType), hipMemcpyHostToDevice, queue));
+
+  // allocate memory for the results and fill it with zeroes
+  std::vector<ResultType> result_h(size, 0);
+  ResultType* result_d;
+  HIP_CHECK(hipMallocAsync(&result_d, size * sizeof(ResultType), queue));
+  HIP_CHECK(hipMemsetAsync(result_d, 0x00, size * sizeof(ResultType), queue));
+
+  // execute the xtd function on the GPU
+  kernel<ResultType, InputType, XtdFunc><<<8, 64, 0, queue>>>(input_d, result_d, size);
+  HIP_CHECK(hipGetLastError());
+
+  // copy the results back to the host and free the GPU memory
+  HIP_CHECK(hipMemcpyAsync(result_h.data(), result_d, size * sizeof(ResultType), hipMemcpyDeviceToHost, queue));
+  HIP_CHECK(hipFreeAsync(input_d, queue));
+  HIP_CHECK(hipFreeAsync(result_d, queue));
+  HIP_CHECK(hipStreamSynchronize(queue));
+
+  // compare the xtd results with the reference results
+  for (unsigned int t = 0; t < size; ++t) {
+    // generate a low-discrepancy deterministic sequence over [0, size)*[0, size)
+    auto [i, j, k] = halton<3>(t, size);
+    // convert the input data to the type to be tested
+    InputType input_x = static_cast<InputType>(values[i]);
+    InputType input_y = static_cast<InputType>(values[j]);
+    InputType input_z = static_cast<InputType>(values[k]);
+    // compare the xtd results with reference results
+    ResultType result = result_h[t];
+    ResultType reference;
+    RefFunc(static_cast<mpfr_single>(static_cast<float>(input_x)),
+            static_cast<mpfr_single>(static_cast<float>(input_y)),
+            static_cast<mpfr_single>(static_cast<float>(input_z)))
+        .conv(reference);
+    INFO(std::fixed << "inputs (" << std::setprecision(std::numeric_limits<InputType>::max_digits10) << input_x << ", "
+                    << input_y << ", " << input_z << "), xtd result "
+                    << std::setprecision(std::numeric_limits<ResultType>::max_digits10) << result << " vs " << reference
+                    << '\n')
+    compare(result, reference, ulps);
+  }
+}
+
+template <std::integral Type, Type (*XtdFunc)(Type, Type, Type), Type (*RefFunc)(Type, Type, Type)>
+inline void test_iii(hipStream_t queue, std::vector<double> const& values) {
+  unsigned int size = values.size();
+
+  // convert the input data to the type to be tested and copy them to the GPU
+  std::vector<Type> input_h(values.begin(), values.end());
+  Type* input_d;
+  HIP_CHECK(hipMallocAsync(&input_d, size * sizeof(Type), queue));
+  HIP_CHECK(hipMemcpyAsync(input_d, input_h.data(), size * sizeof(Type), hipMemcpyHostToDevice, queue));
+
+  // allocate memory for the results and fill it with zeroes
+  std::vector<Type> result_h(size, 0);
+  Type* result_d;
+  HIP_CHECK(hipMallocAsync(&result_d, size * sizeof(Type), queue));
+  HIP_CHECK(hipMemsetAsync(result_d, 0x00, size * sizeof(Type), queue));
+
+  // execute the xtd function on the GPU
+  kernel<Type, Type, XtdFunc><<<8, 64, 0, queue>>>(input_d, result_d, size);
+  HIP_CHECK(hipGetLastError());
+
+  // copy the results back to the host and free the GPU memory
+  HIP_CHECK(hipMemcpyAsync(result_h.data(), result_d, size * sizeof(Type), hipMemcpyDeviceToHost, queue));
+  HIP_CHECK(hipFreeAsync(input_d, queue));
+  HIP_CHECK(hipFreeAsync(result_d, queue));
+  HIP_CHECK(hipStreamSynchronize(queue));
+
+  // compare the xtd results with the reference results
+  for (unsigned int t = 0; t < size; ++t) {
+    // generate a low-discrepancy deterministic sequence over [0, size)*[0, size)
+    auto [i, j, k] = halton<3>(t, size);
+    // convert the input data to the type to be tested
+    Type input_x = static_cast<Type>(values[i]);
+    Type input_y = static_cast<Type>(values[j]);
+    Type input_z = static_cast<Type>(values[k]);
+    // compare the xtd results with reference results
+    Type result = result_h[t];
+    Type reference = RefFunc(input_x, input_y, input_z);
+    INFO("inputs (" << input_x << ", " << input_y << ", " << input_z << "), xtd result " << result << " vs "
+                    << reference << '\n')
+    compare(result, reference);
   }
 }

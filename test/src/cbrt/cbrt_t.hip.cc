@@ -28,8 +28,11 @@ using namespace std::literals;
 #include "common/hip_version.h"
 #include "common/math_inputs.h"
 
-constexpr int ulps_float = 2;
+constexpr int ulps_single = 2;
 constexpr int ulps_double = 1;
+
+constexpr auto ref_function = [](mpfr_double x) { return mpfr::cbrt(x); };
+constexpr auto ref_functionf = [](mpfr_single x) { return mpfr::cbrt(x); };
 
 TEST_CASE("xtd::cbrt", "[cbrt][hip]") {
   std::vector<double> values = generate_input_values();
@@ -50,27 +53,27 @@ TEST_CASE("xtd::cbrt", "[cbrt][hip]") {
         HIP_CHECK(hipStreamCreate(&queue));
 
         SECTION("float xtd::cbrt(float)") {
-          test<float, float, xtd::cbrt, mpfr::cbrt>(queue, values, ulps_float);
+          test_a<float, float, xtd::cbrt, ref_function>(queue, values, ulps_single);
         }
 
         SECTION("double xtd::cbrt(double)") {
-          test<double, double, xtd::cbrt, mpfr::cbrt>(queue, values, ulps_double);
+          test_a<double, double, xtd::cbrt, ref_function>(queue, values, ulps_double);
         }
 
         SECTION("double xtd::cbrt(int)") {
-          test<double, int, xtd::cbrt, mpfr::cbrt>(queue, values, ulps_double);
+          test_a<double, int, xtd::cbrt, ref_function>(queue, values, ulps_double);
         }
 
         SECTION("float xtd::cbrtf(float)") {
-          test_f<float, float, xtd::cbrtf, mpfr::cbrt>(queue, values, ulps_float);
+          test_f<float, float, xtd::cbrtf, ref_functionf>(queue, values, ulps_single);
         }
 
         SECTION("float xtd::cbrtf(double)") {
-          test_f<float, double, xtd::cbrtf, mpfr::cbrt>(queue, values, ulps_float);
+          test_f<float, double, xtd::cbrtf, ref_functionf>(queue, values, ulps_single);
         }
 
         SECTION("float xtd::cbrtf(int)") {
-          test_f<float, int, xtd::cbrtf, mpfr::cbrt>(queue, values, ulps_float);
+          test_f<float, int, xtd::cbrtf, ref_functionf>(queue, values, ulps_single);
         }
 
         HIP_CHECK(hipStreamDestroy(queue));

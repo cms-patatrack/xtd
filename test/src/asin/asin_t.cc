@@ -21,33 +21,36 @@
 #include "common/cpu_test.h"
 #include "common/math_inputs.h"
 
-constexpr int ulps_float = 1;
+constexpr int ulps_single = 1;
 constexpr int ulps_double = 1;
+
+constexpr auto ref_function = [](mpfr_double x) { return mpfr::asin(x); };
+constexpr auto ref_functionf = [](mpfr_single x) { return mpfr::asin(x); };
 
 TEST_CASE("xtd::asin", "[asin][cpu]") {
   std::vector<double> values = generate_input_values();
 
   SECTION("float xtd::asin(float)") {
-    test<float, float, xtd::asin, mpfr::asin>(values, ulps_float);
+    test_a<float, float, xtd::asin, ref_function>(values, ulps_single);
   }
 
   SECTION("double xtd::asin(double)") {
-    test<double, double, xtd::asin, mpfr::asin>(values, ulps_double);
+    test_a<double, double, xtd::asin, ref_function>(values, ulps_double);
   }
 
   SECTION("double xtd::asin(int)") {
-    test<double, int, xtd::asin, mpfr::asin>(values, ulps_double);
+    test_a<double, int, xtd::asin, ref_function>(values, ulps_double);
   }
 
   SECTION("float xtd::asinf(float)") {
-    test_f<float, float, xtd::asinf, mpfr::asin>(values, ulps_float);
+    test_f<float, float, xtd::asinf, ref_functionf>(values, ulps_single);
   }
 
   SECTION("float xtd::asinf(double)") {
-    test_f<float, double, xtd::asinf, mpfr::asin>(values, ulps_float);
+    test_f<float, double, xtd::asinf, ref_functionf>(values, ulps_single);
   }
 
   SECTION("float xtd::asinf(int)") {
-    test_f<float, int, xtd::asinf, mpfr::asin>(values, ulps_float);
+    test_f<float, int, xtd::asinf, ref_functionf>(values, ulps_single);
   }
 }
