@@ -28,8 +28,11 @@ using namespace std::literals;
 #include "common/cuda_version.h"
 #include "common/math_inputs.h"
 
-constexpr int ulps_float = 4;
+constexpr int ulps_single = 4;
 constexpr int ulps_double = 2;
+
+constexpr auto ref_function = [](mpfr_double x) { return mpfr::tan(x); };
+constexpr auto ref_functionf = [](mpfr_single x) { return mpfr::tan(x); };
 
 TEST_CASE("xtd::tan", "[tan][cuda]") {
   std::vector<double> values = generate_input_values();
@@ -50,27 +53,27 @@ TEST_CASE("xtd::tan", "[tan][cuda]") {
         CUDA_CHECK(cudaStreamCreate(&queue));
 
         SECTION("float xtd::tan(float)") {
-          test<float, float, xtd::tan, mpfr::tan>(queue, values, ulps_float);
+          test_a<float, float, xtd::tan, ref_function>(queue, values, ulps_single);
         }
 
         SECTION("double xtd::tan(double)") {
-          test<double, double, xtd::tan, mpfr::tan>(queue, values, ulps_double);
+          test_a<double, double, xtd::tan, ref_function>(queue, values, ulps_double);
         }
 
         SECTION("double xtd::tan(int)") {
-          test<double, int, xtd::tan, mpfr::tan>(queue, values, ulps_double);
+          test_a<double, int, xtd::tan, ref_function>(queue, values, ulps_double);
         }
 
         SECTION("float xtd::tanf(float)") {
-          test_f<float, float, xtd::tanf, mpfr::tan>(queue, values, ulps_float);
+          test_f<float, float, xtd::tanf, ref_functionf>(queue, values, ulps_single);
         }
 
         SECTION("float xtd::tanf(double)") {
-          test_f<float, double, xtd::tanf, mpfr::tan>(queue, values, ulps_float);
+          test_f<float, double, xtd::tanf, ref_functionf>(queue, values, ulps_single);
         }
 
         SECTION("float xtd::tanf(int)") {
-          test_f<float, int, xtd::tanf, mpfr::tan>(queue, values, ulps_float);
+          test_f<float, int, xtd::tanf, ref_functionf>(queue, values, ulps_single);
         }
 
         CUDA_CHECK(cudaStreamDestroy(queue));

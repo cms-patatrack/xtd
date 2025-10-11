@@ -26,11 +26,11 @@
 #include "common/sycl_test.h"
 #include "common/math_inputs.h"
 
-constexpr int ulps_float = 0;
+constexpr int ulps_single = 0;
 constexpr int ulps_double = 0;
 
-constexpr auto ref_fmax = [](mpfr_double y, mpfr_double x) { return mpfr::fmax(y, x); };
-constexpr auto ref_fmaxf = [](mpfr_single y, mpfr_single x) { return mpfr::fmax(y, x); };
+constexpr auto ref_function = [](mpfr_double x, mpfr_double y) -> mpfr_double { return mpfr::fmax(x, y); };
+constexpr auto ref_functionf = [](mpfr_single x, mpfr_single y) -> mpfr_single { return mpfr::fmax(x, y); };
 
 TEST_CASE("xtd::fmax", "[fmax][sycl]") {
   std::vector<double> values = generate_input_values();
@@ -45,27 +45,27 @@ TEST_CASE("xtd::fmax", "[fmax][sycl]") {
           sycl::queue queue{device, sycl::property::queue::in_order()};
 
           SECTION("float xtd::fmax(float, float)") {
-            test_2<float, float, xtd::fmax, ref_fmax>(queue, values, ulps_float);
+            test_aa<float, float, xtd::fmax, ref_function>(queue, values, ulps_single);
           }
 
           SECTION("double xtd::fmax(double, double)") {
-            test_2<double, double, xtd::fmax, ref_fmax>(queue, values, ulps_double);
+            test_aa<double, double, xtd::fmax, ref_function>(queue, values, ulps_double);
           }
 
           SECTION("double xtd::fmax(int, int)") {
-            test_2<double, int, xtd::fmax, ref_fmax>(queue, values, ulps_double);
+            test_aa<double, int, xtd::fmax, ref_function>(queue, values, ulps_double);
           }
 
           SECTION("float xtd::fmaxf(float, float)") {
-            test_2f<float, float, xtd::fmaxf, ref_fmaxf>(queue, values, ulps_float);
+            test_ff<float, float, xtd::fmaxf, ref_functionf>(queue, values, ulps_single);
           }
 
           SECTION("float xtd::fmaxf(double, double)") {
-            test_2f<float, double, xtd::fmaxf, ref_fmaxf>(queue, values, ulps_float);
+            test_ff<float, double, xtd::fmaxf, ref_functionf>(queue, values, ulps_single);
           }
 
           SECTION("float xtd::fmaxf(int, int)") {
-            test_2f<float, int, xtd::fmaxf, ref_fmaxf>(queue, values, ulps_float);
+            test_ff<float, int, xtd::fmaxf, ref_functionf>(queue, values, ulps_single);
           }
         }
       }

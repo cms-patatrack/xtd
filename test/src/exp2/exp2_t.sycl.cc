@@ -26,7 +26,7 @@
 #include "common/sycl_test.h"
 #include "common/math_inputs.h"
 
-constexpr int ulps_float = 3;
+constexpr int ulps_single = 3;
 constexpr int ulps_double = 3;
 
 TEST_CASE("xtd::exp2", "[exp2][sycl]") {
@@ -42,27 +42,27 @@ TEST_CASE("xtd::exp2", "[exp2][sycl]") {
           sycl::queue queue{device, sycl::property::queue::in_order()};
 
           SECTION("float xtd::exp2(float)") {
-            test<float, float, xtd::exp2, mpfr::exp2>(queue, values, ulps_float);
+            test_a<float, float, xtd::exp2, ref_function>(queue, values, ulps_single);
           }
 
           SECTION("double xtd::exp2(double)") {
-            test<double, double, xtd::exp2, mpfr::exp2>(queue, values, ulps_double);
+            test_a<double, double, xtd::exp2, ref_function>(queue, values, ulps_double);
           }
 
           SECTION("double xtd::exp2(int)") {
-            test<double, int, xtd::exp2, mpfr::exp2>(queue, values, ulps_double);
+            test_a<double, int, xtd::exp2, ref_function>(queue, values, ulps_double);
           }
 
           SECTION("float xtd::exp2f(float)") {
-            test_f<float, float, xtd::exp2f, mpfr::exp2>(queue, values, ulps_float);
+            test_f<float, float, xtd::exp2f, ref_functionf>(queue, values, ulps_single);
           }
 
           SECTION("float xtd::exp2f(double)") {
-            test_f<float, double, xtd::exp2f, mpfr::exp2>(queue, values, ulps_float);
+            test_f<float, double, xtd::exp2f, ref_functionf>(queue, values, ulps_single);
           }
 
           SECTION("float xtd::exp2f(int)") {
-            test_f<float, int, xtd::exp2f, mpfr::exp2>(queue, values, ulps_float);
+            test_f<float, int, xtd::exp2f, ref_functionf>(queue, values, ulps_single);
           }
         }
       }

@@ -28,11 +28,11 @@ using namespace std::literals;
 #include "common/hip_version.h"
 #include "common/math_inputs.h"
 
-constexpr int ulps_float = 0;
+constexpr int ulps_single = 0;
 constexpr int ulps_double = 0;
 
-constexpr auto ref_fmod = [](mpfr_double y, mpfr_double x) { return mpfr::fmod(y, x); };
-constexpr auto ref_fmodf = [](mpfr_single y, mpfr_single x) { return mpfr::fmod(y, x); };
+constexpr auto ref_function = [](mpfr_double x, mpfr_double y) -> mpfr_double { return mpfr::fmod(x, y); };
+constexpr auto ref_functionf = [](mpfr_single x, mpfr_single y) -> mpfr_single { return mpfr::fmod(x, y); };
 
 TEST_CASE("xtd::fmod", "[fmod][hip]") {
   std::vector<double> values = generate_input_values();
@@ -53,27 +53,27 @@ TEST_CASE("xtd::fmod", "[fmod][hip]") {
         HIP_CHECK(hipStreamCreate(&queue));
 
         SECTION("float xtd::fmod(float, float)") {
-          test_2<float, float, xtd::fmod, ref_fmod>(queue, values, ulps_float);
+          test_aa<float, float, xtd::fmod, ref_function>(queue, values, ulps_single);
         }
 
         SECTION("double xtd::fmod(double, double)") {
-          test_2<double, double, xtd::fmod, ref_fmod>(queue, values, ulps_double);
+          test_aa<double, double, xtd::fmod, ref_function>(queue, values, ulps_double);
         }
 
         SECTION("double xtd::fmod(int, int)") {
-          test_2<double, int, xtd::fmod, ref_fmod>(queue, values, ulps_double);
+          test_aa<double, int, xtd::fmod, ref_function>(queue, values, ulps_double);
         }
 
         SECTION("float xtd::fmodf(float, float)") {
-          test_2f<float, float, xtd::fmodf, ref_fmodf>(queue, values, ulps_float);
+          test_ff<float, float, xtd::fmodf, ref_functionf>(queue, values, ulps_single);
         }
 
         SECTION("float xtd::fmodf(double, double)") {
-          test_2f<float, double, xtd::fmodf, ref_fmodf>(queue, values, ulps_float);
+          test_ff<float, double, xtd::fmodf, ref_functionf>(queue, values, ulps_single);
         }
 
         SECTION("float xtd::fmodf(int, int)") {
-          test_2f<float, int, xtd::fmodf, ref_fmodf>(queue, values, ulps_float);
+          test_ff<float, int, xtd::fmodf, ref_functionf>(queue, values, ulps_single);
         }
 
         HIP_CHECK(hipStreamDestroy(queue));

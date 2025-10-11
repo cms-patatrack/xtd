@@ -28,8 +28,11 @@ using namespace std::literals;
 #include "common/hip_version.h"
 #include "common/math_inputs.h"
 
-constexpr int ulps_float = 1;
+constexpr int ulps_single = 1;
 constexpr int ulps_double = 1;
+
+constexpr auto ref_function = [](mpfr_double x) { return mpfr::cos(x); };
+constexpr auto ref_functionf = [](mpfr_single x) { return mpfr::cos(x); };
 
 TEST_CASE("xtd::cos", "[cos][hip]") {
   std::vector<double> values = generate_input_values();
@@ -50,27 +53,27 @@ TEST_CASE("xtd::cos", "[cos][hip]") {
         HIP_CHECK(hipStreamCreate(&queue));
 
         SECTION("float xtd::cos(float)") {
-          test<float, float, xtd::cos, mpfr::cos>(queue, values, ulps_float);
+          test_a<float, float, xtd::cos, ref_function>(queue, values, ulps_single);
         }
 
         SECTION("double xtd::cos(double)") {
-          test<double, double, xtd::cos, mpfr::cos>(queue, values, ulps_double);
+          test_a<double, double, xtd::cos, ref_function>(queue, values, ulps_double);
         }
 
         SECTION("double xtd::cos(int)") {
-          test<double, int, xtd::cos, mpfr::cos>(queue, values, ulps_double);
+          test_a<double, int, xtd::cos, ref_function>(queue, values, ulps_double);
         }
 
         SECTION("float xtd::cosf(float)") {
-          test_f<float, float, xtd::cosf, mpfr::cos>(queue, values, ulps_float);
+          test_f<float, float, xtd::cosf, ref_functionf>(queue, values, ulps_single);
         }
 
         SECTION("float xtd::cosf(double)") {
-          test_f<float, double, xtd::cosf, mpfr::cos>(queue, values, ulps_float);
+          test_f<float, double, xtd::cosf, ref_functionf>(queue, values, ulps_single);
         }
 
         SECTION("float xtd::cosf(int)") {
-          test_f<float, int, xtd::cosf, mpfr::cos>(queue, values, ulps_float);
+          test_f<float, int, xtd::cosf, ref_functionf>(queue, values, ulps_single);
         }
 
         HIP_CHECK(hipStreamDestroy(queue));

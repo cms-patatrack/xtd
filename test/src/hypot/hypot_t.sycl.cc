@@ -26,11 +26,11 @@
 #include "common/sycl_test.h"
 #include "common/math_inputs.h"
 
-constexpr int ulps_float = 4;
+constexpr int ulps_single = 4;
 constexpr int ulps_double = 4;
 
-constexpr auto ref_hypot = [](mpfr_double y, mpfr_double x) { return mpfr::hypot(y, x); };
-constexpr auto ref_hypotf = [](mpfr_single y, mpfr_single x) { return mpfr::hypot(y, x); };
+constexpr auto ref_function = [](mpfr_double x, mpfr_double y) -> mpfr_double { return mpfr::hypot(x, y); };
+constexpr auto ref_functionf = [](mpfr_single x, mpfr_single y) -> mpfr_single { return mpfr::hypot(x, y); };
 
 TEST_CASE("xtd::hypot", "[hypot][sycl]") {
   std::vector<double> values = generate_input_values();
@@ -45,27 +45,27 @@ TEST_CASE("xtd::hypot", "[hypot][sycl]") {
           sycl::queue queue{device, sycl::property::queue::in_order()};
 
           SECTION("float xtd::hypot(float, float)") {
-            test_2<float, float, xtd::hypot, ref_hypot>(queue, values, ulps_float);
+            test_aa<float, float, xtd::hypot, ref_function>(queue, values, ulps_single);
           }
 
           SECTION("double xtd::hypot(double, double)") {
-            test_2<double, double, xtd::hypot, ref_hypot>(queue, values, ulps_double);
+            test_aa<double, double, xtd::hypot, ref_function>(queue, values, ulps_double);
           }
 
           SECTION("double xtd::hypot(int, int)") {
-            test_2<double, int, xtd::hypot, ref_hypot>(queue, values, ulps_double);
+            test_aa<double, int, xtd::hypot, ref_function>(queue, values, ulps_double);
           }
 
           SECTION("float xtd::hypotf(float, float)") {
-            test_2f<float, float, xtd::hypotf, ref_hypotf>(queue, values, ulps_float);
+            test_ff<float, float, xtd::hypotf, ref_functionf>(queue, values, ulps_single);
           }
 
           SECTION("float xtd::hypotf(double, double)") {
-            test_2f<float, double, xtd::hypotf, ref_hypotf>(queue, values, ulps_float);
+            test_ff<float, double, xtd::hypotf, ref_functionf>(queue, values, ulps_single);
           }
 
           SECTION("float xtd::hypotf(int, int)") {
-            test_2f<float, int, xtd::hypotf, ref_hypotf>(queue, values, ulps_float);
+            test_ff<float, int, xtd::hypotf, ref_functionf>(queue, values, ulps_single);
           }
         }
       }

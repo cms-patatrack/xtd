@@ -26,7 +26,7 @@
 #include "common/sycl_test.h"
 #include "common/math_inputs.h"
 
-constexpr int ulps_float = 5;
+constexpr int ulps_single = 5;
 constexpr int ulps_double = 5;
 
 TEST_CASE("xtd::atanh", "[atanh][sycl]") {
@@ -42,27 +42,27 @@ TEST_CASE("xtd::atanh", "[atanh][sycl]") {
           sycl::queue queue{device, sycl::property::queue::in_order()};
 
           SECTION("float xtd::atanh(float)") {
-            test<float, float, xtd::atanh, mpfr::atanh>(queue, values, ulps_float);
+            test_a<float, float, xtd::atanh, ref_function>(queue, values, ulps_single);
           }
 
           SECTION("double xtd::atanh(double)") {
-            test<double, double, xtd::atanh, mpfr::atanh>(queue, values, ulps_double);
+            test_a<double, double, xtd::atanh, ref_function>(queue, values, ulps_double);
           }
 
           SECTION("double xtd::atanh(int)") {
-            test<double, int, xtd::atanh, mpfr::atanh>(queue, values, ulps_double);
+            test_a<double, int, xtd::atanh, ref_function>(queue, values, ulps_double);
           }
 
           SECTION("float xtd::atanhf(float)") {
-            test_f<float, float, xtd::atanhf, mpfr::atanh>(queue, values, ulps_float);
+            test_f<float, float, xtd::atanhf, ref_functionf>(queue, values, ulps_single);
           }
 
           SECTION("float xtd::atanhf(double)") {
-            test_f<float, double, xtd::atanhf, mpfr::atanh>(queue, values, ulps_float);
+            test_f<float, double, xtd::atanhf, ref_functionf>(queue, values, ulps_single);
           }
 
           SECTION("float xtd::atanhf(int)") {
-            test_f<float, int, xtd::atanhf, mpfr::atanh>(queue, values, ulps_float);
+            test_f<float, int, xtd::atanhf, ref_functionf>(queue, values, ulps_single);
           }
         }
       }

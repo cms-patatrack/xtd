@@ -28,8 +28,11 @@ using namespace std::literals;
 #include "common/cuda_version.h"
 #include "common/math_inputs.h"
 
-constexpr int ulps_float = 0;
+constexpr int ulps_single = 0;
 constexpr int ulps_double = 0;
+
+constexpr auto ref_function = [](mpfr_double x) { return mpfr::sqrt(x); };
+constexpr auto ref_functionf = [](mpfr_single x) { return mpfr::sqrt(x); };
 
 TEST_CASE("xtd::sqrt", "[sqrt][cuda]") {
   std::vector<double> values = generate_input_values();
@@ -50,27 +53,27 @@ TEST_CASE("xtd::sqrt", "[sqrt][cuda]") {
         CUDA_CHECK(cudaStreamCreate(&queue));
 
         SECTION("float xtd::sqrt(float)") {
-          test<float, float, xtd::sqrt, mpfr::sqrt>(queue, values, ulps_float);
+          test_a<float, float, xtd::sqrt, ref_function>(queue, values, ulps_single);
         }
 
         SECTION("double xtd::sqrt(double)") {
-          test<double, double, xtd::sqrt, mpfr::sqrt>(queue, values, ulps_double);
+          test_a<double, double, xtd::sqrt, ref_function>(queue, values, ulps_double);
         }
 
         SECTION("double xtd::sqrt(int)") {
-          test<double, int, xtd::sqrt, mpfr::sqrt>(queue, values, ulps_double);
+          test_a<double, int, xtd::sqrt, ref_function>(queue, values, ulps_double);
         }
 
         SECTION("float xtd::sqrtf(float)") {
-          test_f<float, float, xtd::sqrtf, mpfr::sqrt>(queue, values, ulps_float);
+          test_f<float, float, xtd::sqrtf, ref_functionf>(queue, values, ulps_single);
         }
 
         SECTION("float xtd::sqrtf(double)") {
-          test_f<float, double, xtd::sqrtf, mpfr::sqrt>(queue, values, ulps_float);
+          test_f<float, double, xtd::sqrtf, ref_functionf>(queue, values, ulps_single);
         }
 
         SECTION("float xtd::sqrtf(int)") {
-          test_f<float, int, xtd::sqrtf, mpfr::sqrt>(queue, values, ulps_float);
+          test_f<float, int, xtd::sqrtf, ref_functionf>(queue, values, ulps_single);
         }
 
         CUDA_CHECK(cudaStreamDestroy(queue));

@@ -21,33 +21,36 @@
 #include "common/cpu_test.h"
 #include "common/math_inputs.h"
 
-constexpr int ulps_float = 2;
+constexpr int ulps_single = 2;
 constexpr int ulps_double = 2;
+
+constexpr auto ref_function = [](mpfr_double x) { return mpfr::acosh(x); };
+constexpr auto ref_functionf = [](mpfr_single x) { return mpfr::acosh(x); };
 
 TEST_CASE("xtd::acosh", "[acosh][cpu]") {
   std::vector<double> values = generate_input_values();
 
   SECTION("float xtd::acosh(float)") {
-    test<float, float, xtd::acosh, mpfr::acosh>(values, ulps_float);
+    test_a<float, float, xtd::acosh, ref_function>(values, ulps_single);
   }
 
   SECTION("double xtd::acosh(double)") {
-    test<double, double, xtd::acosh, mpfr::acosh>(values, ulps_double);
+    test_a<double, double, xtd::acosh, ref_function>(values, ulps_double);
   }
 
   SECTION("double xtd::acosh(int)") {
-    test<double, int, xtd::acosh, mpfr::acosh>(values, ulps_double);
+    test_a<double, int, xtd::acosh, ref_function>(values, ulps_double);
   }
 
   SECTION("float xtd::acoshf(float)") {
-    test_f<float, float, xtd::acoshf, mpfr::acosh>(values, ulps_float);
+    test_f<float, float, xtd::acoshf, ref_functionf>(values, ulps_single);
   }
 
   SECTION("float xtd::acoshf(double)") {
-    test_f<float, double, xtd::acoshf, mpfr::acosh>(values, ulps_float);
+    test_f<float, double, xtd::acoshf, ref_functionf>(values, ulps_single);
   }
 
   SECTION("float xtd::acoshf(int)") {
-    test_f<float, int, xtd::acoshf, mpfr::acosh>(values, ulps_float);
+    test_f<float, int, xtd::acoshf, ref_functionf>(values, ulps_single);
   }
 }

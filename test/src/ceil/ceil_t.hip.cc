@@ -28,8 +28,11 @@ using namespace std::literals;
 #include "common/hip_version.h"
 #include "common/math_inputs.h"
 
-constexpr int ulps_float = 0;
+constexpr int ulps_single = 0;
 constexpr int ulps_double = 0;
+
+constexpr auto ref_function = [](mpfr_double x) { return mpfr::ceil(x); };
+constexpr auto ref_functionf = [](mpfr_single x) { return mpfr::ceil(x); };
 
 TEST_CASE("xtd::ceil", "[ceil][hip]") {
   std::vector<double> values = generate_input_values();
@@ -50,27 +53,27 @@ TEST_CASE("xtd::ceil", "[ceil][hip]") {
         HIP_CHECK(hipStreamCreate(&queue));
 
         SECTION("float xtd::ceil(float)") {
-          test<float, float, xtd::ceil, mpfr::ceil>(queue, values, ulps_float);
+          test_a<float, float, xtd::ceil, ref_function>(queue, values, ulps_single);
         }
 
         SECTION("double xtd::ceil(double)") {
-          test<double, double, xtd::ceil, mpfr::ceil>(queue, values, ulps_double);
+          test_a<double, double, xtd::ceil, ref_function>(queue, values, ulps_double);
         }
 
         SECTION("double xtd::ceil(int)") {
-          test<double, int, xtd::ceil, mpfr::ceil>(queue, values, ulps_double);
+          test_a<double, int, xtd::ceil, ref_function>(queue, values, ulps_double);
         }
 
         SECTION("float xtd::ceilf(float)") {
-          test_f<float, float, xtd::ceilf, mpfr::ceil>(queue, values, ulps_float);
+          test_f<float, float, xtd::ceilf, ref_functionf>(queue, values, ulps_single);
         }
 
         SECTION("float xtd::ceilf(double)") {
-          test_f<float, double, xtd::ceilf, mpfr::ceil>(queue, values, ulps_float);
+          test_f<float, double, xtd::ceilf, ref_functionf>(queue, values, ulps_single);
         }
 
         SECTION("float xtd::ceilf(int)") {
-          test_f<float, int, xtd::ceilf, mpfr::ceil>(queue, values, ulps_float);
+          test_f<float, int, xtd::ceilf, ref_functionf>(queue, values, ulps_single);
         }
 
         HIP_CHECK(hipStreamDestroy(queue));
