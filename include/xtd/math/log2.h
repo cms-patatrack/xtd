@@ -13,7 +13,7 @@
 
 namespace xtd {
 
-  /* Computes the base-2 logarithm of arg, in single precision.
+  /* Computes the base 2 logarithm of arg, in single precision.
    */
   XTD_DEVICE_FUNCTION inline constexpr float log2(float arg) {
 #if defined(XTD_TARGET_CUDA)
@@ -31,7 +31,7 @@ namespace xtd {
 #endif
   }
 
-  /* Computes the base-2 logarithm of arg, in double precision.
+  /* Computes the base 2 logarithm of arg, in double precision.
    */
   XTD_DEVICE_FUNCTION inline constexpr double log2(double arg) {
 #if defined(XTD_TARGET_CUDA)
@@ -49,13 +49,13 @@ namespace xtd {
 #endif
   }
 
-  /* Computes the base-2 logarithm of arg, in double precision.
+  /* Computes the base 2 logarithm of arg, in double precision.
    */
   XTD_DEVICE_FUNCTION inline constexpr double log2(std::integral auto arg) {
     return xtd::log2(static_cast<double>(arg));
   }
 
-  /* Computes the base-2 logarithm of arg, in single precision.
+  /* Computes the base 2 logarithm of arg, in single precision.
    */
   XTD_DEVICE_FUNCTION inline constexpr float log2f(std::floating_point auto arg) {
     return xtd::log2(static_cast<float>(arg));

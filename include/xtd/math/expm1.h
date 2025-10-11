@@ -13,7 +13,7 @@
 
 namespace xtd {
 
-  /* Computes he exponential value of arg, minus 1, in single precision.
+  /* Computes e raised to the given power, minus 1, in single precision.
    */
   XTD_DEVICE_FUNCTION inline constexpr float expm1(float arg) {
 #if defined(XTD_TARGET_CUDA)
@@ -31,7 +31,7 @@ namespace xtd {
 #endif
   }
 
-  /* Computes he exponential value of arg, minus 1, in double precision.
+  /* Computes e raised to the given power, minus 1, in double precision.
    */
   XTD_DEVICE_FUNCTION inline constexpr double expm1(double arg) {
 #if defined(XTD_TARGET_CUDA)
@@ -49,13 +49,13 @@ namespace xtd {
 #endif
   }
 
-  /* Computes he exponential value of arg, minus 1, in double precision.
+  /* Computes e raised to the given power, minus 1, in double precision.
    */
   XTD_DEVICE_FUNCTION inline constexpr double expm1(std::integral auto arg) {
     return xtd::expm1(static_cast<double>(arg));
   }
 
-  /* Computes he exponential value of arg, minus 1, in single precision.
+  /* Computes e raised to the given power, minus 1, in single precision.
    */
   XTD_DEVICE_FUNCTION inline constexpr float expm1f(std::floating_point auto arg) {
     return xtd::expm1(static_cast<float>(arg));

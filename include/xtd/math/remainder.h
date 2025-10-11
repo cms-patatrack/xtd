@@ -13,8 +13,8 @@
 
 namespace xtd {
 
-  /* Computes the IEEE remainder of the floating-point division the two arguments, in single precision.
-   * In contrast to xtd::fmod, the returned value is not guaranteed to have the same sign as x.
+  /* Computes the remainder of the floating-point division between the two arguments, in single precision.
+   * The returned value is not guaranteed to have the same sign as the first argument.
    */
   XTD_DEVICE_FUNCTION inline constexpr float remainder(float x, float y) {
 #if defined(XTD_TARGET_CUDA)
@@ -32,8 +32,8 @@ namespace xtd {
 #endif
   }
 
-  /* Computes the IEEE remainder of the floating-point division the two arguments, in double precision.
-   * In contrast to xtd::fmod, the returned value is not guaranteed to have the same sign as x.
+  /* Computes the remainder of the floating-point division between the two arguments, in double precision.
+   * The returned value is not guaranteed to have the same sign as the first argument.
    */
   XTD_DEVICE_FUNCTION inline constexpr double remainder(double x, double y) {
 #if defined(XTD_TARGET_CUDA)
@@ -51,16 +51,16 @@ namespace xtd {
 #endif
   }
 
-  /* Computes the IEEE remainder of the floating-point division the two arguments, in double precision.
-   * In contrast to xtd::fmod, the returned value is not guaranteed to have the same sign as x.
+  /* Computes the remainder of the floating-point division between the two arguments, in double precision.
+   * The returned value is not guaranteed to have the same sign as the first argument.
    */
   template <std::integral Integral>
   XTD_DEVICE_FUNCTION inline constexpr double remainder(Integral x, Integral y) {
     return xtd::remainder(static_cast<double>(x), static_cast<double>(y));
   }
 
-  /* Computes the IEEE remainder of the floating-point division the two arguments, in single precision.
-   * In contrast to xtd::fmod, the returned value is not guaranteed to have the same sign as x.
+  /* Computes the remainder of the floating-point division between the two arguments, in single precision.
+   * The returned value is not guaranteed to have the same sign as the first argument.
    */
   template <std::floating_point FloatingPoint>
   XTD_DEVICE_FUNCTION inline constexpr float remainderf(FloatingPoint x, FloatingPoint y) {

@@ -13,7 +13,7 @@
 
 namespace xtd {
 
-  /* Computes the smaller of two point arguments, treating NaNs as missing data, in single precision.
+  /* Computes the smaller of the two arguments, in single precision, treating NaNs as missing data.
    * Between a NaN and a numeric value, the numeric value is chosen.
    */
   XTD_DEVICE_FUNCTION inline constexpr float fmin(float x, float y) {
@@ -32,7 +32,7 @@ namespace xtd {
 #endif
   }
 
-  /* Computes the smaller of two point arguments, treating NaNs as missing data, in double precision.
+  /* Computes the smaller of the two arguments, in double precision, treating NaNs as missing data.
    * Between a NaN and a numeric value, the numeric value is chosen.
    */
   XTD_DEVICE_FUNCTION inline constexpr double fmin(double x, double y) {
@@ -51,7 +51,7 @@ namespace xtd {
 #endif
   }
 
-  /* Computes the smaller of two point arguments, treating NaNs as missing data, in double precision.
+  /* Computes the smaller of the two arguments, in double precision, treating NaNs as missing data.
    * Between a NaN and a numeric value, the numeric value is chosen.
    */
   template <std::integral Integral>
@@ -59,7 +59,7 @@ namespace xtd {
     return xtd::fmin(static_cast<double>(x), static_cast<double>(y));
   }
 
-  /* Computes the smaller of two point arguments, treating NaNs as missing data, in single precision.
+  /* Computes the smaller of the two arguments, in single precision, treating NaNs as missing data.
    * Between a NaN and a numeric value, the numeric value is chosen.
    */
   template <std::floating_point FloatingPoint>

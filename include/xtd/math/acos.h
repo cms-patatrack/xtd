@@ -13,7 +13,7 @@
 
 namespace xtd {
 
-  /* Computes the inverse cosine (measured in radians) or arg, in single precision.
+  /* Computes the inverse cosine (measured in radians) of arg, in single precision.
    */
   XTD_DEVICE_FUNCTION inline constexpr float acos(float arg) {
 #if defined(XTD_TARGET_CUDA)
@@ -31,7 +31,7 @@ namespace xtd {
 #endif
   }
 
-  /* Computes the inverse cosine (measured in radians) or arg, in double precision.
+  /* Computes the inverse cosine (measured in radians) of arg, in double precision.
    */
   XTD_DEVICE_FUNCTION inline constexpr double acos(double arg) {
 #if defined(XTD_TARGET_CUDA)
@@ -49,13 +49,13 @@ namespace xtd {
 #endif
   }
 
-  /* Computes the inverse cosine (measured in radians) or arg, in double precision.
+  /* Computes the inverse cosine (measured in radians) of arg, in double precision.
    */
   XTD_DEVICE_FUNCTION inline constexpr double acos(std::integral auto arg) {
     return xtd::acos(static_cast<double>(arg));
   }
 
-  /* Computes the inverse cosine (measured in radians) or arg, in single precision.
+  /* Computes the inverse cosine (measured in radians) of arg, in single precision.
    */
   XTD_DEVICE_FUNCTION inline constexpr float acosf(std::floating_point auto arg) {
     return xtd::acos(static_cast<float>(arg));

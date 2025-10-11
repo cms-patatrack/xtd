@@ -13,7 +13,7 @@
 
 namespace xtd {
 
-  /* Computes the cubic root of arg, in single precision.
+  /* Computes the cube root of arg, in single precision.
    */
   XTD_DEVICE_FUNCTION inline constexpr float cbrt(float arg) {
 #if defined(XTD_TARGET_CUDA)
@@ -31,7 +31,7 @@ namespace xtd {
 #endif
   }
 
-  /* Computes the cubic root of arg, in double precision.
+  /* Computes the cube root of arg, in double precision.
    */
   XTD_DEVICE_FUNCTION inline constexpr double cbrt(double arg) {
 #if defined(XTD_TARGET_CUDA)
@@ -49,13 +49,13 @@ namespace xtd {
 #endif
   }
 
-  /* Computes the cubic root of arg, in double precision.
+  /* Computes the cube root of arg, in double precision.
    */
   XTD_DEVICE_FUNCTION inline constexpr double cbrt(std::integral auto arg) {
     return xtd::cbrt(static_cast<double>(arg));
   }
 
-  /* Computes the cubic root of arg, in single precision.
+  /* Computes the cube root of arg, in single precision.
    */
   XTD_DEVICE_FUNCTION inline constexpr float cbrtf(std::floating_point auto arg) {
     return xtd::cbrt(static_cast<float>(arg));

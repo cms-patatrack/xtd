@@ -13,7 +13,7 @@
 
 namespace xtd {
 
-  /* Computes the square root, in single precision.
+  /* Computes the square root of arg, in single precision.
    */
   XTD_DEVICE_FUNCTION inline constexpr float sqrt(float arg) {
 #if defined(XTD_TARGET_CUDA)
@@ -31,7 +31,7 @@ namespace xtd {
 #endif
   }
 
-  /* Computes the square root, in double precision.
+  /* Computes the square root of arg, in double precision.
    */
   XTD_DEVICE_FUNCTION inline constexpr double sqrt(double arg) {
 #if defined(XTD_TARGET_CUDA)
@@ -49,13 +49,13 @@ namespace xtd {
 #endif
   }
 
-  /* Computes the square root, in double precision.
+  /* Computes the square root of arg, in double precision.
    */
   XTD_DEVICE_FUNCTION inline constexpr double sqrt(std::integral auto arg) {
     return xtd::sqrt(static_cast<double>(arg));
   }
 
-  /* Computes the square root, in single precision.
+  /* Computes the square root of arg, in single precision.
    */
   XTD_DEVICE_FUNCTION inline constexpr float sqrtf(std::floating_point auto arg) {
     return xtd::sqrt(static_cast<float>(arg));

@@ -13,7 +13,7 @@
 
 namespace xtd {
 
-  /* Computes the floating-point remainder of the division the two arguments, in single precision.
+  /* Computes the floating-point remainder of the division between the two arguments, in single precision.
    */
   XTD_DEVICE_FUNCTION inline constexpr float fmod(float x, float y) {
 #if defined(XTD_TARGET_CUDA)
@@ -31,7 +31,7 @@ namespace xtd {
 #endif
   }
 
-  /* Computes the floating-point remainder of the division the two arguments, in double precision.
+  /* Computes the floating-point remainder of the division between the two arguments, in double precision.
    */
   XTD_DEVICE_FUNCTION inline constexpr double fmod(double x, double y) {
 #if defined(XTD_TARGET_CUDA)
@@ -49,14 +49,14 @@ namespace xtd {
 #endif
   }
 
-  /* Computes the floating-point remainder of the division the two arguments, in double precision.
+  /* Computes the floating-point remainder of the division between the two arguments, in double precision.
    */
   template <std::integral Integral>
   XTD_DEVICE_FUNCTION inline constexpr double fmod(Integral x, Integral y) {
     return xtd::fmod(static_cast<double>(x), static_cast<double>(y));
   }
 
-  /* Computes the floating-point remainder of the division the two arguments, in single precision.
+  /* Computes the floating-point remainder of the division between the two arguments, in single precision.
    */
   template <std::floating_point FloatingPoint>
   XTD_DEVICE_FUNCTION inline constexpr float fmodf(FloatingPoint x, FloatingPoint y) {
