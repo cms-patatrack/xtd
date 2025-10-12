@@ -26,7 +26,7 @@
 #include "common/sycl_test.h"
 #include "common/math_inputs.h"
 
-constexpr int ulps_single = 0;
+constexpr int ulps_single = 1;  // Correctly rounded according to the OpenCL documentation.
 constexpr int ulps_double = 0;
 
 constexpr auto ref_function = [](mpfr_double x, mpfr_double y) -> mpfr_double { return mpfr::fdim(x, y); };
