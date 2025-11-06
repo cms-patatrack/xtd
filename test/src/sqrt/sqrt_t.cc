@@ -11,46 +11,42 @@
 // Catch2 headers
 #include <catch.hpp>
 
-// mpfr::real headers
-#include <real.hpp>
-
 // xtd headers
 #include "xtd/math/sqrt.h"
 
 // test headers
-#include "common/cpu_test.h"
-#include "common/math_inputs.h"
+#include "common/cpu/device.h"
+#include "common/cpu/validate.h"
+#include "mpfr_sqrt.h"
 
 constexpr int ulps_single = 0;
 constexpr int ulps_double = 0;
 
-constexpr auto ref_function = [](mpfr_double x) { return mpfr::sqrt(x); };
-constexpr auto ref_functionf = [](mpfr_single x) { return mpfr::sqrt(x); };
-
 TEST_CASE("xtd::sqrt", "[sqrt][cpu]") {
-  std::vector<double> values = generate_input_values();
+  const auto& device = test::cpu::device();
+  DYNAMIC_SECTION("CPU: " << device.name()) {
+    SECTION("float xtd::sqrt(float)") {
+      validate<float, float, xtd::sqrt, mpfr_sqrtf>(device, ulps_single);
+    }
 
-  SECTION("float xtd::sqrt(float)") {
-    test_a<float, float, xtd::sqrt, ref_function>(values, ulps_single);
-  }
+    SECTION("double xtd::sqrt(double)") {
+      validate<double, double, xtd::sqrt, mpfr_sqrt>(device, ulps_double);
+    }
 
-  SECTION("double xtd::sqrt(double)") {
-    test_a<double, double, xtd::sqrt, ref_function>(values, ulps_double);
-  }
+    SECTION("double xtd::sqrt(int)") {
+      validate<double, int, xtd::sqrt, mpfr_sqrt>(device, ulps_double);
+    }
 
-  SECTION("double xtd::sqrt(int)") {
-    test_a<double, int, xtd::sqrt, ref_function>(values, ulps_double);
-  }
+    SECTION("float xtd::sqrtf(float)") {
+      validate<float, float, xtd::sqrtf, mpfr_sqrtf>(device, ulps_single);
+    }
 
-  SECTION("float xtd::sqrtf(float)") {
-    test_f<float, float, xtd::sqrtf, ref_functionf>(values, ulps_single);
-  }
+    SECTION("float xtd::sqrtf(double)") {
+      validate<float, double, xtd::sqrtf, mpfr_sqrtf>(device, ulps_single);
+    }
 
-  SECTION("float xtd::sqrtf(double)") {
-    test_f<float, double, xtd::sqrtf, ref_functionf>(values, ulps_single);
-  }
-
-  SECTION("float xtd::sqrtf(int)") {
-    test_f<float, int, xtd::sqrtf, ref_functionf>(values, ulps_single);
+    SECTION("float xtd::sqrtf(int)") {
+      validate<float, int, xtd::sqrtf, mpfr_sqrtf>(device, ulps_single);
+    }
   }
 }

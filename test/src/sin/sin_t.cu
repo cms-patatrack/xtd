@@ -4,79 +4,49 @@
  * SPDX-License-Identifier: MPL-2.0
  */
 
-// C++ standard headers
-#include <string>
-#include <vector>
-using namespace std::literals;
-
 // Catch2 headers
 #define CATCH_CONFIG_NO_POSIX_SIGNALS
 #include <catch.hpp>
-
-// CUDA headers
-#include <cuda_runtime.h>
-
-// mpfr::real headers
-#include <real.hpp>
 
 // xtd headers
 #include "xtd/math/sin.h"
 
 // test headers
-#include "common/cuda_check.h"
-#include "common/cuda_test.h"
-#include "common/cuda_version.h"
-#include "common/math_inputs.h"
+#include "common/cuda/platform.h"
+#include "common/cuda/validate.h"
+#include "mpfr_sin.h"
 
 constexpr int ulps_single = 1;
 constexpr int ulps_double = 1;
 
-constexpr auto ref_function = [](mpfr_double x) { return mpfr::sin(x); };
-constexpr auto ref_functionf = [](mpfr_single x) { return mpfr::sin(x); };
-
 TEST_CASE("xtd::sin", "[sin][cuda]") {
-  std::vector<double> values = generate_input_values();
-
-  DYNAMIC_SECTION("CUDA platform: " << cuda_version()) {
-    int deviceCount;
-    CUDA_CHECK(cudaGetDeviceCount(&deviceCount));
-
-    for (int device = 0; device < deviceCount; ++device) {
-      cudaDeviceProp properties;
-      CUDA_CHECK(cudaGetDeviceProperties(&properties, device));
-      DYNAMIC_SECTION("CUDA device " << device << ": " << properties.name) {
-        // set the current GPU
-        CUDA_CHECK(cudaSetDevice(device));
-
-        // create a CUDA stream for all the asynchronous operations on this GPU
-        cudaStream_t queue;
-        CUDA_CHECK(cudaStreamCreate(&queue));
-
+  const auto& platform = test::cuda::platform();
+  DYNAMIC_SECTION("CUDA platform: " << platform.name()) {
+    for (const auto& device : platform.devices()) {
+      DYNAMIC_SECTION("CUDA device " << device.index() << ": " << device.name()) {
         SECTION("float xtd::sin(float)") {
-          test_a<float, float, xtd::sin, ref_function>(queue, values, ulps_single);
+          validate<float, float, xtd::sin, mpfr_sinf>(device, ulps_single);
         }
 
         SECTION("double xtd::sin(double)") {
-          test_a<double, double, xtd::sin, ref_function>(queue, values, ulps_double);
+          validate<double, double, xtd::sin, mpfr_sin>(device, ulps_double);
         }
 
         SECTION("double xtd::sin(int)") {
-          test_a<double, int, xtd::sin, ref_function>(queue, values, ulps_double);
+          validate<double, int, xtd::sin, mpfr_sin>(device, ulps_double);
         }
 
         SECTION("float xtd::sinf(float)") {
-          test_f<float, float, xtd::sinf, ref_functionf>(queue, values, ulps_single);
+          validate<float, float, xtd::sinf, mpfr_sinf>(device, ulps_single);
         }
 
         SECTION("float xtd::sinf(double)") {
-          test_f<float, double, xtd::sinf, ref_functionf>(queue, values, ulps_single);
+          validate<float, double, xtd::sinf, mpfr_sinf>(device, ulps_single);
         }
 
         SECTION("float xtd::sinf(int)") {
-          test_f<float, int, xtd::sinf, ref_functionf>(queue, values, ulps_single);
+          validate<float, int, xtd::sinf, mpfr_sinf>(device, ulps_single);
         }
-
-        CUDA_CHECK(cudaStreamDestroy(queue));
       }
     }
   }

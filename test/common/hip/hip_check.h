@@ -45,4 +45,4 @@ namespace internal {
 
 }  // namespace internal
 
-#define HIP_CHECK(ARG, ...) (internal::__hip_check(__FILE__, __LINE__, #ARG, (ARG), ##__VA_ARGS__))
+#define HIP_CHECK(ARG, ...) (::internal::__hip_check(__FILE__, __LINE__, #ARG, (ARG), ##__VA_ARGS__))

@@ -11,46 +11,42 @@
 // Catch2 headers
 #include <catch.hpp>
 
-// mpfr::real headers
-#include <real.hpp>
-
 // xtd headers
 #include "xtd/math/remainder.h"
 
 // test headers
-#include "common/cpu_test.h"
-#include "common/math_inputs.h"
+#include "common/cpu/device.h"
+#include "common/cpu/validate.h"
+#include "mpfr_remainder.h"
 
 constexpr int ulps_single = 0;
 constexpr int ulps_double = 0;
 
-constexpr auto ref_function = [](mpfr_double x, mpfr_double y) -> mpfr_double { return mpfr::remainder(x, y); };
-constexpr auto ref_functionf = [](mpfr_single x, mpfr_single y) -> mpfr_single { return mpfr::remainder(x, y); };
-
 TEST_CASE("xtd::remainder", "[remainder][cpu]") {
-  std::vector<double> values = generate_input_values();
+  const auto& device = test::cpu::device();
+  DYNAMIC_SECTION("CPU: " << device.name()) {
+    SECTION("float xtd::remainder(float, float)") {
+      validate<float, float, xtd::remainder, mpfr_remainderf>(device, ulps_single);
+    }
 
-  SECTION("float xtd::remainder(float, float)") {
-    test_aa<float, float, xtd::remainder, ref_function>(values, ulps_single);
-  }
+    SECTION("double xtd::remainder(double, double)") {
+      validate<double, double, xtd::remainder, mpfr_remainder>(device, ulps_double);
+    }
 
-  SECTION("double xtd::remainder(double, double)") {
-    test_aa<double, double, xtd::remainder, ref_function>(values, ulps_double);
-  }
+    SECTION("double xtd::remainder(int, int)") {
+      validate<double, int, xtd::remainder, mpfr_remainder>(device, ulps_double);
+    }
 
-  SECTION("double xtd::remainder(int, int)") {
-    test_aa<double, int, xtd::remainder, ref_function>(values, ulps_double);
-  }
+    SECTION("float xtd::remainderf(float, float)") {
+      validate<float, float, xtd::remainderf, mpfr_remainderf>(device, ulps_single);
+    }
 
-  SECTION("float xtd::remainderf(float, float)") {
-    test_ff<float, float, xtd::remainderf, ref_functionf>(values, ulps_single);
-  }
+    SECTION("float xtd::remainderf(double, double)") {
+      validate<float, double, xtd::remainderf, mpfr_remainderf>(device, ulps_single);
+    }
 
-  SECTION("float xtd::remainderf(double, double)") {
-    test_ff<float, double, xtd::remainderf, ref_functionf>(values, ulps_single);
-  }
-
-  SECTION("float xtd::remainderf(int, int)") {
-    test_ff<float, int, xtd::remainderf, ref_functionf>(values, ulps_single);
+    SECTION("float xtd::remainderf(int, int)") {
+      validate<float, int, xtd::remainderf, mpfr_remainderf>(device, ulps_single);
+    }
   }
 }

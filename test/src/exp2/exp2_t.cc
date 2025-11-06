@@ -11,46 +11,42 @@
 // Catch2 headers
 #include <catch.hpp>
 
-// mpfr::real headers
-#include <real.hpp>
-
 // xtd headers
 #include "xtd/math/exp2.h"
 
 // test headers
-#include "common/cpu_test.h"
-#include "common/math_inputs.h"
+#include "common/cpu/device.h"
+#include "common/cpu/validate.h"
+#include "mpfr_exp2.h"
 
 constexpr int ulps_single = 1;
 constexpr int ulps_double = 1;
 
-constexpr auto ref_function = [](mpfr_double x) { return mpfr::exp2(x); };
-constexpr auto ref_functionf = [](mpfr_single x) { return mpfr::exp2(x); };
-
 TEST_CASE("xtd::exp2", "[exp2][cpu]") {
-  std::vector<double> values = generate_input_values();
+  const auto& device = test::cpu::device();
+  DYNAMIC_SECTION("CPU: " << device.name()) {
+    SECTION("float xtd::exp2(float)") {
+      validate<float, float, xtd::exp2, mpfr_exp2f>(device, ulps_single);
+    }
 
-  SECTION("float xtd::exp2(float)") {
-    test_a<float, float, xtd::exp2, ref_function>(values, ulps_single);
-  }
+    SECTION("double xtd::exp2(double)") {
+      validate<double, double, xtd::exp2, mpfr_exp2>(device, ulps_double);
+    }
 
-  SECTION("double xtd::exp2(double)") {
-    test_a<double, double, xtd::exp2, ref_function>(values, ulps_double);
-  }
+    SECTION("double xtd::exp2(int)") {
+      validate<double, int, xtd::exp2, mpfr_exp2>(device, ulps_double);
+    }
 
-  SECTION("double xtd::exp2(int)") {
-    test_a<double, int, xtd::exp2, ref_function>(values, ulps_double);
-  }
+    SECTION("float xtd::exp2f(float)") {
+      validate<float, float, xtd::exp2f, mpfr_exp2f>(device, ulps_single);
+    }
 
-  SECTION("float xtd::exp2f(float)") {
-    test_f<float, float, xtd::exp2f, ref_functionf>(values, ulps_single);
-  }
+    SECTION("float xtd::exp2f(double)") {
+      validate<float, double, xtd::exp2f, mpfr_exp2f>(device, ulps_single);
+    }
 
-  SECTION("float xtd::exp2f(double)") {
-    test_f<float, double, xtd::exp2f, ref_functionf>(values, ulps_single);
-  }
-
-  SECTION("float xtd::exp2f(int)") {
-    test_f<float, int, xtd::exp2f, ref_functionf>(values, ulps_single);
+    SECTION("float xtd::exp2f(int)") {
+      validate<float, int, xtd::exp2f, mpfr_exp2f>(device, ulps_single);
+    }
   }
 }

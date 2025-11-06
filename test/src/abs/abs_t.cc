@@ -5,45 +5,40 @@
  */
 
 // C++ standard headers
-#include <cmath>
-#include <vector>
+#include <cstdlib>
 
 // Catch2 headers
+#define CATCH_CONFIG_NO_POSIX_SIGNALS
 #include <catch.hpp>
-
-// mpfr::real headers
-#include <real.hpp>
 
 // xtd headers
 #include "xtd/stdlib/abs.h"
 
 // test headers
-#include "common/cpu_test.h"
-#include "common/math_inputs.h"
-
-constexpr auto ref_function = [](mpfr_double x) { return mpfr::abs(x); };
-constexpr auto ref_functionf = [](mpfr_single x) { return mpfr::abs(x); };
+#include "common/cpu/device.h"
+#include "common/cpu/validate.h"
 
 TEST_CASE("xtd::abs", "[abs][cpu]") {
-  std::vector<double> values = generate_input_values();
+  const auto& device = test::cpu::device();
+  DYNAMIC_SECTION("CPU: " << device.name()) {
+    SECTION("float xtd::abs(float)") {
+      validate<float, float, xtd::abs, std::abs>(device);
+    }
 
-  SECTION("float xtd::abs(float)") {
-    test_f<float, float, xtd::abs, ref_functionf>(values);
-  }
+    SECTION("double xtd::abs(double)") {
+      validate<double, double, xtd::abs, std::abs>(device);
+    }
 
-  SECTION("double xtd::abs(double)") {
-    test_a<double, double, xtd::abs, ref_function>(values);
-  }
+    SECTION("int xtd::abs(int)") {
+      validate<int, int, xtd::abs, std::abs>(device);
+    }
 
-  SECTION("int xtd::abs(int)") {
-    test_i<int, xtd::abs, std::abs>(values);
-  }
+    SECTION("long xtd::abs(long)") {
+      validate<long, long, xtd::abs, std::abs>(device);
+    }
 
-  SECTION("long xtd::abs(long)") {
-    test_i<long, xtd::abs, std::abs>(values);
-  }
-
-  SECTION("long long xtd::abs(long long)") {
-    test_i<long long, xtd::abs, std::abs>(values);
+    SECTION("long long xtd::abs(long long)") {
+      validate<long long, long long, xtd::abs, std::abs>(device);
+    }
   }
 }

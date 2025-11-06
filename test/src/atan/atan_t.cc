@@ -11,46 +11,42 @@
 // Catch2 headers
 #include <catch.hpp>
 
-// mpfr::real headers
-#include <real.hpp>
-
 // xtd headers
 #include "xtd/math/atan.h"
 
 // test headers
-#include "common/cpu_test.h"
-#include "common/math_inputs.h"
+#include "common/cpu/device.h"
+#include "common/cpu/validate.h"
+#include "mpfr_atan.h"
 
 constexpr int ulps_single = 1;
 constexpr int ulps_double = 1;
 
-constexpr auto ref_function = [](mpfr_double x) { return mpfr::atan(x); };
-constexpr auto ref_functionf = [](mpfr_single x) { return mpfr::atan(x); };
-
 TEST_CASE("xtd::atan", "[atan][cpu]") {
-  std::vector<double> values = generate_input_values();
+  const auto& device = test::cpu::device();
+  DYNAMIC_SECTION("CPU: " << device.name()) {
+    SECTION("float xtd::atan(float)") {
+      validate<float, float, xtd::atan, mpfr_atanf>(device, ulps_single);
+    }
 
-  SECTION("float xtd::atan(float)") {
-    test_a<float, float, xtd::atan, ref_function>(values, ulps_single);
-  }
+    SECTION("double xtd::atan(double)") {
+      validate<double, double, xtd::atan, mpfr_atan>(device, ulps_double);
+    }
 
-  SECTION("double xtd::atan(double)") {
-    test_a<double, double, xtd::atan, ref_function>(values, ulps_double);
-  }
+    SECTION("double xtd::atan(int)") {
+      validate<double, int, xtd::atan, mpfr_atan>(device, ulps_double);
+    }
 
-  SECTION("double xtd::atan(int)") {
-    test_a<double, int, xtd::atan, ref_function>(values, ulps_double);
-  }
+    SECTION("float xtd::atanf(float)") {
+      validate<float, float, xtd::atanf, mpfr_atanf>(device, ulps_single);
+    }
 
-  SECTION("float xtd::atanf(float)") {
-    test_f<float, float, xtd::atanf, ref_functionf>(values, ulps_single);
-  }
+    SECTION("float xtd::atanf(double)") {
+      validate<float, double, xtd::atanf, mpfr_atanf>(device, ulps_single);
+    }
 
-  SECTION("float xtd::atanf(double)") {
-    test_f<float, double, xtd::atanf, ref_functionf>(values, ulps_single);
-  }
-
-  SECTION("float xtd::atanf(int)") {
-    test_f<float, int, xtd::atanf, ref_functionf>(values, ulps_single);
+    SECTION("float xtd::atanf(int)") {
+      validate<float, int, xtd::atanf, mpfr_atanf>(device, ulps_single);
+    }
   }
 }

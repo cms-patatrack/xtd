@@ -11,46 +11,42 @@
 // Catch2 headers
 #include <catch.hpp>
 
-// mpfr::real headers
-#include <real.hpp>
-
 // xtd headers
 #include "xtd/math/sinh.h"
 
 // test headers
-#include "common/cpu_test.h"
-#include "common/math_inputs.h"
+#include "common/cpu/device.h"
+#include "common/cpu/validate.h"
+#include "mpfr_sinh.h"
 
 constexpr int ulps_single = 2;
 constexpr int ulps_double = 2;
 
-constexpr auto ref_function = [](mpfr_double x) { return mpfr::sinh(x); };
-constexpr auto ref_functionf = [](mpfr_single x) { return mpfr::sinh(x); };
-
 TEST_CASE("xtd::sinh", "[sinh][cpu]") {
-  std::vector<double> values = generate_input_values();
+  const auto& device = test::cpu::device();
+  DYNAMIC_SECTION("CPU: " << device.name()) {
+    SECTION("float xtd::sinh(float)") {
+      validate<float, float, xtd::sinh, mpfr_sinhf>(device, ulps_single);
+    }
 
-  SECTION("float xtd::sinh(float)") {
-    test_a<float, float, xtd::sinh, ref_function>(values, ulps_single);
-  }
+    SECTION("double xtd::sinh(double)") {
+      validate<double, double, xtd::sinh, mpfr_sinh>(device, ulps_double);
+    }
 
-  SECTION("double xtd::sinh(double)") {
-    test_a<double, double, xtd::sinh, ref_function>(values, ulps_double);
-  }
+    SECTION("double xtd::sinh(int)") {
+      validate<double, int, xtd::sinh, mpfr_sinh>(device, ulps_double);
+    }
 
-  SECTION("double xtd::sinh(int)") {
-    test_a<double, int, xtd::sinh, ref_function>(values, ulps_double);
-  }
+    SECTION("float xtd::sinhf(float)") {
+      validate<float, float, xtd::sinhf, mpfr_sinhf>(device, ulps_single);
+    }
 
-  SECTION("float xtd::sinhf(float)") {
-    test_f<float, float, xtd::sinhf, ref_functionf>(values, ulps_single);
-  }
+    SECTION("float xtd::sinhf(double)") {
+      validate<float, double, xtd::sinhf, mpfr_sinhf>(device, ulps_single);
+    }
 
-  SECTION("float xtd::sinhf(double)") {
-    test_f<float, double, xtd::sinhf, ref_functionf>(values, ulps_single);
-  }
-
-  SECTION("float xtd::sinhf(int)") {
-    test_f<float, int, xtd::sinhf, ref_functionf>(values, ulps_single);
+    SECTION("float xtd::sinhf(int)") {
+      validate<float, int, xtd::sinhf, mpfr_sinhf>(device, ulps_single);
+    }
   }
 }

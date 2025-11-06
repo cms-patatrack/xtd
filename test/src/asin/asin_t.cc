@@ -11,46 +11,42 @@
 // Catch2 headers
 #include <catch.hpp>
 
-// mpfr::real headers
-#include <real.hpp>
-
 // xtd headers
 #include "xtd/math/asin.h"
 
 // test headers
-#include "common/cpu_test.h"
-#include "common/math_inputs.h"
+#include "common/cpu/device.h"
+#include "common/cpu/validate.h"
+#include "mpfr_asin.h"
 
 constexpr int ulps_single = 1;
 constexpr int ulps_double = 1;
 
-constexpr auto ref_function = [](mpfr_double x) { return mpfr::asin(x); };
-constexpr auto ref_functionf = [](mpfr_single x) { return mpfr::asin(x); };
-
 TEST_CASE("xtd::asin", "[asin][cpu]") {
-  std::vector<double> values = generate_input_values();
+  const auto& device = test::cpu::device();
+  DYNAMIC_SECTION("CPU: " << device.name()) {
+    SECTION("float xtd::asin(float)") {
+      validate<float, float, xtd::asin, mpfr_asinf>(device, ulps_single);
+    }
 
-  SECTION("float xtd::asin(float)") {
-    test_a<float, float, xtd::asin, ref_function>(values, ulps_single);
-  }
+    SECTION("double xtd::asin(double)") {
+      validate<double, double, xtd::asin, mpfr_asin>(device, ulps_double);
+    }
 
-  SECTION("double xtd::asin(double)") {
-    test_a<double, double, xtd::asin, ref_function>(values, ulps_double);
-  }
+    SECTION("double xtd::asin(int)") {
+      validate<double, int, xtd::asin, mpfr_asin>(device, ulps_double);
+    }
 
-  SECTION("double xtd::asin(int)") {
-    test_a<double, int, xtd::asin, ref_function>(values, ulps_double);
-  }
+    SECTION("float xtd::asinf(float)") {
+      validate<float, float, xtd::asinf, mpfr_asinf>(device, ulps_single);
+    }
 
-  SECTION("float xtd::asinf(float)") {
-    test_f<float, float, xtd::asinf, ref_functionf>(values, ulps_single);
-  }
+    SECTION("float xtd::asinf(double)") {
+      validate<float, double, xtd::asinf, mpfr_asinf>(device, ulps_single);
+    }
 
-  SECTION("float xtd::asinf(double)") {
-    test_f<float, double, xtd::asinf, ref_functionf>(values, ulps_single);
-  }
-
-  SECTION("float xtd::asinf(int)") {
-    test_f<float, int, xtd::asinf, ref_functionf>(values, ulps_single);
+    SECTION("float xtd::asinf(int)") {
+      validate<float, int, xtd::asinf, mpfr_asinf>(device, ulps_single);
+    }
   }
 }
