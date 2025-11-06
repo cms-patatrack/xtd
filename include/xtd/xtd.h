@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "xtd/algorithm.h"
 #include "xtd/concepts.h"
 #include "xtd/math.h"
 #include "xtd/stdlib.h"
