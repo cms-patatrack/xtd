@@ -35,7 +35,7 @@ COMMON_FLAGS := -std=c++20 -O2 -g
 
 # Catch2 needs -Wno-unused-variable
 # mpfr::real needs -Wno-unused-parameter -Wno-self-assign-overloaded
-HOST_CXXFLAGS := -march=native -Wall -Wextra -Werror -Wfatal-errors -Wno-unused-variable -Wno-unused-parameter -Wno-self-assign-overloaded -fPIC
+HOST_CXXFLAGS := -march=native -Wall -Wextra -Werror -Wno-unused-variable -Wno-unused-parameter -Wno-self-assign-overloaded -fPIC
 
 # Compiler flags supported by GCC but not by the LLVM-based compilers (clang, hipcc, icpx, etc.)
 LLVM_UNSUPPORTED_CXXFLAGS := --param vect-max-version-for-alias-checks=50 -Werror=format-contains-nul -Wno-non-template-friend -Werror=return-local-addr -Werror=unused-but-set-variable
