@@ -11,46 +11,42 @@
 // Catch2 headers
 #include <catch.hpp>
 
-// mpfr::real headers
-#include <real.hpp>
-
 // xtd headers
 #include "xtd/math/floor.h"
 
 // test headers
-#include "common/cpu_test.h"
-#include "common/math_inputs.h"
+#include "common/cpu/device.h"
+#include "common/cpu/validate.h"
+#include "mpfr_floor.h"
 
 constexpr int ulps_single = 0;
 constexpr int ulps_double = 0;
 
-constexpr auto ref_function = [](mpfr_double x) { return mpfr::floor(x); };
-constexpr auto ref_functionf = [](mpfr_single x) { return mpfr::floor(x); };
-
 TEST_CASE("xtd::floor", "[floor][cpu]") {
-  std::vector<double> values = generate_input_values();
+  const auto& device = test::cpu::device();
+  DYNAMIC_SECTION("CPU: " << device.name()) {
+    SECTION("float xtd::floor(float)") {
+      validate<float, float, xtd::floor, mpfr_floorf>(device, ulps_single);
+    }
 
-  SECTION("float xtd::floor(float)") {
-    test_a<float, float, xtd::floor, ref_function>(values, ulps_single);
-  }
+    SECTION("double xtd::floor(double)") {
+      validate<double, double, xtd::floor, mpfr_floor>(device, ulps_double);
+    }
 
-  SECTION("double xtd::floor(double)") {
-    test_a<double, double, xtd::floor, ref_function>(values, ulps_double);
-  }
+    SECTION("double xtd::floor(int)") {
+      validate<double, int, xtd::floor, mpfr_floor>(device, ulps_double);
+    }
 
-  SECTION("double xtd::floor(int)") {
-    test_a<double, int, xtd::floor, ref_function>(values, ulps_double);
-  }
+    SECTION("float xtd::floorf(float)") {
+      validate<float, float, xtd::floorf, mpfr_floorf>(device, ulps_single);
+    }
 
-  SECTION("float xtd::floorf(float)") {
-    test_f<float, float, xtd::floorf, ref_functionf>(values, ulps_single);
-  }
+    SECTION("float xtd::floorf(double)") {
+      validate<float, double, xtd::floorf, mpfr_floorf>(device, ulps_single);
+    }
 
-  SECTION("float xtd::floorf(double)") {
-    test_f<float, double, xtd::floorf, ref_functionf>(values, ulps_single);
-  }
-
-  SECTION("float xtd::floorf(int)") {
-    test_f<float, int, xtd::floorf, ref_functionf>(values, ulps_single);
+    SECTION("float xtd::floorf(int)") {
+      validate<float, int, xtd::floorf, mpfr_floorf>(device, ulps_single);
+    }
   }
 }

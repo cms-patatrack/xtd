@@ -11,46 +11,42 @@
 // Catch2 headers
 #include <catch.hpp>
 
-// mpfr::real headers
-#include <real.hpp>
-
 // xtd headers
 #include "xtd/math/fdim.h"
 
 // test headers
-#include "common/cpu_test.h"
-#include "common/math_inputs.h"
+#include "common/cpu/device.h"
+#include "common/cpu/validate.h"
+#include "mpfr_fdim.h"
 
 constexpr int ulps_single = 1;
 constexpr int ulps_double = 1;
 
-constexpr auto ref_function = [](mpfr_double x, mpfr_double y) -> mpfr_double { return mpfr::fdim(x, y); };
-constexpr auto ref_functionf = [](mpfr_single x, mpfr_single y) -> mpfr_single { return mpfr::fdim(x, y); };
-
 TEST_CASE("xtd::fdim", "[fdim][cpu]") {
-  std::vector<double> values = generate_input_values();
+  const auto& device = test::cpu::device();
+  DYNAMIC_SECTION("CPU: " << device.name()) {
+    SECTION("float xtd::fdim(float, float)") {
+      validate<float, float, xtd::fdim, mpfr_fdimf>(device, ulps_single);
+    }
 
-  SECTION("float xtd::fdim(float, float)") {
-    test_aa<float, float, xtd::fdim, ref_function>(values, ulps_single);
-  }
+    SECTION("double xtd::fdim(double, double)") {
+      validate<double, double, xtd::fdim, mpfr_fdim>(device, ulps_double);
+    }
 
-  SECTION("double xtd::fdim(double, double)") {
-    test_aa<double, double, xtd::fdim, ref_function>(values, ulps_double);
-  }
+    SECTION("double xtd::fdim(int, int)") {
+      validate<double, int, xtd::fdim, mpfr_fdim>(device, ulps_double);
+    }
 
-  SECTION("double xtd::fdim(int, int)") {
-    test_aa<double, int, xtd::fdim, ref_function>(values, ulps_double);
-  }
+    SECTION("float xtd::fdimf(float, float)") {
+      validate<float, float, xtd::fdimf, mpfr_fdimf>(device, ulps_single);
+    }
 
-  SECTION("float xtd::fdimf(float, float)") {
-    test_ff<float, float, xtd::fdimf, ref_functionf>(values, ulps_single);
-  }
+    SECTION("float xtd::fdimf(double, double)") {
+      validate<float, double, xtd::fdimf, mpfr_fdimf>(device, ulps_single);
+    }
 
-  SECTION("float xtd::fdimf(double, double)") {
-    test_ff<float, double, xtd::fdimf, ref_functionf>(values, ulps_single);
-  }
-
-  SECTION("float xtd::fdimf(int, int)") {
-    test_ff<float, int, xtd::fdimf, ref_functionf>(values, ulps_single);
+    SECTION("float xtd::fdimf(int, int)") {
+      validate<float, int, xtd::fdimf, mpfr_fdimf>(device, ulps_single);
+    }
   }
 }

@@ -146,4 +146,4 @@ namespace internal {
 
 }  // namespace internal
 
-#define NVML_CHECK(ARG, ...) (internal::__nvml_check(__FILE__, __LINE__, #ARG, (ARG), ##__VA_ARGS__))
+#define NVML_CHECK(ARG, ...) (::internal::__nvml_check(__FILE__, __LINE__, #ARG, (ARG), ##__VA_ARGS__))

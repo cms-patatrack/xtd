@@ -11,46 +11,42 @@
 // Catch2 headers
 #include <catch.hpp>
 
-// mpfr::real headers
-#include <real.hpp>
-
 // xtd headers
 #include "xtd/math/log10.h"
 
 // test headers
-#include "common/cpu_test.h"
-#include "common/math_inputs.h"
+#include "common/cpu/device.h"
+#include "common/cpu/validate.h"
+#include "mpfr_log10.h"
 
 constexpr int ulps_single = 2;
 constexpr int ulps_double = 2;
 
-constexpr auto ref_function = [](mpfr_double x) { return mpfr::log10(x); };
-constexpr auto ref_functionf = [](mpfr_single x) { return mpfr::log10(x); };
-
 TEST_CASE("xtd::log10", "[log10][cpu]") {
-  std::vector<double> values = generate_input_values();
+  const auto& device = test::cpu::device();
+  DYNAMIC_SECTION("CPU: " << device.name()) {
+    SECTION("float xtd::log10(float)") {
+      validate<float, float, xtd::log10, mpfr_log10f>(device, ulps_single);
+    }
 
-  SECTION("float xtd::log10(float)") {
-    test_a<float, float, xtd::log10, ref_function>(values, ulps_single);
-  }
+    SECTION("double xtd::log10(double)") {
+      validate<double, double, xtd::log10, mpfr_log10>(device, ulps_double);
+    }
 
-  SECTION("double xtd::log10(double)") {
-    test_a<double, double, xtd::log10, ref_function>(values, ulps_double);
-  }
+    SECTION("double xtd::log10(int)") {
+      validate<double, int, xtd::log10, mpfr_log10>(device, ulps_double);
+    }
 
-  SECTION("double xtd::log10(int)") {
-    test_a<double, int, xtd::log10, ref_function>(values, ulps_double);
-  }
+    SECTION("float xtd::log10f(float)") {
+      validate<float, float, xtd::log10f, mpfr_log10f>(device, ulps_single);
+    }
 
-  SECTION("float xtd::log10f(float)") {
-    test_f<float, float, xtd::log10f, ref_functionf>(values, ulps_single);
-  }
+    SECTION("float xtd::log10f(double)") {
+      validate<float, double, xtd::log10f, mpfr_log10f>(device, ulps_single);
+    }
 
-  SECTION("float xtd::log10f(double)") {
-    test_f<float, double, xtd::log10f, ref_functionf>(values, ulps_single);
-  }
-
-  SECTION("float xtd::log10f(int)") {
-    test_f<float, int, xtd::log10f, ref_functionf>(values, ulps_single);
+    SECTION("float xtd::log10f(int)") {
+      validate<float, int, xtd::log10f, mpfr_log10f>(device, ulps_single);
+    }
   }
 }

@@ -58,4 +58,4 @@ namespace internal {
 
 }  // namespace internal
 
-#define CUDA_CHECK(ARG, ...) (internal::__cuda_check(__FILE__, __LINE__, #ARG, (ARG), ##__VA_ARGS__))
+#define CUDA_CHECK(ARG, ...) (::internal::__cuda_check(__FILE__, __LINE__, #ARG, (ARG), ##__VA_ARGS__))

@@ -5,62 +5,43 @@
  */
 
 // C++ standard headers
-#include <cmath>
-#include <iostream>
-#include <vector>
+#include <cstdlib>
 
 // Catch2 headers
 #define CATCH_CONFIG_NO_POSIX_SIGNALS
 #include <catch.hpp>
 
-// SYCL headers
-#include <sycl/sycl.hpp>
-
-// mpfr::real headers
-#include <real.hpp>
-
 // xtd headers
 #include "xtd/stdlib/abs.h"
 
 // test headers
-#include "common/sycl_test.h"
-#include "common/math_inputs.h"
-
-constexpr int ulps_single = 0;
-constexpr int ulps_double = 0;
-
-constexpr auto ref_function = [](mpfr_double x) { return mpfr::fabs(x); };
-constexpr auto ref_functionf = [](mpfr_single x) { return mpfr::fabs(x); };
+#include "common/sycl/device.h"
+#include "common/sycl/platform.h"
+#include "common/sycl/validate.h"
 
 TEST_CASE("xtd::abs", "[abs][sycl]") {
-  std::vector<double> values = generate_input_values();
-
-  int pid = 0;
-  for (const auto &platform : sycl::platform::get_platforms()) {
-    DYNAMIC_SECTION("SYCL platform " << ++pid << ": " << platform.get_info<sycl::info::platform::name>()) {
-      int id = 0;
-      for (const auto &device : platform.get_devices()) {
-        DYNAMIC_SECTION("SYCL device " << pid << '.' << ++id << ": " << device.get_info<sycl::info::device::name>()) {
-          sycl::queue queue{device, sycl::property::queue::in_order()};
-
+  for (const auto &platform : test::sycl::platforms()) {
+    DYNAMIC_SECTION("SYCL platform " << platform.index() << ": " << platform.name()) {
+      for (const auto &device : platform.devices()) {
+        DYNAMIC_SECTION("SYCL device " << platform.index() << '.' << device.index() << ": " << device.name()) {
           SECTION("float xtd::abs(float)") {
-            test_f<float, float, xtd::abs, ref_functionf>(queue, values, ulps_single);
+            validate<float, float, xtd::abs, std::abs>(platform, device);
           }
 
           SECTION("double xtd::abs(double)") {
-            test_a<double, double, xtd::abs, ref_function>(queue, values, ulps_double);
+            validate<double, double, xtd::abs, std::abs>(platform, device);
           }
 
           SECTION("int xtd::abs(int)") {
-            test_i<int, xtd::abs, std::abs>(queue, values);
+            validate<int, int, xtd::abs, std::abs>(platform, device);
           }
 
           SECTION("long xtd::abs(long)") {
-            test_i<long, xtd::abs, std::abs>(queue, values);
+            validate<long, long, xtd::abs, std::abs>(platform, device);
           }
 
           SECTION("long long xtd::abs(long long)") {
-            test_i<long long, xtd::abs, std::abs>(queue, values);
+            validate<long long, long long, xtd::abs, std::abs>(platform, device);
           }
         }
       }

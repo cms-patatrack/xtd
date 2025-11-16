@@ -11,46 +11,42 @@
 // Catch2 headers
 #include <catch.hpp>
 
-// mpfr::real headers
-#include <real.hpp>
-
 // xtd headers
 #include "xtd/math/cos.h"
 
 // test headers
-#include "common/cpu_test.h"
-#include "common/math_inputs.h"
+#include "common/cpu/device.h"
+#include "common/cpu/validate.h"
+#include "mpfr_cos.h"
 
 constexpr int ulps_single = 1;
 constexpr int ulps_double = 1;
 
-constexpr auto ref_function = [](mpfr_double x) { return mpfr::cos(x); };
-constexpr auto ref_functionf = [](mpfr_single x) { return mpfr::cos(x); };
-
 TEST_CASE("xtd::cos", "[cos][cpu]") {
-  std::vector<double> values = generate_input_values();
+  const auto& device = test::cpu::device();
+  DYNAMIC_SECTION("CPU: " << device.name()) {
+    SECTION("float xtd::cos(float)") {
+      validate<float, float, xtd::cos, mpfr_cosf>(device, ulps_single);
+    }
 
-  SECTION("float xtd::cos(float)") {
-    test_a<float, float, xtd::cos, ref_function>(values, ulps_single);
-  }
+    SECTION("double xtd::cos(double)") {
+      validate<double, double, xtd::cos, mpfr_cos>(device, ulps_double);
+    }
 
-  SECTION("double xtd::cos(double)") {
-    test_a<double, double, xtd::cos, ref_function>(values, ulps_double);
-  }
+    SECTION("double xtd::cos(int)") {
+      validate<double, int, xtd::cos, mpfr_cos>(device, ulps_double);
+    }
 
-  SECTION("double xtd::cos(int)") {
-    test_a<double, int, xtd::cos, ref_function>(values, ulps_double);
-  }
+    SECTION("float xtd::cosf(float)") {
+      validate<float, float, xtd::cosf, mpfr_cosf>(device, ulps_single);
+    }
 
-  SECTION("float xtd::cosf(float)") {
-    test_f<float, float, xtd::cosf, ref_functionf>(values, ulps_single);
-  }
+    SECTION("float xtd::cosf(double)") {
+      validate<float, double, xtd::cosf, mpfr_cosf>(device, ulps_single);
+    }
 
-  SECTION("float xtd::cosf(double)") {
-    test_f<float, double, xtd::cosf, ref_functionf>(values, ulps_single);
-  }
-
-  SECTION("float xtd::cosf(int)") {
-    test_f<float, int, xtd::cosf, ref_functionf>(values, ulps_single);
+    SECTION("float xtd::cosf(int)") {
+      validate<float, int, xtd::cosf, mpfr_cosf>(device, ulps_single);
+    }
   }
 }

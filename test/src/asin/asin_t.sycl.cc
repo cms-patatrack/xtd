@@ -4,68 +4,49 @@
  * SPDX-License-Identifier: MPL-2.0
  */
 
-// C++ standard headers
-#include <cmath>
-#include <iostream>
-#include <vector>
-
 // Catch2 headers
 #define CATCH_CONFIG_NO_POSIX_SIGNALS
 #include <catch.hpp>
-
-// SYCL headers
-#include <sycl/sycl.hpp>
-
-// mpfr::real headers
-#include <real.hpp>
 
 // xtd headers
 #include "xtd/math/asin.h"
 
 // test headers
-#include "common/sycl_test.h"
-#include "common/math_inputs.h"
+#include "common/sycl/device.h"
+#include "common/sycl/platform.h"
+#include "common/sycl/validate.h"
+#include "mpfr_asin.h"
 
 constexpr int ulps_single = 4;
 constexpr int ulps_double = 4;
 
-constexpr auto ref_function = [](mpfr_double x) { return mpfr::asin(x); };
-constexpr auto ref_functionf = [](mpfr_single x) { return mpfr::asin(x); };
-
 TEST_CASE("xtd::asin", "[asin][sycl]") {
-  std::vector<double> values = generate_input_values();
-
-  int pid = 0;
-  for (const auto &platform : sycl::platform::get_platforms()) {
-    DYNAMIC_SECTION("SYCL platform " << ++pid << ": " << platform.get_info<sycl::info::platform::name>()) {
-      int id = 0;
-      for (const auto &device : platform.get_devices()) {
-        DYNAMIC_SECTION("SYCL device " << pid << '.' << ++id << ": " << device.get_info<sycl::info::device::name>()) {
-          std::string id;
-          sycl::queue queue{device, sycl::property::queue::in_order()};
-
+  for (const auto &platform : test::sycl::platforms()) {
+    DYNAMIC_SECTION("SYCL platform " << platform.index() << ": " << platform.name()) {
+      for (const auto &device : platform.devices()) {
+        DYNAMIC_SECTION("SYCL device " << platform.index() << '.' << device.index() << ": " << device.name()) {
           SECTION("float xtd::asin(float)") {
-            test_a<float, float, xtd::asin, ref_function>(queue, values, ulps_single);
+            validate<float, float, xtd::asin, mpfr_asinf>(platform, device, ulps_single);
           }
 
           SECTION("double xtd::asin(double)") {
-            test_a<double, double, xtd::asin, ref_function>(queue, values, ulps_double);
+            validate<double, double, xtd::asin, mpfr_asin>(platform, device, ulps_double);
           }
 
           SECTION("double xtd::asin(int)") {
-            test_a<double, int, xtd::asin, ref_function>(queue, values, ulps_double);
+            validate<double, int, xtd::asin, mpfr_asin>(platform, device, ulps_double);
           }
 
           SECTION("float xtd::asinf(float)") {
-            test_f<float, float, xtd::asinf, ref_functionf>(queue, values, ulps_single);
+            validate<float, float, xtd::asinf, mpfr_asinf>(platform, device, ulps_single);
           }
 
           SECTION("float xtd::asinf(double)") {
-            test_f<float, double, xtd::asinf, ref_functionf>(queue, values, ulps_single);
+            validate<float, double, xtd::asinf, mpfr_asinf>(platform, device, ulps_single);
           }
 
           SECTION("float xtd::asinf(int)") {
-            test_f<float, int, xtd::asinf, ref_functionf>(queue, values, ulps_single);
+            validate<float, int, xtd::asinf, mpfr_asinf>(platform, device, ulps_single);
           }
         }
       }

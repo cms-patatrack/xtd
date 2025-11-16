@@ -135,4 +135,4 @@ namespace internal {
 
 }  // namespace internal
 
-#define RSMI_CHECK(ARG, ...) (internal::__rsmi_check(__FILE__, __LINE__, #ARG, (ARG), ##__VA_ARGS__))
+#define RSMI_CHECK(ARG, ...) (::internal::__rsmi_check(__FILE__, __LINE__, #ARG, (ARG), ##__VA_ARGS__))

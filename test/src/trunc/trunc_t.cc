@@ -11,46 +11,42 @@
 // Catch2 headers
 #include <catch.hpp>
 
-// mpfr::real headers
-#include <real.hpp>
-
 // xtd headers
 #include "xtd/math/trunc.h"
 
 // test headers
-#include "common/cpu_test.h"
-#include "common/math_inputs.h"
+#include "common/cpu/device.h"
+#include "common/cpu/validate.h"
+#include "mpfr_trunc.h"
 
 constexpr int ulps_single = 0;
 constexpr int ulps_double = 0;
 
-constexpr auto ref_function = [](mpfr_double x) { return mpfr::trunc(x); };
-constexpr auto ref_functionf = [](mpfr_single x) { return mpfr::trunc(x); };
-
 TEST_CASE("xtd::trunc", "[trunc][cpu]") {
-  std::vector<double> values = generate_input_values();
+  const auto& device = test::cpu::device();
+  DYNAMIC_SECTION("CPU: " << device.name()) {
+    SECTION("float xtd::trunc(float)") {
+      validate<float, float, xtd::trunc, mpfr_truncf>(device, ulps_single);
+    }
 
-  SECTION("float xtd::trunc(float)") {
-    test_a<float, float, xtd::trunc, ref_function>(values, ulps_single);
-  }
+    SECTION("double xtd::trunc(double)") {
+      validate<double, double, xtd::trunc, mpfr_trunc>(device, ulps_double);
+    }
 
-  SECTION("double xtd::trunc(double)") {
-    test_a<double, double, xtd::trunc, ref_function>(values, ulps_double);
-  }
+    SECTION("double xtd::trunc(int)") {
+      validate<double, int, xtd::trunc, mpfr_trunc>(device, ulps_double);
+    }
 
-  SECTION("double xtd::trunc(int)") {
-    test_a<double, int, xtd::trunc, ref_function>(values, ulps_double);
-  }
+    SECTION("float xtd::truncf(float)") {
+      validate<float, float, xtd::truncf, mpfr_truncf>(device, ulps_single);
+    }
 
-  SECTION("float xtd::truncf(float)") {
-    test_f<float, float, xtd::truncf, ref_functionf>(values, ulps_single);
-  }
+    SECTION("float xtd::truncf(double)") {
+      validate<float, double, xtd::truncf, mpfr_truncf>(device, ulps_single);
+    }
 
-  SECTION("float xtd::truncf(double)") {
-    test_f<float, double, xtd::truncf, ref_functionf>(values, ulps_single);
-  }
-
-  SECTION("float xtd::truncf(int)") {
-    test_f<float, int, xtd::truncf, ref_functionf>(values, ulps_single);
+    SECTION("float xtd::truncf(int)") {
+      validate<float, int, xtd::truncf, mpfr_truncf>(device, ulps_single);
+    }
   }
 }

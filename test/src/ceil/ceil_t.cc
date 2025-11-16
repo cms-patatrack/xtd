@@ -11,46 +11,42 @@
 // Catch2 headers
 #include <catch.hpp>
 
-// mpfr::real headers
-#include <real.hpp>
-
 // xtd headers
 #include "xtd/math/ceil.h"
 
 // test headers
-#include "common/cpu_test.h"
-#include "common/math_inputs.h"
+#include "common/cpu/device.h"
+#include "common/cpu/validate.h"
+#include "mpfr_ceil.h"
 
 constexpr int ulps_single = 0;
 constexpr int ulps_double = 0;
 
-constexpr auto ref_function = [](mpfr_double x) { return mpfr::ceil(x); };
-constexpr auto ref_functionf = [](mpfr_single x) { return mpfr::ceil(x); };
-
 TEST_CASE("xtd::ceil", "[ceil][cpu]") {
-  std::vector<double> values = generate_input_values();
+  const auto& device = test::cpu::device();
+  DYNAMIC_SECTION("CPU: " << device.name()) {
+    SECTION("float xtd::ceil(float)") {
+      validate<float, float, xtd::ceil, mpfr_ceilf>(device, ulps_single);
+    }
 
-  SECTION("float xtd::ceil(float)") {
-    test_a<float, float, xtd::ceil, ref_function>(values, ulps_single);
-  }
+    SECTION("double xtd::ceil(double)") {
+      validate<double, double, xtd::ceil, mpfr_ceil>(device, ulps_double);
+    }
 
-  SECTION("double xtd::ceil(double)") {
-    test_a<double, double, xtd::ceil, ref_function>(values, ulps_double);
-  }
+    SECTION("double xtd::ceil(int)") {
+      validate<double, int, xtd::ceil, mpfr_ceil>(device, ulps_double);
+    }
 
-  SECTION("double xtd::ceil(int)") {
-    test_a<double, int, xtd::ceil, ref_function>(values, ulps_double);
-  }
+    SECTION("float xtd::ceilf(float)") {
+      validate<float, float, xtd::ceilf, mpfr_ceilf>(device, ulps_single);
+    }
 
-  SECTION("float xtd::ceilf(float)") {
-    test_f<float, float, xtd::ceilf, ref_functionf>(values, ulps_single);
-  }
+    SECTION("float xtd::ceilf(double)") {
+      validate<float, double, xtd::ceilf, mpfr_ceilf>(device, ulps_single);
+    }
 
-  SECTION("float xtd::ceilf(double)") {
-    test_f<float, double, xtd::ceilf, ref_functionf>(values, ulps_single);
-  }
-
-  SECTION("float xtd::ceilf(int)") {
-    test_f<float, int, xtd::ceilf, ref_functionf>(values, ulps_single);
+    SECTION("float xtd::ceilf(int)") {
+      validate<float, int, xtd::ceilf, mpfr_ceilf>(device, ulps_single);
+    }
   }
 }

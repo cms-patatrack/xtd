@@ -4,79 +4,49 @@
  * SPDX-License-Identifier: MPL-2.0
  */
 
-// C++ standard headers
-#include <string>
-#include <vector>
-using namespace std::literals;
-
 // Catch2 headers
 #define CATCH_CONFIG_NO_POSIX_SIGNALS
 #include <catch.hpp>
-
-// HIP headers
-#include <hip/hip_runtime.h>
-
-// mpfr::real headers
-#include <real.hpp>
 
 // xtd headers
 #include "xtd/math/pow.h"
 
 // test headers
-#include "common/hip_check.h"
-#include "common/hip_test.h"
-#include "common/hip_version.h"
-#include "common/math_inputs.h"
+#include "common/hip/platform.h"
+#include "common/hip/validate.h"
+#include "mpfr_pow.h"
 
 constexpr int ulps_single = 1;
 constexpr int ulps_double = 1;
 
-constexpr auto ref_function = [](mpfr_double x, mpfr_double y) -> mpfr_double { return mpfr::pow(x, y); };
-constexpr auto ref_functionf = [](mpfr_single x, mpfr_single y) -> mpfr_single { return mpfr::pow(x, y); };
-
 TEST_CASE("xtd::pow", "[pow][hip]") {
-  std::vector<double> values = generate_input_values();
-
-  DYNAMIC_SECTION("HIP platform: " << hip_version()) {
-    int deviceCount;
-    HIP_CHECK(hipGetDeviceCount(&deviceCount));
-
-    for (int device = 0; device < deviceCount; ++device) {
-      hipDeviceProp_t properties;
-      HIP_CHECK(hipGetDeviceProperties(&properties, device));
-      DYNAMIC_SECTION("HIP device " << device << ": " << properties.name) {
-        // set the current GPU
-        HIP_CHECK(hipSetDevice(device));
-
-        // create a HIP stream for all the asynchronous operations on this GPU
-        hipStream_t queue;
-        HIP_CHECK(hipStreamCreate(&queue));
-
+  const auto& platform = test::hip::platform();
+  DYNAMIC_SECTION("HIP platform: " << platform.name()) {
+    for (const auto& device : platform.devices()) {
+      DYNAMIC_SECTION("HIP device " << device.index() << ": " << device.name()) {
         SECTION("float xtd::pow(float, float)") {
-          test_aa<float, float, xtd::pow, ref_function>(queue, values, ulps_single);
+          validate<float, float, xtd::pow, mpfr_powf>(device, ulps_single);
         }
 
         SECTION("double xtd::pow(double, double)") {
-          test_aa<double, double, xtd::pow, ref_function>(queue, values, ulps_double);
+          validate<double, double, xtd::pow, mpfr_pow>(device, ulps_double);
         }
 
         SECTION("double xtd::pow(int, int)") {
-          test_aa<double, int, xtd::pow, ref_function>(queue, values, ulps_double);
+          validate<double, int, xtd::pow, mpfr_pow>(device, ulps_double);
         }
 
         SECTION("float xtd::powf(float, float)") {
-          test_ff<float, float, xtd::powf, ref_functionf>(queue, values, ulps_single);
+          validate<float, float, xtd::powf, mpfr_powf>(device, ulps_single);
         }
 
         SECTION("float xtd::powf(double, double)") {
-          test_ff<float, double, xtd::powf, ref_functionf>(queue, values, ulps_single);
+          validate<float, double, xtd::powf, mpfr_powf>(device, ulps_single);
         }
 
         SECTION("float xtd::powf(int, int)") {
-          test_ff<float, int, xtd::powf, ref_functionf>(queue, values, ulps_single);
+          validate<float, int, xtd::powf, mpfr_powf>(device, ulps_single);
         }
-
-        HIP_CHECK(hipStreamDestroy(queue));
       }
     }
   }
