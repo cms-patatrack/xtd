@@ -21,7 +21,7 @@ jobs:
       - name: Build tests
         working-directory: test
         run: |
-          make -k -j`nproc` build
+          make -k -j`nproc` CUDA_BASE=/cvmfs/patatrack.cern.ch/externals/x86_64/rhel9/nvidia/cuda-12.9.1 build
 
       - name: Run tests
         working-directory: test
