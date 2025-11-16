@@ -21,9 +21,15 @@ jobs:
       - name: Build tests
         working-directory: test
         run: |
-          make -k -j`nproc` CUDA_BASE=/cvmfs/patatrack.cern.ch/externals/x86_64/rhel9/nvidia/cuda-12.9.1 build
+          make \
+            CUDA_BASE=/cvmfs/patatrack.cern.ch/externals/x86_64/rhel9/nvidia/cuda-12.9.1 \
+            ROCM_BASE=/cvmfs/patatrack.cern.ch/externals/x86_64/rhel9/amd/rocm-7.1.0 \
+            -k -j`nproc` build
 
       - name: Run tests
         working-directory: test
         run: |
-          make -k run
+          make \
+            CUDA_BASE=/cvmfs/patatrack.cern.ch/externals/x86_64/rhel9/nvidia/cuda-12.9.1 \
+            ROCM_BASE=/cvmfs/patatrack.cern.ch/externals/x86_64/rhel9/amd/rocm-7.1.0 \
+            -k run
