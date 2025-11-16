@@ -228,10 +228,10 @@ $(MPFR_REAL_INCLUDE):
 	curl -s -S -L https://www.chschneider.eu/programming/mpfr_real/mpfr_real_v0.0.9-alpha.tar.gz | tar xz -C $(EXTERNAL_BASE)
 
 bin:
-	mkdir -p bin
+	@mkdir -p bin
 
 tmp:
-	mkdir -p tmp
+	@mkdir -p tmp
 
 .PHONY: prereq
 prereq: external_catch2 external_mpfr_real bin tmp
@@ -239,8 +239,11 @@ prereq: external_catch2 external_mpfr_real bin tmp
 $(info -------------------------------------------------------------------------------)
 
 # xtd tests
-SUBDIRS := $(wildcard $(XTD_BASE)/test/src/*/)
-TARGETS := $(notdir $(patsubst %/,%,$(SUBDIRS)))
+MODULES := math stdlib
+SUBDIRS := $(foreach MODULE,$(MODULES),$(wildcard $(XTD_BASE)/test/src/$(MODULE)/*/))
+TARGETS := $(foreach P,$(patsubst %/,%,$(SUBDIRS)),$(notdir $(patsubst %/,%,$(dir $P)))/$(notdir $P))
+$(info Unit tests: $(TARGETS))
+$(info -------------------------------------------------------------------------------)
 
 # CPU tests
 .PHONY: cpu
@@ -360,29 +363,30 @@ endif
 
 define TEST_template
 # CPU tests
-tmp/$(1)_t.cc.o: src/$(1)/$(1)_t.cc | prereq
+tmp/$(1)_t.cc.o: src/$(1)/$(notdir $(1))_t.cc | prereq
+	@mkdir -p tmp/$(dir $(1))
 	$(CXX) $(CXXFLAGS) $(LIB_CFLAGS) -c $$< -o $$@
-
-bin/$(1)_t_cc: tmp/$(1)_t.cc.o | prereq
-	$(CXX) $$< $(LDFLAGS) $(LIB_LDFLAGS) -o $$@
 
 # CUDA tests
 ifdef CUDA_BASE
-tmp/$(1)_t.cu.o: src/$(1)/$(1)_t.cu | prereq
+tmp/$(1)_t.cu.o: src/$(1)/$(notdir $(1))_t.cu | prereq
+	@mkdir -p tmp/$(dir $(1))
 	$(CUDA_CXX) $(CUDA_CXXFLAGS) $(LIB_CFLAGS) -c $$< -o $$@
 endif
 
 # HIP/ROCm tests
 ifdef ROCM_BASE
-tmp/$(1)_t.hip.cc.o: src/$(1)/$(1)_t.hip.cc | prereq
+tmp/$(1)_t.hip.cc.o: src/$(1)/$(notdir $(1))_t.hip.cc | prereq
+	@mkdir -p tmp/$(dir $(1))
 	$(ROCM_CXX) $(ROCM_CXXFLAGS) $(LIB_CFLAGS) -c $$< -o $$@
 endif
 
 # oneAPI tests
 ifdef ONEAPI_BASE
-tmp/$(1)_t.sycl.cc.o: src/$(1)/$(1)_t.sycl.cc | prereq
+tmp/$(1)_t.sycl.cc.o: src/$(1)/$(notdir $(1))_t.sycl.cc | prereq
+	@mkdir -p tmp/$(dir $(1))
 	$(SYCL_CXX) $(SYCL_CXXFLAGS) $(LIB_CFLAGS) -c $$< -o $$@
 endif
 endef
 
-$(foreach target,$(TARGETS),$(eval $(call TEST_template,$(target))))
+$(foreach TARGET,$(TARGETS),$(eval $(call TEST_template,$(TARGET))))
