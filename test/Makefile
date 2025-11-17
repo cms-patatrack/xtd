@@ -239,7 +239,7 @@ prereq: external_catch2 external_mpfr_real bin tmp
 $(info -------------------------------------------------------------------------------)
 
 # xtd tests
-MODULES := math stdlib
+MODULES := algorithm math stdlib
 SUBDIRS := $(foreach MODULE,$(MODULES),$(wildcard $(XTD_BASE)/test/src/$(MODULE)/*/))
 TARGETS := $(foreach P,$(patsubst %/,%,$(SUBDIRS)),$(notdir $(patsubst %/,%,$(dir $P)))/$(notdir $P))
 $(info Unit tests: $(TARGETS))
