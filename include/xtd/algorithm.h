@@ -10,3 +10,4 @@
 #include "algorithm/clamp.h"
 #include "algorithm/max.h"
 #include "algorithm/min.h"
+#include "algorithm/minmax.h"
