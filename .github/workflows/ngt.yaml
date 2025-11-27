@@ -21,15 +21,19 @@ jobs:
       - name: Build tests
         working-directory: test
         run: |
+          source /cvmfs/projects.cern.ch/intelsw/oneAPI/linux/x86_64/2025/setvars.sh
           make \
             CUDA_BASE=/cvmfs/patatrack.cern.ch/externals/x86_64/rhel9/nvidia/cuda-12.9.1 \
             ROCM_BASE=/cvmfs/patatrack.cern.ch/externals/x86_64/rhel9/amd/rocm-7.1.0 \
+            ONEAPI_BASE=/cvmfs/projects.cern.ch/intelsw/oneAPI/linux/x86_64/2025 \
             -k -j`nproc` build
 
       - name: Run tests
         working-directory: test
         run: |
+          source /cvmfs/projects.cern.ch/intelsw/oneAPI/linux/x86_64/2025/setvars.sh
           make \
             CUDA_BASE=/cvmfs/patatrack.cern.ch/externals/x86_64/rhel9/nvidia/cuda-12.9.1 \
             ROCM_BASE=/cvmfs/patatrack.cern.ch/externals/x86_64/rhel9/amd/rocm-7.1.0 \
+            ONEAPI_BASE=/cvmfs/projects.cern.ch/intelsw/oneAPI/linux/x86_64/2025 \
             -k run
