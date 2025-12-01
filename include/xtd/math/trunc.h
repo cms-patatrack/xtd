@@ -13,7 +13,7 @@
 
 namespace xtd {
 
-  /* Computes the nearest integral value that is not larger than arg in magnitude, in single precision.
+  /* Computes the nearest integral value to arg in single precision, always rounding towards zero.
    */
   XTD_DEVICE_FUNCTION inline constexpr float trunc(float arg) {
 #if defined(XTD_TARGET_CUDA)
@@ -31,7 +31,7 @@ namespace xtd {
 #endif
   }
 
-  /* Computes the nearest integral value that is not larger than arg in magnitude, in double precision.
+  /* Computes the nearest integral value to arg in double precision, always rounding towards zero.
    */
   XTD_DEVICE_FUNCTION inline constexpr double trunc(double arg) {
 #if defined(XTD_TARGET_CUDA)
@@ -49,13 +49,13 @@ namespace xtd {
 #endif
   }
 
-  /* Computes the nearest integral value that is not larger than arg in magnitude, in double precision.
+  /* Computes the nearest integral value to arg in double precision, always rounding towards zero.
    */
   XTD_DEVICE_FUNCTION inline constexpr double trunc(std::integral auto arg) {
     return xtd::trunc(static_cast<double>(arg));
   }
 
-  /* Computes the nearest integral value that is not larger than arg in magnitude, in single precision.
+  /* Computes the nearest integral value to arg in single precision, always rounding towards zero.
    */
   XTD_DEVICE_FUNCTION inline constexpr float truncf(std::floating_point auto arg) {
     return xtd::trunc(static_cast<float>(arg));
