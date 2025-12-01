@@ -62,12 +62,12 @@
 #include "math/floor.h"
 #include "math/trunc.h"
 #include "math/round.h"
-//lround
-//llround
+#include "math/lround.h"
+#include "math/llround.h"
 #include "math/nearbyint.h"
 #include "math/rint.h"
-//lrint
-//llrint
+#include "math/lrint.h"
+#include "math/llrint.h"
 
 // Floating point manipulation functions
 //frexp
