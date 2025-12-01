@@ -61,11 +61,11 @@
 #include "math/ceil.h"
 #include "math/floor.h"
 #include "math/trunc.h"
-//round
+#include "math/round.h"
 //lround
 //llround
-//nearbyint
-//rint
+#include "math/nearbyint.h"
+#include "math/rint.h"
 //lrint
 //llrint
 
