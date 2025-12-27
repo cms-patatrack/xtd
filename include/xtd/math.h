@@ -82,11 +82,11 @@
 //copysign
 
 // Classification and comparison
-//fpclassify
-//isfinite
-//isinf
-//isnan
-//isnormal
+#include "math/fpclassify.h"
+#include "math/isfinite.h"
+#include "math/isinf.h"
+#include "math/isnan.h"
+#include "math/isnormal.h"
 //signbit
 //isgreater
 //isgreaterequal
