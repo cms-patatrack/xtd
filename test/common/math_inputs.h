@@ -104,5 +104,14 @@ constexpr_cxx23 inline std::vector<double> generate_input_values() {
     add_with_ulps(-val);
   }
 
+  // Sort and remove duplicate entries, using bitwise ordering and comparisons to avoid problems with NaNs
+  std::sort(values.begin(), values.end(), [](double a, double b) {
+    return std::bit_cast<uint64_t>(a) < std::bit_cast<uint64_t>(b);
+  });
+  auto last = std::unique(values.begin(), values.end(), [](double a, double b) {
+    return std::bit_cast<uint64_t>(a) == std::bit_cast<uint64_t>(b);
+  });
+  values.resize(std::distance(values.begin(), last));
+
   return values;
 }
