@@ -19,22 +19,24 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Update symlinks
+        run: |
+          sudo rm -f /usr/local/cuda
+          sudo ln -s /cvmfs/patatrack.cern.ch/externals/x86_64/rhel9/nvidia/cuda-12.9.1 /usr/local/cuda
+          sudo rm -f /opt/rocm
+          sudo ln -s /cvmfs/patatrack.cern.ch/externals/x86_64/rhel9/amd/rocm-7.1.0 /opt/rocm
+          sudo rm -f /opt/intel/oneapi
+          sudo mkdir -p /opt/intel
+          sudo ln -s /cvmfs/projects.cern.ch/intelsw/oneAPI/linux/x86_64/2025 /opt/intel/oneapi
+
       - name: Build tests
         working-directory: test
         run: |
-          source /cvmfs/projects.cern.ch/intelsw/oneAPI/linux/x86_64/2025/setvars.sh
-          make \
-            CUDA_BASE=/cvmfs/patatrack.cern.ch/externals/x86_64/rhel9/nvidia/cuda-12.9.1 \
-            ROCM_BASE=/cvmfs/patatrack.cern.ch/externals/x86_64/rhel9/amd/rocm-7.1.0 \
-            ONEAPI_BASE=/cvmfs/projects.cern.ch/intelsw/oneAPI/linux/x86_64/2025 \
-            -k -j`nproc` build
+          source /opt/intel/oneapi/setvars.sh
+          make -k -j`nproc` build
 
       - name: Run tests
         working-directory: test
         run: |
-          source /cvmfs/projects.cern.ch/intelsw/oneAPI/linux/x86_64/2025/setvars.sh
-          make \
-            CUDA_BASE=/cvmfs/patatrack.cern.ch/externals/x86_64/rhel9/nvidia/cuda-12.9.1 \
-            ROCM_BASE=/cvmfs/patatrack.cern.ch/externals/x86_64/rhel9/amd/rocm-7.1.0 \
-            ONEAPI_BASE=/cvmfs/projects.cern.ch/intelsw/oneAPI/linux/x86_64/2025 \
-            -k run
+          source /opt/intel/oneapi/setvars.sh
+          make -k run
