@@ -12,7 +12,7 @@
 #include "math/fmod.h"
 #include "math/remainder.h"
 //remquo
-//fma
+#include "math/fma.h"
 #include "math/fmax.h"
 #include "math/fmin.h"
 #include "math/fdim.h"
