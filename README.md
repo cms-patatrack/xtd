@@ -1,3 +1,12 @@
+_For everything I long to do_  
+_No matter when or where or who_  
+_Has one thing in common, too_  
+_It's a, it's a, it's a, it's a_ `sin()`  
+  
+by Chris Lowe and Neil Tennant
+
+---
+
 # xtd
 
 C++ functions for CPU and GPUs with a consistent interface.
