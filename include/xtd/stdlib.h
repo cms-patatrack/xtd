@@ -8,3 +8,6 @@
 
 // Miscellaneous algorithms and math
 #include "stdlib/abs.h"
+#include "stdlib/div.h"
+#include "stdlib/ldiv.h"
+#include "stdlib/lldiv.h"
