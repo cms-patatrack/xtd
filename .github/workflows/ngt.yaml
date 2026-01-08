@@ -8,7 +8,7 @@ jobs:
       fail-fast: false
       matrix:
         runner:
-          - cms-patatrack-h100
+          - cms-patatrack-h100-sxm
           - cms-patatrack-l40s
           - cms-patatrack-mi300x
           - cms-patatrack-w7900
