@@ -16,7 +16,7 @@
 #include "math/fmax.h"
 #include "math/fmin.h"
 #include "math/fdim.h"
-//nan
+#include "math/nan.h"
 
 // Exponential functions
 #include "math/exp.h"
