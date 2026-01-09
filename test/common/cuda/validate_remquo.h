@@ -10,7 +10,6 @@
 #include <iomanip>
 #include <iostream>
 #include <vector>
-#include <type_traits>
 
 // CUDA headers
 #include <cuda_runtime.h>
@@ -28,8 +27,14 @@
 
 namespace test::cuda {
 
-  template <typename ResultType, typename InputType, ResultType (*XtdFunc)(InputType, InputType)>
-  __global__ static void kernel_div(InputType const* input, ResultType* result, unsigned int size) {
+  template <std::floating_point T>
+  struct remquo_t {
+    T rem;
+    int quo;
+  };
+
+  template <typename ResultType, typename InputType, ResultType (*XtdFunc)(InputType, InputType, int*)>
+  __global__ static void kernel_remquo(InputType const* input, remquo_t<ResultType>* result, unsigned int size) {
     const int thread = blockDim.x * blockIdx.x + threadIdx.x;
     const int stride = blockDim.x * gridDim.x;
     for (unsigned int t = thread; t < size; t += stride) {
@@ -37,26 +42,9 @@ namespace test::cuda {
       auto [i, j] = halton<2>(t, size);
       InputType x = input[i];
       InputType y = input[j];
-      result[t] = XtdFunc(x, y);
+      result[t].rem = XtdFunc(x, y, &result[t].quo);
     }
   }
-
-  template <typename T>
-  concept DivResultType = requires(T t) {
-    // C struct
-    requires std::is_standard_layout_v<T>;
-
-    // quot data member
-    t.quot;
-    requires std::integral<decltype(T::quot)>;
-
-    // rem data member
-    t.rem;
-    requires std::integral<decltype(T::rem)>;
-
-    // members type
-    requires std::same_as<decltype(T::quot), decltype(T::rem)>;
-  };
 
   template <typename T>
   struct detailed {
@@ -66,23 +54,35 @@ namespace test::cuda {
     T value_;
   };
 
+  template <std::floating_point T>
+  std::ostream& operator<<(std::ostream& out, detailed<T> const& val) {
+    std::ostringstream buffer;
+    buffer << std::fixed << std::setprecision(std::numeric_limits<T>::max_digits10) << val.value_ << " ["
+           << std::hexfloat << val.value_ << "]";
+    out << buffer.str();
+    return out;
+  }
+
   template <std::integral T>
   std::ostream& operator<<(std::ostream& out, detailed<T> const& val) {
     out << val.value_;
     return out;
   }
 
-  template <DivResultType T>
-  std::ostream& operator<<(std::ostream& out, detailed<T> const& val) {
-    out << '{' << val.value_.quot << ", " << val.value_.rem << '}';
+  template <std::floating_point T>
+  std::ostream& operator<<(std::ostream& out, detailed<remquo_t<T>> const& val) {
+    std::ostringstream buffer;
+    buffer << std::fixed << std::setprecision(std::numeric_limits<T>::max_digits10) << "{" << val.value_.rem << " ["
+           << std::hexfloat << val.value_.rem << "], " << val.value_.quo << "}";
+    out << buffer.str();
     return out;
   }
 
-  template <DivResultType ResultType,
-            std::integral InputType,
-            ResultType (*XtdFunc)(InputType, InputType),
-            ResultType (*RefFunc)(InputType, InputType)>
-  inline void validate_div(const Device& device) {
+  template <std::floating_point ResultType,
+            typename InputType,
+            ResultType (*XtdFunc)(InputType, InputType, int*),
+            ResultType (*RefFunc)(InputType, InputType, int*)>
+  inline void validate_remquo(const Device& device, int ulps = 0) {
     cudaStream_t queue = device.queue();
     const Inputs& input = inputs(device);
     unsigned int size = input.size();
@@ -90,17 +90,18 @@ namespace test::cuda {
     std::span<const InputType> values_d = input.values_d<InputType>();
 
     // allocate memory for the results and fill it with zeroes
-    std::vector<ResultType> result_h(size);
-    ResultType* result_d;
-    CUDA_CHECK(cudaMallocAsync(&result_d, size * sizeof(ResultType), queue));
-    CUDA_CHECK(cudaMemsetAsync(result_d, 0x00, size * sizeof(ResultType), queue));
+    std::vector<remquo_t<ResultType>> result_h(size);
+    remquo_t<ResultType>* result_d;
+    CUDA_CHECK(cudaMallocAsync(&result_d, size * sizeof(remquo_t<ResultType>), queue));
+    CUDA_CHECK(cudaMemsetAsync(result_d, 0x00, size * sizeof(remquo_t<ResultType>), queue));
 
     // execute the xtd function on the GPU
-    kernel_div<ResultType, InputType, XtdFunc><<<8, 64, 0, queue>>>(values_d.data(), result_d, size);
+    kernel_remquo<ResultType, InputType, XtdFunc><<<8, 64, 0, queue>>>(values_d.data(), result_d, size);
     CUDA_CHECK(cudaGetLastError());
 
     // copy the results back to the host and free the GPU memory
-    CUDA_CHECK(cudaMemcpyAsync(result_h.data(), result_d, size * sizeof(ResultType), cudaMemcpyDeviceToHost, queue));
+    CUDA_CHECK(
+        cudaMemcpyAsync(result_h.data(), result_d, size * sizeof(remquo_t<ResultType>), cudaMemcpyDeviceToHost, queue));
     CUDA_CHECK(cudaFreeAsync(result_d, queue));
     CUDA_CHECK(cudaStreamSynchronize(queue));
 
@@ -110,15 +111,17 @@ namespace test::cuda {
       InputType x = values_h[i];
       InputType y = values_h[j];
       // read the result of the xtd function
-      ResultType result = result_h[t];
+      remquo_t<ResultType> result = result_h[t];
       // compute the reference
-      ResultType reference = RefFunc(x, y);
+      remquo_t<ResultType> reference;
+      reference.rem = RefFunc(x, y, &reference.quo);
       // log the comparison
       INFO("index: " << t << "\ninput: " << detailed(x) << ", " << detailed(y) << ", "
                      << "\nxtd result: " << detailed(result) << "\nreference:  " << detailed(reference) << '\n');
       // compare the result with the reference
-      compare(result.quot, reference.quot);
-      compare(result.rem, reference.rem);
+      compare(result.rem, reference.rem, ulps);
+      // the standard guarantees only the sign and the last three bits
+      compare(result.quo % 8, reference.quo % 8);
     }
   }
 

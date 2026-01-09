@@ -53,7 +53,7 @@ namespace test::cpu {
 
   template <DivResultType T>
   std::ostream& operator<<(std::ostream& out, detailed<T> const& val) {
-    out << '[' << val.value_.quot << ", " << val.value_.rem << ']';
+    out << '{' << val.value_.quot << ", " << val.value_.rem << '}';
     return out;
   }
 
