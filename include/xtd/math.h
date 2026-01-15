@@ -78,7 +78,7 @@
 //logb
 //nextafter
 //nexttoward
-//copysign
+#include "math/copysign.h"
 
 // Classification and comparison
 #include "math/fpclassify.h"
