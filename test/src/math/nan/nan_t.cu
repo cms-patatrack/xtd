@@ -16,9 +16,6 @@
 #include "common/cuda/validate.h"
 #include "reference_nan.h"
 
-constexpr int ulps_single = 0;
-constexpr int ulps_double = 0;
-
 TEST_CASE("xtd::nan", "[nan][cuda]") {
   const auto& platform = test::cuda::platform();
   DYNAMIC_SECTION("CUDA platform: " << platform.name()) {
