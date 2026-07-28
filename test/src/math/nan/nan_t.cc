@@ -19,9 +19,6 @@
 #include "common/cpu/validate.h"
 #include "reference_nan.h"
 
-constexpr int ulps_single = 0;
-constexpr int ulps_double = 0;
-
 TEST_CASE("xtd::nan", "[nan][cpu]") {
   const auto& device = test::cpu::device();
   DYNAMIC_SECTION("CPU: " << device.name()) {

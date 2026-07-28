@@ -16,9 +16,6 @@
 #include "common/hip/validate.h"
 #include "reference_nan.h"
 
-constexpr int ulps_single = 0;
-constexpr int ulps_double = 0;
-
 TEST_CASE("xtd::nan", "[nan][hip]") {
   const auto& platform = test::hip::platform();
   DYNAMIC_SECTION("HIP platform: " << platform.name()) {
