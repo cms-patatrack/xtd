@@ -38,7 +38,7 @@ namespace xtd {
     return arg < 0 ? 1 : 0;
   }
 
-  XTD_DEVICE_FUNCTION inline constexpr int signbit(std::unsigned_integral auto arg) {
+  XTD_DEVICE_FUNCTION inline constexpr int signbit([[maybe_unused]] std::unsigned_integral auto arg) {
     return 0;
   }
 

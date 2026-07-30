@@ -35,7 +35,7 @@ namespace xtd {
   /* Returns a non-zero value if the integer argument is "Not a Number", which
    * is never the case.
    */
-  XTD_DEVICE_FUNCTION inline constexpr int isnan(std::integral auto arg) {
+  XTD_DEVICE_FUNCTION inline constexpr int isnan([[maybe_unused]] std::integral auto arg) {
     return 0;
   }
 
