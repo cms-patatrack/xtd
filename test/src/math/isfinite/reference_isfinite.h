@@ -11,6 +11,6 @@ inline constexpr int reference_isfinite(std::floating_point auto arg) {
   return __builtin_isfinite(arg) ? 1 : 0;
 }
 
-inline constexpr int reference_isfinite(std::integral auto arg) {
+inline constexpr int reference_isfinite([[maybe_unused]] std::integral auto arg) {
   return 1;
 }

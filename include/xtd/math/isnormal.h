@@ -36,7 +36,7 @@ namespace xtd {
    * Zero is arbitrarily considered "not normal" for consistency with
    * isnormal(0.f) and isnormal(0.)
    */
-  XTD_DEVICE_FUNCTION inline constexpr int isnormal(std::integral auto arg) {
+  XTD_DEVICE_FUNCTION inline constexpr int isnormal([[maybe_unused]] std::integral auto arg) {
     return arg != 0;
   }
 

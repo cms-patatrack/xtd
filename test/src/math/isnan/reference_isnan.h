@@ -11,6 +11,6 @@ inline constexpr int reference_isnan(std::floating_point auto arg) {
   return __builtin_isnan(arg) ? 1 : 0;
 }
 
-inline constexpr int reference_isnan(std::integral auto arg) {
+inline constexpr int reference_isnan([[maybe_unused]] std::integral auto arg) {
   return 0;
 }

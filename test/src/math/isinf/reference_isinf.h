@@ -11,6 +11,6 @@ inline constexpr int reference_isinf(std::floating_point auto arg) {
   return __builtin_isinf(arg) ? arg > 0 ? 1 : -1 : 0;
 }
 
-inline constexpr int reference_isinf(std::integral auto arg) {
+inline constexpr int reference_isinf([[maybe_unused]] std::integral auto arg) {
   return 0;
 }

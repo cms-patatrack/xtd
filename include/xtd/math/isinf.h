@@ -40,7 +40,7 @@ namespace xtd {
 
   /* Returns a non-zero value if the integer argument is infinite, which is never the case.
    */
-  XTD_DEVICE_FUNCTION inline constexpr int isinf(std::integral auto arg) {
+  XTD_DEVICE_FUNCTION inline constexpr int isinf([[maybe_unused]] std::integral auto arg) {
     return 0;
   }
 
