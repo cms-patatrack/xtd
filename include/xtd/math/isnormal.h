@@ -10,9 +10,19 @@
 #include <concepts>
 #include <cstdint>
 
+#include "xtd/internal/concepts.h"
 #include "xtd/internal/defines.h"
 
 namespace xtd {
+
+  /* Returns a non-zero value if the single precision argument is normal.
+   */
+  XTD_DEVICE_FUNCTION inline constexpr int isnormal(float16_t arg) {
+    uint16_t bits = std::bit_cast<uint16_t>(arg);
+    constexpr uint16_t mask = 0x7c00u;
+    uint16_t exp = bits & mask;
+    return exp != 0 and exp != mask;
+  }
 
   /* Returns a non-zero value if the single precision argument is normal.
    */
