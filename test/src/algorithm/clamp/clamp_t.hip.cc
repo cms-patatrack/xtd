@@ -24,6 +24,10 @@ TEST_CASE("xtd::clamp", "[clamp][hip]") {
   DYNAMIC_SECTION("HIP platform: " << platform.name()) {
     for (const auto& device : platform.devices()) {
       DYNAMIC_SECTION("HIP device " << device.index() << ": " << device.name()) {
+        SECTION("xtd::float16_t xtd::clamp(xtd::float16_t, xtd::float16_t)") {
+          validate_clamp<xtd::float16_t, xtd::float16_t, xtd::clamp, byval::clamp>(device);
+        }
+
         SECTION("float xtd::clamp(float, float)") {
           validate_clamp<float, float, xtd::clamp, byval::clamp>(device);
         }

@@ -17,6 +17,7 @@
 #include "common/sycl/validate.h"
 #include "mpfr_ceil.h"
 
+constexpr int ulps_half = 0;
 constexpr int ulps_single = 0;
 constexpr int ulps_double = 0;
 
@@ -25,6 +26,10 @@ TEST_CASE("xtd::ceil", "[ceil][sycl]") {
     DYNAMIC_SECTION("SYCL platform " << platform.index() << ": " << platform.name()) {
       for (const auto &device : platform.devices()) {
         DYNAMIC_SECTION("SYCL device " << platform.index() << '.' << device.index() << ": " << device.name()) {
+          SECTION("xtd::float16_t xtd::ceil(xtd::float16_t)") {
+            validate<xtd::float16_t, xtd::float16_t, xtd::ceil, mpfr_ceilf>(platform, device, ulps_half);
+          }
+
           SECTION("float xtd::ceil(float)") {
             validate<float, float, xtd::ceil, mpfr_ceilf>(platform, device, ulps_single);
           }
@@ -35,6 +40,10 @@ TEST_CASE("xtd::ceil", "[ceil][sycl]") {
 
           SECTION("double xtd::ceil(int)") {
             validate<double, int, xtd::ceil, mpfr_ceil>(platform, device, ulps_double);
+          }
+
+          SECTION("xtd::float16_t xtd::ceilf(xtd::float16_t)") {
+            validate<xtd::float16_t, xtd::float16_t, xtd::ceilf, mpfr_ceilf>(platform, device, ulps_half);
           }
 
           SECTION("float xtd::ceilf(float)") {

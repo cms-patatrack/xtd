@@ -17,4 +17,8 @@ namespace byval {
   T max(T a, T b) {
     return std::max(a, b);
   }
+
+  inline xtd::float16_t max(xtd::float16_t a, xtd::float16_t b) {
+    return xtd::float16_t(std::max(static_cast<float>(a), static_cast<float>(b)));
+  }
 }  // namespace byval

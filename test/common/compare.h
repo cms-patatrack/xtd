@@ -13,7 +13,11 @@
 #define CATCH_CONFIG_NO_POSIX_SIGNALS
 #include <catch.hpp>
 
-template <std::floating_point T>
+// XTD headers
+#include "xtd/internal/concepts.h"
+#include "xtd/internal/limits.h"
+
+template <xtd::floating_point T>
 void compare(T result, T reference, int ulps = 0) {
   switch (std::fpclassify(reference)) {
     case FP_INFINITE:

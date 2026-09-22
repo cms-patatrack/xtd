@@ -18,6 +18,10 @@
 TEST_CASE("xtd::isnan", "[isnan][cpu]") {
   const auto& device = test::cpu::device();
   DYNAMIC_SECTION("CPU: " << device.name()) {
+    SECTION("int xtd::isnan(xtd::float16_t)") {
+      validate<int, xtd::float16_t, xtd::isnan, reference_isnan>(device);
+    }
+
     SECTION("int xtd::isnan(float)") {
       validate<int, float, xtd::isnan, reference_isnan>(device);
     }

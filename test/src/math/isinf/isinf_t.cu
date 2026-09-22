@@ -21,6 +21,10 @@ TEST_CASE("xtd::isinf", "[isinf][cuda]") {
   DYNAMIC_SECTION("CUDA platform: " << platform.name()) {
     for (const auto& device : platform.devices()) {
       DYNAMIC_SECTION("CUDA device " << device.index() << ": " << device.name()) {
+        SECTION("int xtd::isinf(xtd::float16_t)") {
+          validate<int, xtd::float16_t, xtd::isinf, reference_isinf>(device);
+        }
+
         SECTION("int xtd::isinf(float)") {
           validate<int, float, xtd::isinf, reference_isinf>(device);
         }

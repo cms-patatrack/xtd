@@ -16,6 +16,7 @@
 #include "common/cuda/validate.h"
 #include "mpfr_asinh.h"
 
+constexpr int ulps_half = 0;
 constexpr int ulps_single = 3;
 constexpr int ulps_double = 3;
 
@@ -24,6 +25,10 @@ TEST_CASE("xtd::asinh", "[asinh][cuda]") {
   DYNAMIC_SECTION("CUDA platform: " << platform.name()) {
     for (const auto& device : platform.devices()) {
       DYNAMIC_SECTION("CUDA device " << device.index() << ": " << device.name()) {
+        SECTION("xtd::float16_t xtd::asinh(xtd::float16_t)") {
+          validate<xtd::float16_t, xtd::float16_t, xtd::asinh, mpfr_asinhf>(device, ulps_half);
+        }
+
         SECTION("float xtd::asinh(float)") {
           validate<float, float, xtd::asinh, mpfr_asinhf>(device, ulps_single);
         }
@@ -34,6 +39,10 @@ TEST_CASE("xtd::asinh", "[asinh][cuda]") {
 
         SECTION("double xtd::asinh(int)") {
           validate<double, int, xtd::asinh, mpfr_asinh>(device, ulps_double);
+        }
+
+        SECTION("xtd::float16_t xtd::asinhf(xtd::float16_t)") {
+          validate<xtd::float16_t, xtd::float16_t, xtd::asinhf, mpfr_asinhf>(device, ulps_half);
         }
 
         SECTION("float xtd::asinhf(float)") {

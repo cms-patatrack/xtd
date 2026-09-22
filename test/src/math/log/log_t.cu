@@ -16,6 +16,7 @@
 #include "common/cuda/validate.h"
 #include "mpfr_log.h"
 
+constexpr int ulps_half = 0;
 constexpr int ulps_single = 1;
 constexpr int ulps_double = 1;
 
@@ -24,6 +25,10 @@ TEST_CASE("xtd::log", "[log][cuda]") {
   DYNAMIC_SECTION("CUDA platform: " << platform.name()) {
     for (const auto& device : platform.devices()) {
       DYNAMIC_SECTION("CUDA device " << device.index() << ": " << device.name()) {
+        SECTION("xtd::float16_t xtd::log(xtd::float16_t)") {
+          validate<xtd::float16_t, xtd::float16_t, xtd::log, mpfr_logf>(device, ulps_half);
+        }
+
         SECTION("float xtd::log(float)") {
           validate<float, float, xtd::log, mpfr_logf>(device, ulps_single);
         }
@@ -34,6 +39,10 @@ TEST_CASE("xtd::log", "[log][cuda]") {
 
         SECTION("double xtd::log(int)") {
           validate<double, int, xtd::log, mpfr_log>(device, ulps_double);
+        }
+
+        SECTION("xtd::float16_t xtd::logf(xtd::float16_t)") {
+          validate<xtd::float16_t, xtd::float16_t, xtd::logf, mpfr_logf>(device, ulps_half);
         }
 
         SECTION("float xtd::logf(float)") {

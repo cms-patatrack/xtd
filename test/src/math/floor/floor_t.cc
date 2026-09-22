@@ -19,12 +19,17 @@
 #include "common/cpu/validate.h"
 #include "mpfr_floor.h"
 
+constexpr int ulps_half = 0;
 constexpr int ulps_single = 0;
 constexpr int ulps_double = 0;
 
 TEST_CASE("xtd::floor", "[floor][cpu]") {
   const auto& device = test::cpu::device();
   DYNAMIC_SECTION("CPU: " << device.name()) {
+    SECTION("xtd::float16_t xtd::floor(xtd::float16_t)") {
+      validate<xtd::float16_t, xtd::float16_t, xtd::floor, mpfr_floorf>(device, ulps_half);
+    }
+
     SECTION("float xtd::floor(float)") {
       validate<float, float, xtd::floor, mpfr_floorf>(device, ulps_single);
     }
@@ -35,6 +40,10 @@ TEST_CASE("xtd::floor", "[floor][cpu]") {
 
     SECTION("double xtd::floor(int)") {
       validate<double, int, xtd::floor, mpfr_floor>(device, ulps_double);
+    }
+
+    SECTION("xtd::float16_t xtd::floorf(xtd::float16_t)") {
+      validate<xtd::float16_t, xtd::float16_t, xtd::floorf, mpfr_floorf>(device, ulps_half);
     }
 
     SECTION("float xtd::floorf(float)") {

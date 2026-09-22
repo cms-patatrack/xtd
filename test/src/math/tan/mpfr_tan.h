@@ -17,6 +17,12 @@
 #undef mpfr_tan
 #endif
 
+inline xtd::float16_t mpfr_tanf(xtd::arithmetic auto arg) {
+  float result;
+  mpfr::tan(static_cast<mpfr_half>(static_cast<float>(arg))).conv(result);
+  return result;
+}
+
 inline float mpfr_tanf(xtd::arithmetic auto arg) {
   float result;
   mpfr::tan(static_cast<mpfr_single>(static_cast<float>(arg))).conv(result);

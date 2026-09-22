@@ -16,6 +16,7 @@
 #include "common/hip/validate.h"
 #include "mpfr_cos.h"
 
+constexpr int ulps_half = 0;
 constexpr int ulps_single = 1;
 constexpr int ulps_double = 1;
 
@@ -24,6 +25,10 @@ TEST_CASE("xtd::cos", "[cos][hip]") {
   DYNAMIC_SECTION("HIP platform: " << platform.name()) {
     for (const auto& device : platform.devices()) {
       DYNAMIC_SECTION("HIP device " << device.index() << ": " << device.name()) {
+        SECTION("xtd::float16_t xtd::cos(xtd::float16_t)") {
+          validate<xtd::float16_t, xtd::float16_t, xtd::cos, mpfr_cosf>(device, ulps_half);
+        }
+
         SECTION("float xtd::cos(float)") {
           validate<float, float, xtd::cos, mpfr_cosf>(device, ulps_single);
         }
@@ -34,6 +39,10 @@ TEST_CASE("xtd::cos", "[cos][hip]") {
 
         SECTION("double xtd::cos(int)") {
           validate<double, int, xtd::cos, mpfr_cos>(device, ulps_double);
+        }
+
+        SECTION("xtd::float16_t xtd::cosf(xtd::float16_t)") {
+          validate<xtd::float16_t, xtd::float16_t, xtd::cosf, mpfr_cosf>(device, ulps_half);
         }
 
         SECTION("float xtd::cosf(float)") {

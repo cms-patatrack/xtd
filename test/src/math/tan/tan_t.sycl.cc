@@ -17,6 +17,7 @@
 #include "common/sycl/validate.h"
 #include "mpfr_tan.h"
 
+constexpr int ulps_half = 0;
 constexpr int ulps_single = 5;
 constexpr int ulps_double = 5;
 
@@ -25,6 +26,10 @@ TEST_CASE("xtd::tan", "[tan][sycl]") {
     DYNAMIC_SECTION("SYCL platform " << platform.index() << ": " << platform.name()) {
       for (const auto &device : platform.devices()) {
         DYNAMIC_SECTION("SYCL device " << platform.index() << '.' << device.index() << ": " << device.name()) {
+          SECTION("xtd::float16_t xtd::tan(xtd::float16_t)") {
+            validate<xtd::float16_t, xtd::float16_t, xtd::tan, mpfr_tanf>(platform, device, ulps_half);
+          }
+
           SECTION("float xtd::tan(float)") {
             validate<float, float, xtd::tan, mpfr_tanf>(platform, device, ulps_single);
           }
@@ -35,6 +40,10 @@ TEST_CASE("xtd::tan", "[tan][sycl]") {
 
           SECTION("double xtd::tan(int)") {
             validate<double, int, xtd::tan, mpfr_tan>(platform, device, ulps_double);
+          }
+
+          SECTION("xtd::float16_t xtd::tanf(xtd::float16_t)") {
+            validate<xtd::float16_t, xtd::float16_t, xtd::tanf, mpfr_tanf>(platform, device, ulps_half);
           }
 
           SECTION("float xtd::tanf(float)") {

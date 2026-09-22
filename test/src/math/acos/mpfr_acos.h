@@ -17,6 +17,12 @@
 #undef mpfr_acos
 #endif
 
+inline xtd::float16_t mpfr_acosf(xtd::arithmetic auto arg) {
+  float result;
+  mpfr::acos(static_cast<mpfr_half>(static_cast<float>(arg))).conv(result);
+  return result;
+}
+
 inline float mpfr_acosf(xtd::arithmetic auto arg) {
   float result;
   mpfr::acos(static_cast<mpfr_single>(static_cast<float>(arg))).conv(result);

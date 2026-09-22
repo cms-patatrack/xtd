@@ -17,6 +17,7 @@
 #include "common/sycl/validate.h"
 #include "mpfr_sin.h"
 
+constexpr int ulps_half = 0;
 constexpr int ulps_single = 4;
 constexpr int ulps_double = 4;
 
@@ -25,6 +26,10 @@ TEST_CASE("xtd::sin", "[sin][sycl]") {
     DYNAMIC_SECTION("SYCL platform " << platform.index() << ": " << platform.name()) {
       for (const auto &device : platform.devices()) {
         DYNAMIC_SECTION("SYCL device " << platform.index() << '.' << device.index() << ": " << device.name()) {
+          SECTION("xtd::float16_t xtd::sin(xtd::float16_t)") {
+            validate<xtd::float16_t, xtd::float16_t, xtd::sin, mpfr_sinf>(platform, device, ulps_half);
+          }
+
           SECTION("float xtd::sin(float)") {
             validate<float, float, xtd::sin, mpfr_sinf>(platform, device, ulps_single);
           }
@@ -35,6 +40,10 @@ TEST_CASE("xtd::sin", "[sin][sycl]") {
 
           SECTION("double xtd::sin(int)") {
             validate<double, int, xtd::sin, mpfr_sin>(platform, device, ulps_double);
+          }
+
+          SECTION("xtd::float16_t xtd::sinf(xtd::float16_t)") {
+            validate<xtd::float16_t, xtd::float16_t, xtd::sinf, mpfr_sinf>(platform, device, ulps_half);
           }
 
           SECTION("float xtd::sinf(float)") {

@@ -16,6 +16,7 @@
 #include "common/hip/validate.h"
 #include "mpfr_acos.h"
 
+constexpr int ulps_half = 0;
 constexpr int ulps_single = 1;
 constexpr int ulps_double = 1;
 
@@ -24,6 +25,10 @@ TEST_CASE("xtd::acos", "[acos][hip]") {
   DYNAMIC_SECTION("HIP platform: " << platform.name()) {
     for (const auto& device : platform.devices()) {
       DYNAMIC_SECTION("HIP device " << device.index() << ": " << device.name()) {
+        SECTION("float xtd::acos(xtd::float16_t)") {
+          validate<xtd::float16_t, xtd::float16_t, xtd::acos, mpfr_acosf>(device, ulps_half);
+        }
+
         SECTION("float xtd::acos(float)") {
           validate<float, float, xtd::acos, mpfr_acosf>(device, ulps_single);
         }
@@ -34,6 +39,10 @@ TEST_CASE("xtd::acos", "[acos][hip]") {
 
         SECTION("double xtd::acos(int)") {
           validate<double, int, xtd::acos, mpfr_acos>(device, ulps_double);
+        }
+
+        SECTION("float xtd::acosf(xtd::float16_t)") {
+          validate<xtd::float16_t, xtd::float16_t, xtd::acosf, mpfr_acosf>(device, ulps_half);
         }
 
         SECTION("float xtd::acosf(float)") {

@@ -17,6 +17,7 @@
 #include "common/sycl/validate.h"
 #include "mpfr_fmax.h"
 
+constexpr int ulps_half = 0;
 constexpr int ulps_single = 2;  // 0 ULP according to the OpenCL documentation.
 constexpr int ulps_double = 0;
 
@@ -25,6 +26,10 @@ TEST_CASE("xtd::fmax", "[fmax][sycl]") {
     DYNAMIC_SECTION("SYCL platform " << platform.index() << ": " << platform.name()) {
       for (const auto &device : platform.devices()) {
         DYNAMIC_SECTION("SYCL device " << platform.index() << '.' << device.index() << ": " << device.name()) {
+          SECTION("xtd::float16_t xtd::fmax(xtd::float16_t, xtd::float16_t)") {
+            test::sycl::validate<xtd::float16_t, xtd::float16_t, xtd::fmax, mpfr_fmaxf>(platform, device, ulps_half);
+          }
+
           SECTION("float xtd::fmax(float, float)") {
             test::sycl::validate<float, float, xtd::fmax, mpfr_fmaxf>(platform, device, ulps_single);
           }
@@ -35,6 +40,10 @@ TEST_CASE("xtd::fmax", "[fmax][sycl]") {
 
           SECTION("double xtd::fmax(int, int)") {
             test::sycl::validate<double, int, xtd::fmax, mpfr_fmax>(platform, device, ulps_double);
+          }
+
+          SECTION("xtd::float16_t xtd::fmaxf(xtd::float16_t, xtd::float16_t)") {
+            test::sycl::validate<xtd::float16_t, xtd::float16_t, xtd::fmaxf, mpfr_fmaxf>(platform, device, ulps_half);
           }
 
           SECTION("float xtd::fmaxf(float, float)") {
