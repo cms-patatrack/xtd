@@ -1,6 +1,6 @@
 /*
  * Copyright 2026 European Organization for Nuclear Research (CERN)
- * Authors: Andrea Bocci <andrea.bocci@cern.ch>
+ * Authors: Andrea Bocci <andrea.bocci@cern.ch>, Patrick Kopper <patrick.kopper@cern.ch>
  * SPDX-License-Identifier: MPL-2.0
  */
 
@@ -9,6 +9,9 @@
 // C++ standard headers
 #include <iomanip>
 #include <iostream>
+#include <limits>
+#include <span>
+#include <sstream>
 #include <vector>
 
 // CUDA headers
@@ -34,15 +37,14 @@ namespace test::cuda {
   };
 
   template <typename ResultType, typename InputType, ResultType (*XtdFunc)(InputType, InputType, int*)>
-  __global__ static void kernel_remquo(InputType const* input, remquo_t<ResultType>* result, unsigned int size) {
-    const int thread = blockDim.x * blockIdx.x + threadIdx.x;
-    const int stride = blockDim.x * gridDim.x;
+  __global__ static void kernel_remquo(InputType const* buf_x,
+                                       InputType const* buf_y,
+                                       remquo_t<ResultType>* result_d,
+                                       unsigned int size) {
+    const unsigned int thread = blockDim.x * blockIdx.x + threadIdx.x;
+    const unsigned int stride = blockDim.x * gridDim.x;
     for (unsigned int t = thread; t < size; t += stride) {
-      // generate a low-discrepancy deterministic sequence over [0, size)*[0, size)
-      auto [i, j] = halton<2>(t, size);
-      InputType x = input[i];
-      InputType y = input[j];
-      result[t].rem = XtdFunc(x, y, &result[t].quo);
+      result_d[t].rem = static_cast<ResultType>(XtdFunc(buf_x[t], buf_y[t], &result_d[t].quo));
     }
   }
 
@@ -87,40 +89,58 @@ namespace test::cuda {
     const Inputs& input = inputs(device);
     unsigned int size = input.size();
     std::span<const InputType> values_h = input.values_h<InputType>();
-    std::span<const InputType> values_d = input.values_d<InputType>();
 
-    // allocate memory for the results and fill it with zeroes
-    std::vector<remquo_t<ResultType>> result_h(size);
+    // Generate a low-discrepancy deterministic sequence over [0, size) x [0, size)
+    std::vector<InputType> input_x(size);
+    std::vector<InputType> input_y(size);
+
+    for (unsigned int t = 0; t < size; ++t) {
+      auto [i, j] = halton<2>(t, size);
+      input_x[t] = values_h[i];
+      input_y[t] = values_h[j];
+    }
+
+    InputType* buf_x;
+    InputType* buf_y;
+    CUDA_CHECK(cudaMallocAsync(&buf_x, size * sizeof(InputType), queue));
+    CUDA_CHECK(cudaMallocAsync(&buf_y, size * sizeof(InputType), queue));
+
+    CUDA_CHECK(cudaMemcpyAsync(buf_x, input_x.data(), size * sizeof(InputType), cudaMemcpyHostToDevice, queue));
+    CUDA_CHECK(cudaMemcpyAsync(buf_y, input_y.data(), size * sizeof(InputType), cudaMemcpyHostToDevice, queue));
+    CUDA_CHECK(cudaStreamSynchronize(queue));
+
+    // Allocate memory for the results and fill it with zeroes
+    std::vector<remquo_t<ResultType>> result_h(size, remquo_t<ResultType>{0., 0});
     remquo_t<ResultType>* result_d;
     CUDA_CHECK(cudaMallocAsync(&result_d, size * sizeof(remquo_t<ResultType>), queue));
     CUDA_CHECK(cudaMemsetAsync(result_d, 0x00, size * sizeof(remquo_t<ResultType>), queue));
 
-    // execute the xtd function on the GPU
-    kernel_remquo<ResultType, InputType, XtdFunc><<<8, 64, 0, queue>>>(values_d.data(), result_d, size);
+    // Execute the xtd function on the CUDA device
+    kernel_remquo<ResultType, InputType, XtdFunc><<<8, 64, 0, queue>>>(buf_x, buf_y, result_d, size);
     CUDA_CHECK(cudaGetLastError());
 
-    // copy the results back to the host and free the GPU memory
+    // Copy the results back to the host and free the GPU memory
     CUDA_CHECK(
         cudaMemcpyAsync(result_h.data(), result_d, size * sizeof(remquo_t<ResultType>), cudaMemcpyDeviceToHost, queue));
     CUDA_CHECK(cudaFreeAsync(result_d, queue));
+    CUDA_CHECK(cudaFreeAsync(buf_x, queue));
+    CUDA_CHECK(cudaFreeAsync(buf_y, queue));
     CUDA_CHECK(cudaStreamSynchronize(queue));
 
     for (unsigned int t = 0; t < size; ++t) {
-      // generate a low-discrepancy deterministic sequence over [0, size)*[0, size)
-      auto [i, j] = halton<2>(t, size);
-      InputType x = values_h[i];
-      InputType y = values_h[j];
-      // read the result of the xtd function
+      InputType x = input_x[t];
+      InputType y = input_y[t];
+      // Read the result of the xtd function
       remquo_t<ResultType> result = result_h[t];
-      // compute the reference
+      // Compute the reference
       remquo_t<ResultType> reference;
       reference.rem = RefFunc(x, y, &reference.quo);
-      // log the comparison
-      INFO("index: " << t << "\ninput: " << detailed(x) << ", " << detailed(y) << ", "
-                     << "\nxtd result: " << detailed(result) << "\nreference:  " << detailed(reference) << '\n');
-      // compare the result with the reference
+      // Log the comparison
+      INFO("index: " << t << "\ninput: " << detailed(x) << ", " << detailed(y) << "\nxtd result: " << detailed(result)
+                     << "\nreference:  " << detailed(reference) << '\n');
+      // Compare the result with the reference
       compare(result.rem, reference.rem, ulps);
-      // the standard guarantees only the sign and the last three bits
+      // The standard guarantees only the sign and the last three bits
       compare(result.quo % 8, reference.quo % 8);
     }
   }

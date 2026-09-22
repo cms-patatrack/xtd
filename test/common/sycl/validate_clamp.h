@@ -68,7 +68,7 @@ namespace test::sycl {
     std::span<const InputType> values_h = input.values_h<InputType>();
     std::span<const InputType> values_d = input.values_d<InputType>();
 
-    // Allocate memory for the results and fill it with zeroes.
+    // Allocate memory for the results and fill it with zeroes
     std::vector<ResultType> result_h(size, 0);
     ResultType* result_d = ::sycl::malloc_device<ResultType>(size, device.queue());
     device.queue().fill(result_d, ResultType{0}, size);
