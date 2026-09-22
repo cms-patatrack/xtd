@@ -1,6 +1,6 @@
 /*
  * Copyright 2026 European Organization for Nuclear Research (CERN)
- * Authors: Andrea Bocci <andrea.bocci@cern.ch>
+ * Authors: Andrea Bocci <andrea.bocci@cern.ch>, Patrick Kopper <patrick.kopper@cern.ch>
  * SPDX-License-Identifier: MPL-2.0
  */
 
@@ -10,9 +10,22 @@
 #include <concepts>
 #include <cstdint>
 
+#include "xtd/internal/concepts.h"
 #include "xtd/internal/defines.h"
 
 namespace xtd {
+
+  /* Returns +1 or -1 if the half precision argument is positive or negative infinity, or zero otherwise.
+   */
+  XTD_DEVICE_FUNCTION inline constexpr int isinf(float16_t arg) {
+    uint16_t bits = std::bit_cast<uint16_t>(arg);
+    constexpr uint16_t exp_mask = 0x7c00u;
+    constexpr uint16_t mant_mask = 0x03ffu;
+    constexpr uint32_t sign_mask = 0x8000u;
+    if ((bits & exp_mask) == exp_mask and (bits & mant_mask) == 0)
+      return (bits & sign_mask) ? -1 : +1;
+    return 0;
+  }
 
   /* Returns +1 or -1 if the single precision argument is positive or negative infinity, or zero otherwise.
    */

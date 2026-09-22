@@ -9,6 +9,7 @@
 #include <concepts>
 #include <cmath>
 
+#include "xtd/internal/concepts.h"
 #include "xtd/internal/defines.h"
 
 namespace xtd {

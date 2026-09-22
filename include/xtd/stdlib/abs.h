@@ -7,6 +7,7 @@
 #pragma once
 
 #include <concepts>
+#include "xtd/concepts.h"
 
 #include "xtd/math/fabs.h"
 
@@ -20,7 +21,7 @@ namespace xtd {
 
   /* Computes the absolute value of arg, with the appropriate precision.
    */
-  XTD_DEVICE_FUNCTION inline constexpr auto abs(std::floating_point auto arg) {
+  XTD_DEVICE_FUNCTION inline constexpr auto abs(xtd::floating_point auto arg) {
     return xtd::fabs(arg);
   }
 
