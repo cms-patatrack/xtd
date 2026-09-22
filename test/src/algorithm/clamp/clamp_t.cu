@@ -24,6 +24,11 @@ TEST_CASE("xtd::clamp", "[clamp][cuda]") {
   DYNAMIC_SECTION("CUDA platform: " << platform.name()) {
     for (const auto& device : platform.devices()) {
       DYNAMIC_SECTION("CUDA device " << device.index() << ": " << device.name()) {
+        SECTION("xtd::float16_t xtd::clamp(xtd::float16_t, xtd::float16_t)") {
+          // NVCC suffers from internal template mangling errors on stateless lambdas
+          validate_clamp<xtd::float16_t, xtd::float16_t, xtd::clamp, byval::clamp>(device);
+        }
+
         SECTION("float xtd::clamp(float, float)") {
           validate_clamp<float, float, xtd::clamp, byval::clamp>(device);
         }

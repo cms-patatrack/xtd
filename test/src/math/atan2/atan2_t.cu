@@ -16,6 +16,7 @@
 #include "common/cuda/validate.h"
 #include "mpfr_atan2.h"
 
+// constexpr int ulps_half = 1;
 constexpr int ulps_single = 2;
 constexpr int ulps_double = 2;
 
@@ -24,6 +25,10 @@ TEST_CASE("xtd::atan2", "[atan2][cuda]") {
   DYNAMIC_SECTION("CUDA platform: " << platform.name()) {
     for (const auto& device : platform.devices()) {
       DYNAMIC_SECTION("CUDA device " << device.index() << ": " << device.name()) {
+        // SECTION("xtd::float16_t xtd::atan2(xtd::float16_t, xtd::float16_t)") {
+        //   validate<xtd::float16_t, xtd::float16_t, xtd::atan2, mpfr_atan2f16>(device, ulps_half);
+        // }
+
         SECTION("float xtd::atan2(float, float)") {
           validate<float, float, xtd::atan2, mpfr_atan2f>(device, ulps_single);
         }

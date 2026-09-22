@@ -11,11 +11,17 @@
 #include <xtd/concepts/arithmetic.h>
 
 // test headers
+#include "common/math_inputs.h"
 #include "common/mpfr.h"
 
 #ifdef mpfr_fma
 #undef mpfr_fma
 #endif
+
+inline xtd::float16_t mpfr_fmaf(xtd::arithmetic auto x, xtd::arithmetic auto y, xtd::arithmetic auto z) {
+  return test_half::reference(
+      [](mpfr_ptr r, mpfr_srcptr a, mpfr_srcptr b, mpfr_srcptr c, mpfr_rnd_t rnd) { return ::mpfr_fma(r, a, b, c, rnd); }, x, y, z);
+}
 
 inline float mpfr_fmaf(xtd::arithmetic auto x, xtd::arithmetic auto y, xtd::arithmetic auto z) {
   float result;

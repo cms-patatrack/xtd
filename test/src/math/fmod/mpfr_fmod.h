@@ -17,6 +17,13 @@
 #undef mpfr_fmod
 #endif
 
+inline xtd::float16_t mpfr_fmodf(xtd::arithmetic auto x, xtd::arithmetic auto y) {
+  float result;
+  mpfr::fmod(static_cast<mpfr_half>(static_cast<float>(x)), static_cast<mpfr_half>(static_cast<float>(y)))
+      .conv(result);
+  return result;
+}
+
 inline float mpfr_fmodf(xtd::arithmetic auto x, xtd::arithmetic auto y) {
   float result;
   mpfr::fmod(static_cast<mpfr_single>(static_cast<float>(x)), static_cast<mpfr_single>(static_cast<float>(y)))

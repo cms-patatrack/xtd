@@ -19,12 +19,21 @@
 #include "common/cpu/validate.h"
 #include "mpfr_fma.h"
 
+#if __has_builtin(__builtin_fmaf16) && defined(__AVX512FP16__)
+constexpr int ulps_half = 0;
+#else
+constexpr int ulps_half = 1;
+#endif
 constexpr int ulps_single = 0;
 constexpr int ulps_double = 0;
 
 TEST_CASE("xtd::fma", "[fma][cpu]") {
   const auto& device = test::cpu::device();
   DYNAMIC_SECTION("CPU: " << device.name()) {
+    SECTION("xtd::float16_t xtd::fma(xtd::float16_t, xtd::float16_t, xtd::float16_t)") {
+      validate<xtd::float16_t, xtd::float16_t, xtd::fma, mpfr_fmaf>(device, ulps_half);
+    }
+
     SECTION("float xtd::fma(float, float, float)") {
       validate<float, float, xtd::fma, mpfr_fmaf>(device, ulps_single);
     }
@@ -35,6 +44,10 @@ TEST_CASE("xtd::fma", "[fma][cpu]") {
 
     SECTION("double xtd::fma(int, int, int)") {
       validate<double, int, xtd::fma, mpfr_fma>(device, ulps_double);
+    }
+
+    SECTION("xtd::float16_t xtd::fmaf(xtd::float16_t, xtd::float16_t, xtd::float16_t)") {
+      validate<xtd::float16_t, xtd::float16_t, xtd::fmaf16, mpfr_fmaf>(device, ulps_half);
     }
 
     SECTION("float xtd::fmaf(float, float, float)") {

@@ -24,6 +24,11 @@ TEST_CASE("xtd::min", "[min][cuda]") {
   DYNAMIC_SECTION("CUDA platform: " << platform.name()) {
     for (const auto& device : platform.devices()) {
       DYNAMIC_SECTION("CUDA device " << device.index() << ": " << device.name()) {
+        SECTION("xtd::float16_t xtd::min(xtd::float16_t, xtd::float16_t)") {
+          // NVCC suffers from internal template mangling errors on stateless lambdas
+          validate<xtd::float16_t, xtd::float16_t, xtd::min, byval::min>(device);
+        }
+
         SECTION("float xtd::min(float, float)") {
           validate<float, float, xtd::min, byval::min>(device);
         }

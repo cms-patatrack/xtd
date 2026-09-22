@@ -16,6 +16,7 @@
 #include "common/cuda/validate.h"
 #include "mpfr_expm1.h"
 
+constexpr int ulps_half = 1;
 constexpr int ulps_single = 1;
 constexpr int ulps_double = 1;
 
@@ -24,6 +25,10 @@ TEST_CASE("xtd::expm1", "[expm1][cuda]") {
   DYNAMIC_SECTION("CUDA platform: " << platform.name()) {
     for (const auto& device : platform.devices()) {
       DYNAMIC_SECTION("CUDA device " << device.index() << ": " << device.name()) {
+        SECTION("xtd::float16_t xtd::exp(xtd::float16_t)") {
+          validate<xtd::float16_t, xtd::float16_t, xtd::expm1, mpfr_expm1f16>(device, ulps_half);
+        }
+
         SECTION("float xtd::expm1(float)") {
           validate<float, float, xtd::expm1, mpfr_expm1f>(device, ulps_single);
         }
@@ -34,6 +39,10 @@ TEST_CASE("xtd::expm1", "[expm1][cuda]") {
 
         SECTION("double xtd::expm1(int)") {
           validate<double, int, xtd::expm1, mpfr_expm1>(device, ulps_double);
+        }
+
+        SECTION("xtd::float16_t xtd::expm1f16(xtd::float16_t)") {
+          validate<xtd::float16_t, xtd::float16_t, xtd::expm1f16, mpfr_expm1f16>(device, ulps_half);
         }
 
         SECTION("float xtd::expm1f(float)") {

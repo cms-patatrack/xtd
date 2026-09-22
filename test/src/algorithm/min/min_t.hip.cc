@@ -24,6 +24,10 @@ TEST_CASE("xtd::min", "[min][hip]") {
   DYNAMIC_SECTION("HIP platform: " << platform.name()) {
     for (const auto& device : platform.devices()) {
       DYNAMIC_SECTION("HIP device " << device.index() << ": " << device.name()) {
+        SECTION("xtd::float16_t xtd::min(xtd::float16_t, xtd::float16_t)") {
+          validate<xtd::float16_t, xtd::float16_t, xtd::min, byval::min>(device);
+        }
+
         SECTION("float xtd::min(float, float)") {
           validate<float, float, xtd::min, byval::min>(device);
         }
