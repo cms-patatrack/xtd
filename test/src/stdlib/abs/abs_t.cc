@@ -17,10 +17,15 @@
 // test headers
 #include "common/cpu/device.h"
 #include "common/cpu/validate.h"
+#include "byval_abs.h"
 
 TEST_CASE("xtd::abs", "[abs][cpu]") {
   const auto& device = test::cpu::device();
   DYNAMIC_SECTION("CPU: " << device.name()) {
+    SECTION("xtd::float16_t xtd::abs(xtd::float16_t)") {
+      validate<xtd::float16_t, xtd::float16_t, xtd::abs, byval::abs>(device);
+    }
+
     SECTION("float xtd::abs(float)") {
       validate<float, float, xtd::abs, std::abs>(device);
     }

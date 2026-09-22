@@ -13,17 +13,25 @@
 #define CATCH_CONFIG_NO_POSIX_SIGNALS
 #include <catch.hpp>
 
-template <std::floating_point T>
+// XTD headers
+#include "xtd/internal/concepts.h"
+#include "xtd/internal/limits.h"
+#include "xtd/math/fpclassify.h"
+#include "xtd/math/isinf.h"
+#include "xtd/math/isnan.h"
+#include "xtd/math/fabs.h"
+
+template <xtd::floating_point T>
 void compare(T result, T reference, int ulps = 0) {
-  switch (std::fpclassify(reference)) {
+  switch (xtd::fpclassify(reference)) {
     case FP_INFINITE:
-      CHECK(std::isinf(result));
+      CHECK(xtd::isinf(result));
       break;
     case FP_NAN:
-      CHECK(std::isnan(result));
+      CHECK(xtd::isnan(result));
       break;
     case FP_ZERO:
-      CHECK_THAT(std::abs(result), Catch::Matchers::WithinULP(static_cast<T>(0), ulps));
+      CHECK_THAT(xtd::fabs(result), Catch::Matchers::WithinULP(static_cast<T>(0), ulps));
       break;
     case FP_SUBNORMAL:
       // Catch::Matchers::WithinULP does not handle properly the comparison of denormals with zero

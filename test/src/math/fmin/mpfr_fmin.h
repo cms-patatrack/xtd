@@ -17,6 +17,13 @@
 #undef mpfr_fmin
 #endif
 
+inline xtd::float16_t mpfr_fminf(xtd::arithmetic auto x, xtd::arithmetic auto y) {
+  float result;
+  mpfr::fmin(static_cast<mpfr_half>(static_cast<float>(x)), static_cast<mpfr_half>(static_cast<float>(y)))
+      .conv(result);
+  return result;
+}
+
 inline float mpfr_fminf(xtd::arithmetic auto x, xtd::arithmetic auto y) {
   float result;
   mpfr::fmin(static_cast<mpfr_single>(static_cast<float>(x)), static_cast<mpfr_single>(static_cast<float>(y)))

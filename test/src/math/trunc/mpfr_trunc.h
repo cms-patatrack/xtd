@@ -17,6 +17,12 @@
 #undef mpfr_trunc
 #endif
 
+inline xtd::float16_t mpfr_truncf(xtd::arithmetic auto arg) {
+  float result;
+  mpfr::trunc(static_cast<mpfr_half>(static_cast<float>(arg))).conv(result);
+  return result;
+}
+
 inline float mpfr_truncf(xtd::arithmetic auto arg) {
   float result;
   mpfr::trunc(static_cast<mpfr_single>(static_cast<float>(arg))).conv(result);

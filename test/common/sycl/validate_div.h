@@ -80,7 +80,23 @@ namespace test::sycl {
     const Inputs& input = inputs(platform, device);
     unsigned int size = input.size();
     std::span<const InputType> values_h = input.values_h<InputType>();
-    std::span<const InputType> values_d = input.values_d<InputType>();
+
+    // Generate a low-discrepancy deterministic sequence over [0, size)×[0, size).
+    std::vector<InputType> input_x(size);
+    std::vector<InputType> input_y(size);
+
+    for (unsigned int t = 0; t < size; ++t) {
+      auto [i, j] = halton<2>(t, size);
+      input_x[t] = values_h[i];
+      input_y[t] = values_h[j];
+    }
+
+    InputType* buf_x = ::sycl::malloc_device<InputType>(size, device.queue());
+    InputType* buf_y = ::sycl::malloc_device<InputType>(size, device.queue());
+
+    device.queue().copy(input_x.data(), buf_x, size);
+    device.queue().copy(input_y.data(), buf_y, size);
+    device.queue().wait();
 
     // Allocate memory for the results and fill it with zeroes.
     std::vector<ResultType> result_h(size, ResultType{0, 0});
@@ -90,24 +106,23 @@ namespace test::sycl {
     // Execute the xtd function on the SYCL device.
     device.queue().submit([&](::sycl::handler& cgh) {
       cgh.parallel_for(::sycl::range<1>(size), [=](::sycl::id<1> t) {
-        // Generate a low-discrepancy deterministic sequence over [0, size)×[0, size).
-        auto [i, j] = halton<2>(static_cast<size_t>(t), size);
-        InputType x = values_d[i];
-        InputType y = values_d[j];
-        result_d[t] = static_cast<ResultType>(XtdFunc(x, y));
+        // Load a low-discrepancy deterministic sequence over [0, size)×[0, size).
+        result_d[t] = static_cast<ResultType>(XtdFunc(buf_x[t], buf_y[t]));
       });
     });
 
     // Copy the results back to the host and free the device memory.
     device.queue().copy(result_d, result_h.data(), size);
     device.queue().wait();
+
     ::sycl::free(result_d, device.queue());
+    ::sycl::free(buf_x, device.queue());
+    ::sycl::free(buf_y, device.queue());
 
     for (unsigned int t = 0; t < size; ++t) {
-      // generate a low-discrepancy deterministic sequence over [0, size)×[0, size)
-      auto [i, j] = halton<2>(t, size);
-      InputType x = values_h[i];
-      InputType y = values_h[j];
+      // Load a low-discrepancy deterministic sequence over [0, size)×[0, size).
+      InputType x = input_x[t];
+      InputType y = input_y[t];
       // read the result of the xtd function
       ResultType result = result_h[t];
       // compute the reference

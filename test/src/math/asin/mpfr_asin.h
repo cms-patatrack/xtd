@@ -17,6 +17,12 @@
 #undef mpfr_asin
 #endif
 
+inline xtd::float16_t mpfr_asinf(xtd::arithmetic auto arg) {
+  float result;
+  mpfr::asin(static_cast<mpfr_half>(static_cast<float>(arg))).conv(result);
+  return result;
+}
+
 inline float mpfr_asinf(xtd::arithmetic auto arg) {
   float result;
   mpfr::asin(static_cast<mpfr_single>(static_cast<float>(arg))).conv(result);

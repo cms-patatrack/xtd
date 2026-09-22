@@ -14,6 +14,9 @@
 // CUDA headers
 #include <cuda_runtime.h>
 
+// XTD concepts
+#include "xtd/concepts.h"
+
 // test headers
 #include "common/compare.h"
 #include "common/cuda/cuda_check.h"
@@ -63,7 +66,7 @@ namespace test::cuda {
     T value_;
   };
 
-  template <std::floating_point T>
+  template <xtd::floating_point T>
   std::ostream& operator<<(std::ostream& out, detailed<T> const& val) {
     std::ostringstream buffer;
     buffer << std::fixed << std::setprecision(std::numeric_limits<T>::max_digits10) << val.value_ << " ["
@@ -78,7 +81,7 @@ namespace test::cuda {
     return out;
   }
 
-  template <std::floating_point ResultType,
+  template <xtd::floating_point ResultType,
             typename InputType,
             ResultType (*XtdFunc)(InputType),
             ResultType (*RefFunc)(InputType)>
@@ -156,7 +159,7 @@ namespace test::cuda {
     }
   }
 
-  template <std::floating_point ResultType,
+  template <xtd::floating_point ResultType,
             typename InputType,
             ResultType (*XtdFunc)(InputType, InputType),
             ResultType (*RefFunc)(InputType, InputType)>
@@ -242,7 +245,7 @@ namespace test::cuda {
     }
   }
 
-  template <std::floating_point ResultType,
+  template <xtd::floating_point ResultType,
             typename InputType,
             ResultType (*XtdFunc)(InputType, InputType, InputType),
             ResultType (*RefFunc)(InputType, InputType, InputType)>

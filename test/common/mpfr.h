@@ -9,6 +9,9 @@
 // mpfr::real headers
 #include <real.hpp>
 
+constexpr inline auto half_precision = 11;
+using mpfr_half = mpfr::real<half_precision, MPFR_RNDN>;
+
 constexpr inline auto single_precision = 24;
 using mpfr_single = mpfr::real<single_precision, MPFR_RNDN>;
 
