@@ -17,6 +17,7 @@
 #include "common/sycl/validate.h"
 #include "mpfr_fmin.h"
 
+constexpr int ulps_half = 0;
 constexpr int ulps_single = 0;
 constexpr int ulps_double = 0;
 
@@ -25,6 +26,10 @@ TEST_CASE("xtd::fmin", "[fmin][sycl]") {
     DYNAMIC_SECTION("SYCL platform " << platform.index() << ": " << platform.name()) {
       for (const auto &device : platform.devices()) {
         DYNAMIC_SECTION("SYCL device " << platform.index() << '.' << device.index() << ": " << device.name()) {
+          SECTION("xtd::float16_t xtd::fmin(xtd::float16_t, xtd::float16_t)") {
+            test::sycl::validate<xtd::float16_t, xtd::float16_t, xtd::fmin, mpfr_fminf>(platform, device, ulps_half);
+          }
+
           SECTION("float xtd::fmin(float, float)") {
             test::sycl::validate<float, float, xtd::fmin, mpfr_fminf>(platform, device, ulps_single);
           }
@@ -39,6 +44,10 @@ TEST_CASE("xtd::fmin", "[fmin][sycl]") {
 
           SECTION("float xtd::fminf(float, float)") {
             test::sycl::validate<float, float, xtd::fminf, mpfr_fminf>(platform, device, ulps_single);
+          }
+
+          SECTION("xtd::float16_t xtd::fminf(xtd::float16_t, xtd::float16_t)") {
+            test::sycl::validate<xtd::float16_t, xtd::float16_t, xtd::fminf, mpfr_fminf>(platform, device, ulps_half);
           }
 
           SECTION("float xtd::fminf(double, double)") {

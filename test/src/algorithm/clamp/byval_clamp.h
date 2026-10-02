@@ -17,4 +17,8 @@ namespace byval {
   T clamp(T x, T lo, T hi) {
     return std::clamp(x, lo, hi);
   }
+
+  inline xtd::float16_t clamp(xtd::float16_t x, xtd::float16_t lo, xtd::float16_t hi) {
+    return xtd::float16_t(std::clamp(static_cast<float>(x), static_cast<float>(lo), static_cast<float>(hi)));
+  }
 }  // namespace byval

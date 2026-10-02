@@ -17,12 +17,17 @@
 // test headers
 #include "common/cuda/platform.h"
 #include "common/cuda/validate.h"
+#include "byval_abs.h"
 
 TEST_CASE("xtd::abs", "[abs][cuda]") {
   const auto& platform = test::cuda::platform();
   DYNAMIC_SECTION("CUDA platform: " << platform.name()) {
     for (const auto& device : platform.devices()) {
       DYNAMIC_SECTION("CUDA device " << device.index() << ": " << device.name()) {
+        SECTION("xtd::float16_t xtd::abs(xtd::float16_t)") {
+          validate<xtd::float16_t, xtd::float16_t, xtd::abs, byval::abs>(device);
+        }
+
         SECTION("float xtd::abs(float)") {
           validate<float, float, xtd::abs, std::abs>(device);
         }

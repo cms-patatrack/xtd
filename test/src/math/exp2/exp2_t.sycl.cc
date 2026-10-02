@@ -17,6 +17,7 @@
 #include "common/sycl/validate.h"
 #include "mpfr_exp2.h"
 
+constexpr int ulps_half = 0;
 constexpr int ulps_single = 3;
 constexpr int ulps_double = 3;
 
@@ -29,12 +30,20 @@ TEST_CASE("xtd::exp2", "[exp2][sycl]") {
             validate<float, float, xtd::exp2, mpfr_exp2f>(platform, device, ulps_single);
           }
 
+          SECTION("xtd::float16_t xtd::exp2(xtd::float16_t)") {
+            validate<xtd::float16_t, xtd::float16_t, xtd::exp2, mpfr_exp2f>(platform, device, ulps_half);
+          }
+
           SECTION("double xtd::exp2(double)") {
             validate<double, double, xtd::exp2, mpfr_exp2>(platform, device, ulps_double);
           }
 
           SECTION("double xtd::exp2(int)") {
             validate<double, int, xtd::exp2, mpfr_exp2>(platform, device, ulps_double);
+          }
+
+          SECTION("xtd::float16_t xtd::exp2f(xtd::float16_t)") {
+            validate<xtd::float16_t, xtd::float16_t, xtd::exp2f, mpfr_exp2f>(platform, device, ulps_half);
           }
 
           SECTION("float xtd::exp2f(float)") {

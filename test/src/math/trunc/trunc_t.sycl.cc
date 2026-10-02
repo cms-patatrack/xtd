@@ -17,6 +17,7 @@
 #include "common/sycl/validate.h"
 #include "mpfr_trunc.h"
 
+constexpr int ulps_half = 0;
 constexpr int ulps_single = 0;
 constexpr int ulps_double = 0;
 
@@ -25,6 +26,10 @@ TEST_CASE("xtd::trunc", "[trunc][sycl]") {
     DYNAMIC_SECTION("SYCL platform " << platform.index() << ": " << platform.name()) {
       for (const auto &device : platform.devices()) {
         DYNAMIC_SECTION("SYCL device " << platform.index() << '.' << device.index() << ": " << device.name()) {
+          SECTION("xtd::float16_t xtd::trunc(xtd::float16_t)") {
+            validate<xtd::float16_t, xtd::float16_t, xtd::trunc, mpfr_truncf>(platform, device, ulps_half);
+          }
+
           SECTION("float xtd::trunc(float)") {
             validate<float, float, xtd::trunc, mpfr_truncf>(platform, device, ulps_single);
           }
@@ -35,6 +40,10 @@ TEST_CASE("xtd::trunc", "[trunc][sycl]") {
 
           SECTION("double xtd::trunc(int)") {
             validate<double, int, xtd::trunc, mpfr_trunc>(platform, device, ulps_double);
+          }
+
+          SECTION("xtd::float16_t xtd::truncf(xtd::float16_t)") {
+            validate<xtd::float16_t, xtd::float16_t, xtd::truncf, mpfr_truncf>(platform, device, ulps_half);
           }
 
           SECTION("float xtd::truncf(float)") {

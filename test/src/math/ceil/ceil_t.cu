@@ -16,6 +16,7 @@
 #include "common/cuda/validate.h"
 #include "mpfr_ceil.h"
 
+constexpr int ulps_half = 0;
 constexpr int ulps_single = 0;
 constexpr int ulps_double = 0;
 
@@ -24,6 +25,10 @@ TEST_CASE("xtd::ceil", "[ceil][cuda]") {
   DYNAMIC_SECTION("CUDA platform: " << platform.name()) {
     for (const auto& device : platform.devices()) {
       DYNAMIC_SECTION("CUDA device " << device.index() << ": " << device.name()) {
+        SECTION("xtd::float16_t xtd::ceil(xtd::float16_t)") {
+          validate<xtd::float16_t, xtd::float16_t, xtd::ceil, mpfr_ceilf>(device, ulps_half);
+        }
+
         SECTION("float xtd::ceil(float)") {
           validate<float, float, xtd::ceil, mpfr_ceilf>(device, ulps_single);
         }
@@ -34,6 +39,10 @@ TEST_CASE("xtd::ceil", "[ceil][cuda]") {
 
         SECTION("double xtd::ceil(int)") {
           validate<double, int, xtd::ceil, mpfr_ceil>(device, ulps_double);
+        }
+
+        SECTION("xtd::float16_t xtd::ceilf(xtd::float16_t)") {
+          validate<xtd::float16_t, xtd::float16_t, xtd::ceilf, mpfr_ceilf>(device, ulps_half);
         }
 
         SECTION("float xtd::ceilf(float)") {

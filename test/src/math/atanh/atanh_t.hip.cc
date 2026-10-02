@@ -16,6 +16,7 @@
 #include "common/hip/validate.h"
 #include "mpfr_atanh.h"
 
+constexpr int ulps_half = 0;
 constexpr int ulps_single = 1;
 constexpr int ulps_double = 1;
 
@@ -24,6 +25,10 @@ TEST_CASE("xtd::atanh", "[atanh][hip]") {
   DYNAMIC_SECTION("HIP platform: " << platform.name()) {
     for (const auto& device : platform.devices()) {
       DYNAMIC_SECTION("HIP device " << device.index() << ": " << device.name()) {
+        SECTION("xtd::float16_t xtd::atanh(xtd::float16_t)") {
+          validate<xtd::float16_t, xtd::float16_t, xtd::atanh, mpfr_atanhf>(device, ulps_half);
+        }
+
         SECTION("float xtd::atanh(float)") {
           validate<float, float, xtd::atanh, mpfr_atanhf>(device, ulps_single);
         }
@@ -34,6 +39,10 @@ TEST_CASE("xtd::atanh", "[atanh][hip]") {
 
         SECTION("double xtd::atanh(int)") {
           validate<double, int, xtd::atanh, mpfr_atanh>(device, ulps_double);
+        }
+
+        SECTION("xtd::float16_t xtd::atanhf(xtd::float16_t)") {
+          validate<xtd::float16_t, xtd::float16_t, xtd::atanhf, mpfr_atanhf>(device, ulps_half);
         }
 
         SECTION("float xtd::atanhf(float)") {

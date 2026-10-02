@@ -19,12 +19,17 @@
 #include "common/cpu/validate.h"
 #include "mpfr_rint.h"
 
+constexpr int ulps_half = 0;
 constexpr int ulps_single = 0;
 constexpr int ulps_double = 0;
 
 TEST_CASE("xtd::rint", "[rint][cpu]") {
   const auto& device = test::cpu::device();
   DYNAMIC_SECTION("CPU: " << device.name()) {
+    SECTION("xtd::float16_t xtd::rint(xtd::float16_t)") {
+      validate<xtd::float16_t, xtd::float16_t, xtd::rint, mpfr_rintf>(device, ulps_half);
+    }
+
     SECTION("float xtd::rint(float)") {
       validate<float, float, xtd::rint, mpfr_rintf>(device, ulps_single);
     }
@@ -35,6 +40,10 @@ TEST_CASE("xtd::rint", "[rint][cpu]") {
 
     SECTION("double xtd::rint(int)") {
       validate<double, int, xtd::rint, mpfr_rint>(device, ulps_double);
+    }
+
+    SECTION("xtd::float16_t xtd::rintf(xtd::float16_t)") {
+      validate<xtd::float16_t, xtd::float16_t, xtd::rintf, mpfr_rintf>(device, ulps_half);
     }
 
     SECTION("float xtd::rintf(float)") {

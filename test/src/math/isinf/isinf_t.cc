@@ -18,6 +18,10 @@
 TEST_CASE("xtd::isinf", "[isinf][cpu]") {
   const auto& device = test::cpu::device();
   DYNAMIC_SECTION("CPU: " << device.name()) {
+    SECTION("int xtd::isinf(xtd::float16_t)") {
+      validate<int, xtd::float16_t, xtd::isinf, reference_isinf>(device);
+    }
+
     SECTION("int xtd::isinf(float)") {
       validate<int, float, xtd::isinf, reference_isinf>(device);
     }

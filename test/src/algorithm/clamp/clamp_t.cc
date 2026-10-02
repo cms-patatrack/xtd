@@ -22,6 +22,10 @@
 TEST_CASE("xtd::clamp", "[clamp][cpu]") {
   const auto& device = test::cpu::device();
   DYNAMIC_SECTION("CPU: " << device.name()) {
+    SECTION("xtd::float16_t xtd::clamp(xtd::float16_t, xtd::float16_t)") {
+      validate_clamp<xtd::float16_t, xtd::float16_t, xtd::clamp, byval::clamp>(device);
+    }
+
     SECTION("float xtd::clamp(float, float)") {
       validate_clamp<float, float, xtd::clamp, byval::clamp>(device);
     }

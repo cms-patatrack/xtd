@@ -16,6 +16,7 @@
 #include "common/hip/validate.h"
 #include "mpfr_cbrt.h"
 
+constexpr int ulps_half = 0;
 constexpr int ulps_single = 2;
 constexpr int ulps_double = 1;
 
@@ -24,6 +25,10 @@ TEST_CASE("xtd::cbrt", "[cbrt][hip]") {
   DYNAMIC_SECTION("HIP platform: " << platform.name()) {
     for (const auto& device : platform.devices()) {
       DYNAMIC_SECTION("HIP device " << device.index() << ": " << device.name()) {
+        SECTION("xtd::float16_t xtd::cbrt(xtd::float16_t)") {
+          validate<xtd::float16_t, xtd::float16_t, xtd::cbrt, mpfr_cbrtf>(device, ulps_half);
+        }
+
         SECTION("float xtd::cbrt(float)") {
           validate<float, float, xtd::cbrt, mpfr_cbrtf>(device, ulps_single);
         }
@@ -34,6 +39,10 @@ TEST_CASE("xtd::cbrt", "[cbrt][hip]") {
 
         SECTION("double xtd::cbrt(int)") {
           validate<double, int, xtd::cbrt, mpfr_cbrt>(device, ulps_double);
+        }
+
+        SECTION("xtd::float16_t xtd::cbrtf(xtd::float16_t)") {
+          validate<xtd::float16_t, xtd::float16_t, xtd::cbrtf, mpfr_cbrtf>(device, ulps_half);
         }
 
         SECTION("float xtd::cbrtf(float)") {

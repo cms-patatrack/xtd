@@ -17,6 +17,7 @@
 #include "common/sycl/validate.h"
 #include "mpfr_fma.h"
 
+constexpr int ulps_half = 0;
 constexpr int ulps_single = 0;
 constexpr int ulps_double = 0;
 
@@ -25,6 +26,10 @@ TEST_CASE("xtd::fma", "[fma][sycl]") {
     DYNAMIC_SECTION("SYCL platform " << platform.index() << ": " << platform.name()) {
       for (const auto &device : platform.devices()) {
         DYNAMIC_SECTION("SYCL device " << platform.index() << '.' << device.index() << ": " << device.name()) {
+          SECTION("xtd::float16_t xtd::fma(xtd::float16_t, xtd::float16_t, xtd::float16_t)") {
+            test::sycl::validate<xtd::float16_t, xtd::float16_t, xtd::fma, mpfr_fmaf>(platform, device, ulps_half);
+          }
+
           SECTION("float xtd::fma(float, float, float)") {
             test::sycl::validate<float, float, xtd::fma, mpfr_fmaf>(platform, device, ulps_single);
           }
@@ -35,6 +40,10 @@ TEST_CASE("xtd::fma", "[fma][sycl]") {
 
           SECTION("double xtd::fma(int, int, int)") {
             test::sycl::validate<double, int, xtd::fma, mpfr_fma>(platform, device, ulps_double);
+          }
+
+          SECTION("xtd::float16_t xtd::fmaf(xtd::float16_t, xtd::float16_t, xtd::float16_t)") {
+            test::sycl::validate<xtd::float16_t, xtd::float16_t, xtd::fmaf, mpfr_fmaf>(platform, device, ulps_half);
           }
 
           SECTION("float xtd::fmaf(float, float, float)") {

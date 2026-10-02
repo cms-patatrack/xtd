@@ -17,6 +17,12 @@
 #undef mpfr_log10
 #endif
 
+inline xtd::float16_t mpfr_log10f(xtd::arithmetic auto arg) {
+  float result;
+  mpfr::log10(static_cast<mpfr_half>(static_cast<float>(arg))).conv(result);
+  return result;
+}
+
 inline float mpfr_log10f(xtd::arithmetic auto arg) {
   float result;
   mpfr::log10(static_cast<mpfr_single>(static_cast<float>(arg))).conv(result);

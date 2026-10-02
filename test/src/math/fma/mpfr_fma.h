@@ -17,6 +17,15 @@
 #undef mpfr_fma
 #endif
 
+inline xtd::float16_t mpfr_fmaf(xtd::arithmetic auto x, xtd::arithmetic auto y, xtd::arithmetic auto z) {
+  double result;
+  mpfr::fma(static_cast<mpfr_double>(static_cast<double>(x)),
+            static_cast<mpfr_double>(static_cast<double>(y)),
+            static_cast<mpfr_double>(static_cast<double>(z)))
+      .conv(result);
+  return static_cast<xtd::float16_t>(result);
+}
+
 inline float mpfr_fmaf(xtd::arithmetic auto x, xtd::arithmetic auto y, xtd::arithmetic auto z) {
   float result;
   mpfr::fma(static_cast<mpfr_single>(static_cast<float>(x)),

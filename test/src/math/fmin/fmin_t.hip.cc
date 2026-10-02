@@ -16,6 +16,7 @@
 #include "common/hip/validate.h"
 #include "mpfr_fmin.h"
 
+constexpr int ulps_half = 0;
 constexpr int ulps_single = 0;
 constexpr int ulps_double = 0;
 
@@ -23,7 +24,11 @@ TEST_CASE("xtd::fmin", "[fmin][hip]") {
   const auto& platform = test::hip::platform();
   DYNAMIC_SECTION("HIP platform: " << platform.name()) {
     for (const auto& device : platform.devices()) {
-      DYNAMIC_SECTION("HIP device " << device.index() << ": " << device.name()) {
+      DYNAMIC_SECTION("CUDA device " << device.index() << ": " << device.name()) {
+        SECTION("xtd::float16_t xtd::fmin(float, float)") {
+          validate<xtd::float16_t, xtd::float16_t, xtd::fmin, mpfr_fminf>(device, ulps_half);
+        }
+
         SECTION("float xtd::fmin(float, float)") {
           validate<float, float, xtd::fmin, mpfr_fminf>(device, ulps_single);
         }
@@ -34,6 +39,10 @@ TEST_CASE("xtd::fmin", "[fmin][hip]") {
 
         SECTION("double xtd::fmin(int, int)") {
           validate<double, int, xtd::fmin, mpfr_fmin>(device, ulps_double);
+        }
+
+        SECTION("xtd::float16_t xtd::fminf(xtd::float16_t, xtd::float16_t)") {
+          validate<xtd::float16_t, xtd::float16_t, xtd::fminf, mpfr_fminf>(device, ulps_half);
         }
 
         SECTION("float xtd::fminf(float, float)") {

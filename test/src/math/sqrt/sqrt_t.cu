@@ -16,6 +16,7 @@
 #include "common/cuda/validate.h"
 #include "mpfr_sqrt.h"
 
+constexpr int ulps_half = 0;
 constexpr int ulps_single = 0;
 constexpr int ulps_double = 0;
 
@@ -24,6 +25,10 @@ TEST_CASE("xtd::sqrt", "[sqrt][cuda]") {
   DYNAMIC_SECTION("CUDA platform: " << platform.name()) {
     for (const auto& device : platform.devices()) {
       DYNAMIC_SECTION("CUDA device " << device.index() << ": " << device.name()) {
+        SECTION("xtd::float16_t xtd::sqrt(xtd::float16_t)") {
+          validate<xtd::float16_t, xtd::float16_t, xtd::sqrt, mpfr_sqrtf>(device, ulps_half);
+        }
+
         SECTION("float xtd::sqrt(float)") {
           validate<float, float, xtd::sqrt, mpfr_sqrtf>(device, ulps_single);
         }
@@ -34,6 +39,10 @@ TEST_CASE("xtd::sqrt", "[sqrt][cuda]") {
 
         SECTION("double xtd::sqrt(int)") {
           validate<double, int, xtd::sqrt, mpfr_sqrt>(device, ulps_double);
+        }
+
+        SECTION("xtd::float16_t xtd::sqrtf(xtd::float16_t)") {
+          validate<xtd::float16_t, xtd::float16_t, xtd::sqrtf, mpfr_sqrtf>(device, ulps_half);
         }
 
         SECTION("float xtd::sqrtf(float)") {

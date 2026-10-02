@@ -19,12 +19,17 @@
 #include "common/cpu/validate.h"
 #include "mpfr_trunc.h"
 
+constexpr int ulps_half = 0;
 constexpr int ulps_single = 0;
 constexpr int ulps_double = 0;
 
 TEST_CASE("xtd::trunc", "[trunc][cpu]") {
   const auto& device = test::cpu::device();
   DYNAMIC_SECTION("CPU: " << device.name()) {
+    SECTION("xtd::float16_t xtd::trunc(xtd::float16_t)") {
+      validate<xtd::float16_t, xtd::float16_t, xtd::trunc, mpfr_truncf>(device, ulps_half);
+    }
+
     SECTION("float xtd::trunc(float)") {
       validate<float, float, xtd::trunc, mpfr_truncf>(device, ulps_single);
     }
@@ -35,6 +40,10 @@ TEST_CASE("xtd::trunc", "[trunc][cpu]") {
 
     SECTION("double xtd::trunc(int)") {
       validate<double, int, xtd::trunc, mpfr_trunc>(device, ulps_double);
+    }
+
+    SECTION("xtd::float16_t xtd::truncf(xtd::float16_t)") {
+      validate<xtd::float16_t, xtd::float16_t, xtd::truncf, mpfr_truncf>(device, ulps_half);
     }
 
     SECTION("float xtd::truncf(float)") {

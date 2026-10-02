@@ -19,12 +19,17 @@
 #include "common/cpu/validate.h"
 #include "mpfr_fmod.h"
 
+constexpr int ulps_half = 0;
 constexpr int ulps_single = 0;
 constexpr int ulps_double = 0;
 
 TEST_CASE("xtd::fmod", "[fmod][cpu]") {
   const auto& device = test::cpu::device();
   DYNAMIC_SECTION("CPU: " << device.name()) {
+    SECTION("xtd::float16_t xtd::fmod(xtd::float16_t, xtd::float16_t)") {
+      validate<xtd::float16_t, xtd::float16_t, xtd::fmod, mpfr_fmodf>(device, ulps_half);
+    }
+
     SECTION("float xtd::fmod(float, float)") {
       validate<float, float, xtd::fmod, mpfr_fmodf>(device, ulps_single);
     }
@@ -35,6 +40,10 @@ TEST_CASE("xtd::fmod", "[fmod][cpu]") {
 
     SECTION("double xtd::fmod(int, int)") {
       validate<double, int, xtd::fmod, mpfr_fmod>(device, ulps_double);
+    }
+
+    SECTION("xtd::float16_t xtd::fmodf(xtd::float16_t, xtd::float16_t)") {
+      validate<xtd::float16_t, xtd::float16_t, xtd::fmodf, mpfr_fmodf>(device, ulps_half);
     }
 
     SECTION("float xtd::fmodf(float, float)") {
