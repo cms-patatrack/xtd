@@ -309,6 +309,51 @@ namespace xtd {
 #endif
 
       /* ========================================================================
+       * TEMPLATED COMPARISON OPERATORS
+       * ===================================================================== */
+      template <typename L, typename R>
+      requires (std::is_same_v<L, float16_t> && std::is_arithmetic_v<R>) ||
+               (std::is_arithmetic_v<L> && std::is_same_v<R, float16_t>)
+      XTD_DEVICE_FUNCTION friend constexpr inline bool operator==(L lhs, R rhs) noexcept {
+          return static_cast<float>(lhs) == static_cast<float>(rhs);
+      }
+
+      template <typename L, typename R>
+      requires (std::is_same_v<L, float16_t> && std::is_arithmetic_v<R>) ||
+               (std::is_arithmetic_v<L> && std::is_same_v<R, float16_t>)
+      XTD_DEVICE_FUNCTION friend constexpr inline bool operator!=(L lhs, R rhs) noexcept {
+          return static_cast<float>(lhs) != static_cast<float>(rhs);
+      }
+
+      template <typename L, typename R>
+      requires (std::is_same_v<L, float16_t> && std::is_arithmetic_v<R>) ||
+               (std::is_arithmetic_v<L> && std::is_same_v<R, float16_t>)
+      XTD_DEVICE_FUNCTION friend constexpr inline bool operator<(L lhs, R rhs) noexcept {
+          return static_cast<float>(lhs) < static_cast<float>(rhs);
+      }
+
+      template <typename L, typename R>
+      requires (std::is_same_v<L, float16_t> && std::is_arithmetic_v<R>) ||
+               (std::is_arithmetic_v<L> && std::is_same_v<R, float16_t>)
+      XTD_DEVICE_FUNCTION friend constexpr inline bool operator>(L lhs, R rhs) noexcept {
+          return static_cast<float>(lhs) > static_cast<float>(rhs);
+      }
+
+      template <typename L, typename R>
+      requires (std::is_same_v<L, float16_t> && std::is_arithmetic_v<R>) ||
+               (std::is_arithmetic_v<L> && std::is_same_v<R, float16_t>)
+      XTD_DEVICE_FUNCTION friend constexpr inline bool operator<=(L lhs, R rhs) noexcept {
+          return static_cast<float>(lhs) <= static_cast<float>(rhs);
+      }
+
+      template <typename L, typename R>
+      requires (std::is_same_v<L, float16_t> && std::is_arithmetic_v<R>) ||
+               (std::is_arithmetic_v<L> && std::is_same_v<R, float16_t>)
+      XTD_DEVICE_FUNCTION friend constexpr inline bool operator>=(L lhs, R rhs) noexcept {
+          return static_cast<float>(lhs) >= static_cast<float>(rhs);
+      }
+
+      /* ========================================================================
        * BITWISE OPERATORS
        * ===================================================================== */
       XTD_DEVICE_FUNCTION constexpr inline float16_t operator&(uint16_t mask) const noexcept {
