@@ -461,7 +461,9 @@ namespace xtd {
           // Denormal shift calculation capped to prevent shift overflow (round to nearest, ties to even)
           const std::uint32_t raw_denorm_sa = ( 1 - f_e_half_bias );
           const std::uint32_t is_sa_overflow_msb = ( 11 - raw_denorm_sa );
-          const std::uint32_t denorm_sa_clamped = _uint32_sels( is_sa_overflow_msb, 11, raw_denorm_sa );
+          // Clamp the shift to 11 also for normal values, where raw_denorm_sa wraps around: the denormal
+          // result is discarded for them, but shifting by 32 or more bits is undefined behaviour.
+          const std::uint32_t denorm_sa_clamped = ( raw_denorm_sa > 11 ) ? 11 : raw_denorm_sa;
 
           const std::uint32_t f_m_with_hidden = ( f_m | f_m_hidden_bit );
           const std::uint32_t denorm_total_shift = f_h_m_pos_offset + denorm_sa_clamped;
@@ -583,7 +585,9 @@ namespace xtd {
           // Denormal shift calculation capped to prevent shift overflow (round to nearest, ties to even)
           const std::uint32_t raw_denorm_sa = ( 1 - d_e_half_bias );
           const std::uint32_t is_sa_overflow_msb = ( 11 - raw_denorm_sa );
-          const std::uint32_t denorm_sa_clamped = _uint32_sels( is_sa_overflow_msb, 11, raw_denorm_sa );
+          // Clamp the shift to 11 also for normal values, where raw_denorm_sa wraps around: the denormal
+          // result is discarded for them, but shifting by 32 or more bits is undefined behaviour.
+          const std::uint32_t denorm_sa_clamped = ( raw_denorm_sa > 11 ) ? 11 : raw_denorm_sa;
 
           const std::uint64_t d_m_with_hidden = ( d_m | d_m_hidden_bit );
           const std::uint32_t denorm_total_shift = d_h_m_pos_offset + denorm_sa_clamped;
