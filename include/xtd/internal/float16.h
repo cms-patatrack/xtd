@@ -640,3 +640,6 @@ namespace xtd {
           }
   };
 }
+
+// Make the std::numeric_limits<xtd::float16_t> specialisation available wherever the type is.
+#include "xtd/internal/limits.h"

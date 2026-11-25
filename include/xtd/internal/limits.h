@@ -6,43 +6,33 @@
 
 #pragma once
 
-#include <cmath>
+#include <bit>
+#include <cstdint>
 #include <limits>
 
-// XTD concepts
-#include "xtd/internal/concepts.h"
+// xtd headers
 #include "xtd/internal/float16.h"
 
-// Mirror std::limits
-#if !defined(__FLT16_DIG__)
-#define __FLT16_HAS_QUIET_NAN__ 1
-#define __FLT16_MIN_EXP__ (-13)
-#define __FLT16_MAX_10_EXP__ 4
-#define __FLT16_DECIMAL_DIG__ 5
-#define __FLT16_DENORM_MIN__ 5.960464477539062500000000000e-8f
-#define __FLT16_MIN_10_EXP__ (-4)
-#define __FLT16_IS_IEC_60559__ 1
-#define __FLT16_MIN__ 6.103515625000000000000000000e-5f
-#define __FLT16_MAX_EXP__ 16
-#define __FLT16_EPSILON__ 9.765625000000000000000000000e-4f
-#define __FLT16_NORM_MAX__ 6.550400000000000000000000000e+4f
-#define __FLT16_MAX__ 6.550400000000000000000000000e+4f
-#define __FLT16_HAS_INFINITY__ 1
-#define __FLT16_HAS_DENORM__ 1
-#define __FLT16_MANT_DIG__ 11
-#define __FLT16_DIG__ 3
-#endif
-
-// Default values.  Should be overridden in configuration files if necessary.
-#ifndef __glibcxx_float16_has_denorm_loss
-#  define __glibcxx_float16_has_denorm_loss false
-#endif
-#ifndef __glibcxx_float16_traps
-#  define __glibcxx_float16_traps false
-#endif
-#ifndef __glibcxx_float16_tinyness_before
-#  define __glibcxx_float16_tinyness_before false
-#endif
+// Properties of the IEEE 754 binary16 format, used by std::numeric_limits<xtd::float16_t>.
+//
+// These use their own XTD_ prefix instead of the compiler's __FLT16_* macros: names starting with a
+// double underscore are reserved for the implementation, and compilers define the __FLT16_* macros
+// only when they support _Float16, so other code uses them to detect that support. Defining them
+// here would make every header processed afterwards believe that _Float16 is available.
+#define XTD_FLT16_RADIX 2
+#define XTD_FLT16_MANT_DIG 11
+#define XTD_FLT16_DIG 3
+#define XTD_FLT16_DECIMAL_DIG 5
+#define XTD_FLT16_MIN_EXP (-13)
+#define XTD_FLT16_MIN_10_EXP (-4)
+#define XTD_FLT16_MAX_EXP 16
+#define XTD_FLT16_MAX_10_EXP 4
+#define XTD_FLT16_HAS_INFINITY 1
+#define XTD_FLT16_HAS_QUIET_NAN 1
+#define XTD_FLT16_HAS_DENORM 1
+#define XTD_FLT16_HAS_DENORM_LOSS false
+#define XTD_FLT16_TRAPS false
+#define XTD_FLT16_TINYNESS_BEFORE false
 
 namespace std {
   /// numeric_limits<xtd::float16_t> specialization.
@@ -54,31 +44,29 @@ namespace std {
       static constexpr xtd::float16_t max() noexcept { return std::bit_cast<xtd::float16_t>(static_cast<uint16_t>(0x7bff)); }
       static constexpr xtd::float16_t lowest() noexcept { return std::bit_cast<xtd::float16_t>(static_cast<uint16_t>(0xfbff)); }
 
-      static constexpr int digits = __FLT16_MANT_DIG__;
-      static constexpr int digits10 = __FLT16_DIG__;
-#define __glibcxx_max_digits10(T) (2 + (T) * 643L / 2136)
-      static constexpr int max_digits10 = __glibcxx_max_digits10 (__FLT16_MANT_DIG__);
-#undef __glibcxx_max_digits10
+      static constexpr int digits = XTD_FLT16_MANT_DIG;
+      static constexpr int digits10 = XTD_FLT16_DIG;
+      static constexpr int max_digits10 = XTD_FLT16_DECIMAL_DIG;
       static constexpr bool is_signed = true;
       static constexpr bool is_integer = false;
       static constexpr bool is_exact = false;
-      static constexpr int radix = __FLT_RADIX__;
+      static constexpr int radix = XTD_FLT16_RADIX;
 
       static constexpr xtd::float16_t
       epsilon() noexcept { return std::bit_cast<xtd::float16_t>(static_cast<uint16_t>(0x1400)); }
 
       static constexpr xtd::float16_t round_error() noexcept { return std::bit_cast<xtd::float16_t>(static_cast<uint16_t>(0x3800)); }
 
-      static constexpr int min_exponent = __FLT16_MIN_EXP__;
-      static constexpr int min_exponent10 = __FLT16_MIN_10_EXP__;
-      static constexpr int max_exponent = __FLT16_MAX_EXP__;
-      static constexpr int max_exponent10 = __FLT16_MAX_10_EXP__;
+      static constexpr int min_exponent = XTD_FLT16_MIN_EXP;
+      static constexpr int min_exponent10 = XTD_FLT16_MIN_10_EXP;
+      static constexpr int max_exponent = XTD_FLT16_MAX_EXP;
+      static constexpr int max_exponent10 = XTD_FLT16_MAX_10_EXP;
 
-      static constexpr bool has_infinity = __FLT16_HAS_INFINITY__;
-      static constexpr bool has_quiet_NaN = __FLT16_HAS_QUIET_NAN__;
+      static constexpr bool has_infinity = XTD_FLT16_HAS_INFINITY;
+      static constexpr bool has_quiet_NaN = XTD_FLT16_HAS_QUIET_NAN;
       static constexpr bool has_signaling_NaN = has_quiet_NaN;
-      static constexpr float_denorm_style has_denorm = bool(__FLT16_HAS_DENORM__) ? denorm_present : denorm_absent;
-      static constexpr bool has_denorm_loss = __glibcxx_float16_has_denorm_loss;
+      static constexpr float_denorm_style has_denorm = bool(XTD_FLT16_HAS_DENORM) ? denorm_present : denorm_absent;
+      static constexpr bool has_denorm_loss = XTD_FLT16_HAS_DENORM_LOSS;
 
       static constexpr xtd::float16_t infinity() noexcept { return std::bit_cast<xtd::float16_t>(static_cast<uint16_t>(0x7C00)); }
       static constexpr xtd::float16_t quiet_NaN() noexcept { return std::bit_cast<xtd::float16_t>(static_cast<uint16_t>(0x7E00)); }
@@ -89,12 +77,8 @@ namespace std {
       static constexpr bool is_bounded = true;
       static constexpr bool is_modulo = false;
 
-      static constexpr bool traps = __glibcxx_float16_traps;
-      static constexpr bool tinyness_before = __glibcxx_float16_tinyness_before;
+      static constexpr bool traps = XTD_FLT16_TRAPS;
+      static constexpr bool tinyness_before = XTD_FLT16_TINYNESS_BEFORE;
       static constexpr float_round_style round_style = round_to_nearest;
     };
 } // namespace std
-
-#undef __glibcxx_float16_has_denorm_loss
-#undef __glibcxx_float16_traps
-#undef __glibcxx_float16_tinyness_before
