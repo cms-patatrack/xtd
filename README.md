@@ -12,6 +12,23 @@ by Chris Lowe and Neil Tennant
 C++ functions for CPU and GPUs with a consistent interface.
 
 
+## Half precision: `xtd::float16_t`
+
+`xtd::float16_t` is a vendor-neutral IEEE 754 binary16 type, available on the CPU and in CUDA, HIP and
+SYCL device code. It uses the native half-precision type and instructions where they are available,
+and a portable software implementation otherwise.
+
+  - The conversions from `float`, `double` and the other arithmetic types are implicit, so that
+    `xtd::float16_t` can be used in place of `float` in existing code. This differs from the C++23
+    `std::float16_t`, where the conversion from `float` or `double` must be explicit.
+  - Mixed-type operations follow the usual arithmetic conversions of `std::float16_t`: with an integer
+    operand the result is an `xtd::float16_t`, while with a `float`, `double` or `long double` operand
+    the `xtd::float16_t` value is converted to that type, and the result has that type.
+  - The conversions from and to the vendor types (`__half` for CUDA and HIP, `sycl::half` for SYCL) are
+    available only in device code.
+  - `std::numeric_limits<xtd::float16_t>` is specialised.
+
+
 ## Accuracy of mathematical functions
 
 For a detailed comparison of the accuracy of different math library

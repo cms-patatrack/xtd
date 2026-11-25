@@ -10,6 +10,7 @@
 #include <cmath>
 
 #include <cstdint>   // For uint16_t
+#include <type_traits>
 #include <bit>       // For std::bit_cast
 #include <ostream>
 
@@ -40,6 +41,10 @@ namespace xtd {
 
       /* ========================================================================
        * CONSTRUCTOR
+       *
+       * The conversions from float, double and the other arithmetic types are implicit, so that
+       * xtd::float16_t can be used in place of float in existing code. Note that this differs from
+       * the C++23 std::float16_t, where the conversion from float or double must be explicit.
        * ===================================================================== */
       XTD_DEVICE_FUNCTION constexpr inline float16_t(float f) noexcept
 #if defined(XTD_TARGET_CUDA)
@@ -254,33 +259,42 @@ namespace xtd {
 
       /* ========================================================================
        * TEMPLATED ARITHMETIC OPERATORS
+       *
+       * Mixed-type operations follow the usual arithmetic conversions of the C++23 std::float16_t:
+       *   - with an integer operand, the integer is converted to float16_t, and the result is a float16_t;
+       *   - with a floating-point operand (float, double, long double), the float16_t value is converted
+       *     to that type, and the result has that type.
        * ===================================================================== */
       template <typename L, typename R>
       requires (std::is_same_v<L, float16_t> && std::is_arithmetic_v<R>) ||
                (std::is_arithmetic_v<L> && std::is_same_v<R, float16_t>)
-      XTD_DEVICE_FUNCTION friend constexpr inline float operator+(L lhs, R rhs) noexcept {
-          return static_cast<float>(lhs) + static_cast<float>(rhs);
+      XTD_DEVICE_FUNCTION friend constexpr inline auto operator+(L lhs, R rhs) noexcept {
+          using T = mixed_type_t<L, R>;
+          return convert<T>(lhs) + convert<T>(rhs);
       }
 
       template <typename L, typename R>
       requires (std::is_same_v<L, float16_t> && std::is_arithmetic_v<R>) ||
                (std::is_arithmetic_v<L> && std::is_same_v<R, float16_t>)
-      XTD_DEVICE_FUNCTION friend constexpr inline float operator*(L lhs, R rhs) noexcept {
-          return static_cast<float>(lhs) * static_cast<float>(rhs);
+      XTD_DEVICE_FUNCTION friend constexpr inline auto operator*(L lhs, R rhs) noexcept {
+          using T = mixed_type_t<L, R>;
+          return convert<T>(lhs) * convert<T>(rhs);
       }
 
       template <typename L, typename R>
       requires (std::is_same_v<L, float16_t> && std::is_arithmetic_v<R>) ||
                (std::is_arithmetic_v<L> && std::is_same_v<R, float16_t>)
-      XTD_DEVICE_FUNCTION friend constexpr inline float operator-(L lhs, R rhs) noexcept {
-          return static_cast<float>(lhs) - static_cast<float>(rhs);
+      XTD_DEVICE_FUNCTION friend constexpr inline auto operator-(L lhs, R rhs) noexcept {
+          using T = mixed_type_t<L, R>;
+          return convert<T>(lhs) - convert<T>(rhs);
       }
 
       template <typename L, typename R>
       requires (std::is_same_v<L, float16_t> && std::is_arithmetic_v<R>) ||
                (std::is_arithmetic_v<L> && std::is_same_v<R, float16_t>)
-      XTD_DEVICE_FUNCTION friend constexpr inline float operator/(L lhs, R rhs) noexcept {
-          return static_cast<float>(lhs) / static_cast<float>(rhs);
+      XTD_DEVICE_FUNCTION friend constexpr inline auto operator/(L lhs, R rhs) noexcept {
+          using T = mixed_type_t<L, R>;
+          return convert<T>(lhs) / convert<T>(rhs);
       }
 
       /* ========================================================================
@@ -304,47 +318,55 @@ namespace xtd {
 
       /* ========================================================================
        * TEMPLATED COMPARISON OPERATORS
+       *
+       * Mixed-type comparisons are done in the same type as the mixed-type arithmetic operations.
        * ===================================================================== */
       template <typename L, typename R>
       requires (std::is_same_v<L, float16_t> && std::is_arithmetic_v<R>) ||
                (std::is_arithmetic_v<L> && std::is_same_v<R, float16_t>)
       XTD_DEVICE_FUNCTION friend constexpr inline bool operator==(L lhs, R rhs) noexcept {
-          return static_cast<float>(lhs) == static_cast<float>(rhs);
+          using T = mixed_type_t<L, R>;
+          return convert<T>(lhs) == convert<T>(rhs);
       }
 
       template <typename L, typename R>
       requires (std::is_same_v<L, float16_t> && std::is_arithmetic_v<R>) ||
                (std::is_arithmetic_v<L> && std::is_same_v<R, float16_t>)
       XTD_DEVICE_FUNCTION friend constexpr inline bool operator!=(L lhs, R rhs) noexcept {
-          return static_cast<float>(lhs) != static_cast<float>(rhs);
+          using T = mixed_type_t<L, R>;
+          return convert<T>(lhs) != convert<T>(rhs);
       }
 
       template <typename L, typename R>
       requires (std::is_same_v<L, float16_t> && std::is_arithmetic_v<R>) ||
                (std::is_arithmetic_v<L> && std::is_same_v<R, float16_t>)
       XTD_DEVICE_FUNCTION friend constexpr inline bool operator<(L lhs, R rhs) noexcept {
-          return static_cast<float>(lhs) < static_cast<float>(rhs);
+          using T = mixed_type_t<L, R>;
+          return convert<T>(lhs) < convert<T>(rhs);
       }
 
       template <typename L, typename R>
       requires (std::is_same_v<L, float16_t> && std::is_arithmetic_v<R>) ||
                (std::is_arithmetic_v<L> && std::is_same_v<R, float16_t>)
       XTD_DEVICE_FUNCTION friend constexpr inline bool operator>(L lhs, R rhs) noexcept {
-          return static_cast<float>(lhs) > static_cast<float>(rhs);
+          using T = mixed_type_t<L, R>;
+          return convert<T>(lhs) > convert<T>(rhs);
       }
 
       template <typename L, typename R>
       requires (std::is_same_v<L, float16_t> && std::is_arithmetic_v<R>) ||
                (std::is_arithmetic_v<L> && std::is_same_v<R, float16_t>)
       XTD_DEVICE_FUNCTION friend constexpr inline bool operator<=(L lhs, R rhs) noexcept {
-          return static_cast<float>(lhs) <= static_cast<float>(rhs);
+          using T = mixed_type_t<L, R>;
+          return convert<T>(lhs) <= convert<T>(rhs);
       }
 
       template <typename L, typename R>
       requires (std::is_same_v<L, float16_t> && std::is_arithmetic_v<R>) ||
                (std::is_arithmetic_v<L> && std::is_same_v<R, float16_t>)
       XTD_DEVICE_FUNCTION friend constexpr inline bool operator>=(L lhs, R rhs) noexcept {
-          return static_cast<float>(lhs) >= static_cast<float>(rhs);
+          using T = mixed_type_t<L, R>;
+          return convert<T>(lhs) >= convert<T>(rhs);
       }
 
       /* ========================================================================
@@ -370,6 +392,26 @@ namespace xtd {
       }
 
   private:
+      // Type used for mixed-type operations between a float16_t and an arithmetic type, following the
+      // usual arithmetic conversions of std::float16_t: integers are converted to float16_t, while
+      // float16_t is converted to any (wider) floating-point type.
+      template <typename L, typename R>
+      using mixed_type_t = std::conditional_t<std::is_same_v<L, float16_t>,
+                                              std::conditional_t<std::is_integral_v<R>, float16_t, R>,
+                                              std::conditional_t<std::is_integral_v<L>, float16_t, L>>;
+
+      // Convert a value to the type used for a mixed-type operation. A float16_t is converted to wider
+      // floating-point types through float, which is exact, and avoids the ambiguity between the
+      // conversion operators to float and to xtd::detail::float16_t (e.g. for long double).
+      template <typename T, typename U>
+      XTD_DEVICE_FUNCTION constexpr static inline T convert(U value) noexcept {
+          if constexpr (std::is_same_v<U, float16_t> and not std::is_same_v<T, float16_t>) {
+              return static_cast<T>(static_cast<float>(value));
+          } else {
+              return static_cast<T>(value);
+          }
+      }
+
       XTD_DEVICE_FUNCTION constexpr static inline bool is_nan(std::uint16_t u) noexcept { return (u & 0x7fff) > 0x7c00; }
 
       // Needs initialization to be compatible with <C++20
