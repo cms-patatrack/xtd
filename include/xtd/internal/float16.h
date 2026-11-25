@@ -370,20 +370,6 @@ namespace xtd {
       }
 
       /* ========================================================================
-       * BITWISE OPERATORS
-       * ===================================================================== */
-      XTD_DEVICE_FUNCTION constexpr inline float16_t operator&(uint16_t mask) const noexcept {
-          float16_t res;
-          res.bits_ = bits_ & mask;
-          return res;
-      }
-
-      XTD_DEVICE_FUNCTION constexpr inline float16_t& operator&=(uint16_t mask) noexcept {
-          bits_ &= mask;
-          return *this;
-      }
-
-      /* ========================================================================
        * UTILITIES
        * ===================================================================== */
       friend std::ostream& operator<<(std::ostream& os, float16_t const& c)
