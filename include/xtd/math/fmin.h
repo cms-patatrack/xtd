@@ -29,11 +29,11 @@ namespace xtd {
     return sycl::fmin(static_cast<sycl::half>(x), static_cast<sycl::half>(y));
 #elif XTD_HAS_STDFLOAT16
     // standard C/C++ code
-#if defined(__clang__) && __has_builtin(__builtin_fmin16) && defined(__AVX512FP16__)
+#if defined(__clang__) && __has_builtin(__builtin_fminf16) && defined(__AVX512FP16__)
     if (std::is_constant_evaluated()) {
       return std::fmin(static_cast<float>(x), static_cast<float>(y));
     }
-    return __builtin_fmin16(std::bit_cast<xtd::detail::float16_t>(x), std::bit_cast<xtd::detail::float16_t>(y));
+    return __builtin_fminf16(std::bit_cast<xtd::detail::float16_t>(x), std::bit_cast<xtd::detail::float16_t>(y));
 #elif __has_builtin(__builtin_fminf)
     if (std::is_constant_evaluated()) {
       return std::fmin(static_cast<float>(x), static_cast<float>(y));
