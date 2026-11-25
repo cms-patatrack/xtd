@@ -57,7 +57,7 @@ namespace xtd {
           // SYCL device code
           : bits_(sycl::bit_cast<uint16_t>(static_cast<sycl::half>(f))) {}
 #else
-#if defined(__STDCPP_FLOAT16_T__) || XTD_HAS_STDFLOAT16
+#if XTD_HAS_STDFLOAT16
           // standard C/C++ code
           : bits_(std::bit_cast<uint16_t>(static_cast<xtd::detail::float16_t>(f))) {}
 #else
@@ -77,7 +77,7 @@ namespace xtd {
           // SYCL device code
           : bits_(sycl::bit_cast<uint16_t>(static_cast<sycl::half>(d))) {}
 #else
-#if defined(__STDCPP_FLOAT16_T__) || XTD_HAS_STDFLOAT16
+#if XTD_HAS_STDFLOAT16
           // standard C/C++ code
           : bits_(std::bit_cast<uint16_t>(static_cast<xtd::detail::float16_t>(d))) {}
 #elif defined(__FLT16_MANT_DIG__)
@@ -107,7 +107,7 @@ namespace xtd {
           // SYCL device code
           return static_cast<float>(sycl::bit_cast<sycl::half>(bits_));
 #else
-#if defined(__STDCPP_FLOAT16_T__) || XTD_HAS_STDFLOAT16
+#if XTD_HAS_STDFLOAT16
           // standard C/C++ code
           return static_cast<float>(std::bit_cast<xtd::detail::float16_t>(bits_));
 #else
@@ -139,7 +139,7 @@ namespace xtd {
           : bits_(sycl::bit_cast<std::uint16_t>(f)) {}
 #endif
 
-#if defined(__STDCPP_FLOAT16_T__) || XTD_HAS_STDFLOAT16
+#if XTD_HAS_STDFLOAT16
       // C++23 standard float16_t
       XTD_DEVICE_FUNCTION constexpr inline float16_t(xtd::detail::float16_t f) noexcept
           : bits_(std::bit_cast<std::uint16_t>(f)) {}
@@ -168,7 +168,7 @@ namespace xtd {
           return sycl::bit_cast<sycl::half>(bits_);
       }
 #endif
-#if defined(__STDCPP_FLOAT16_T__) || XTD_HAS_STDFLOAT16
+#if XTD_HAS_STDFLOAT16
       // standard C/C++ code
       XTD_DEVICE_FUNCTION constexpr inline operator xtd::detail::float16_t() const noexcept {
           return std::bit_cast<xtd::detail::float16_t>(bits_);
@@ -196,7 +196,7 @@ namespace xtd {
 #elif defined(XTD_TARGET_SYCL)
           return static_cast<sycl::half>(*this) + static_cast<sycl::half>(rhs);
 #else
-#if defined(__STDCPP_FLOAT16_T__) || XTD_HAS_STDFLOAT16
+#if XTD_HAS_STDFLOAT16
           return static_cast<xtd::detail::float16_t>(*this) + static_cast<xtd::detail::float16_t>(rhs);
 #else
           return static_cast<float>(*this) + static_cast<float>(rhs);
@@ -212,7 +212,7 @@ namespace xtd {
 #elif defined(XTD_TARGET_SYCL)
           return static_cast<sycl::half>(*this) - static_cast<sycl::half>(rhs);
 #else
-#if defined(__STDCPP_FLOAT16_T__) || XTD_HAS_STDFLOAT16
+#if XTD_HAS_STDFLOAT16
           return static_cast<xtd::detail::float16_t>(*this) - static_cast<xtd::detail::float16_t>(rhs);
 #else
           return static_cast<float>(*this) - static_cast<float>(rhs);
@@ -228,7 +228,7 @@ namespace xtd {
 #elif defined(XTD_TARGET_SYCL)
           return static_cast<sycl::half>(*this) * static_cast<sycl::half>(rhs);
 #else
-#if defined(__STDCPP_FLOAT16_T__) || XTD_HAS_STDFLOAT16
+#if XTD_HAS_STDFLOAT16
           return static_cast<xtd::detail::float16_t>(*this) * static_cast<xtd::detail::float16_t>(rhs);
 #else
           return static_cast<float>(*this) * static_cast<float>(rhs);
@@ -244,7 +244,7 @@ namespace xtd {
 #elif defined(XTD_TARGET_SYCL)
           return static_cast<sycl::half>(*this) / static_cast<sycl::half>(rhs);
 #else
-#if defined(__STDCPP_FLOAT16_T__) || XTD_HAS_STDFLOAT16
+#if XTD_HAS_STDFLOAT16
           return static_cast<xtd::detail::float16_t>(*this) / static_cast<xtd::detail::float16_t>(rhs);
 #else
           return static_cast<float>(*this) / static_cast<float>(rhs);
