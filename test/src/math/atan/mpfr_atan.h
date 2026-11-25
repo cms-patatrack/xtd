@@ -18,9 +18,7 @@
 #endif
 
 inline xtd::float16_t mpfr_atanf(xtd::arithmetic auto arg) {
-  float result;
-  mpfr::atan(static_cast<mpfr_half>(static_cast<float>(arg))).conv(result);
-  return result;
+  return mpfr_half_reference(mpfr_atan, static_cast<float>(arg));
 }
 
 inline float mpfr_atanf(xtd::arithmetic auto arg) {

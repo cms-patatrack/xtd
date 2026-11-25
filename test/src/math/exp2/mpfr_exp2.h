@@ -18,9 +18,7 @@
 #endif
 
 inline xtd::float16_t mpfr_exp2f(xtd::arithmetic auto arg) {
-  float result;
-  mpfr::exp2(static_cast<mpfr_half>(static_cast<float>(arg))).conv(result);
-  return result;
+  return mpfr_half_reference(mpfr_exp2, static_cast<float>(arg));
 }
 
 inline float mpfr_exp2f(xtd::arithmetic auto arg) {
