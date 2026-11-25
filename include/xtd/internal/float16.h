@@ -114,6 +114,10 @@ namespace xtd {
 
       /* ========================================================================
        * COMPATIBILITY CONSTRUCTOR FROM VENDOR
+       *
+       * The conversions from and to the vendor types (__half for CUDA and HIP, sycl::half for SYCL)
+       * are available only in device code. Making them depend on the compiler instead would change
+       * the behaviour of host-only code compiled with nvcc, hipcc or icpx compared with gcc.
        * ===================================================================== */
       // NON-EXPLICIT constructor allows implicit conversion from xtd::detail::float16_t (_Float16)
 #if defined(XTD_TARGET_CUDA)
@@ -281,32 +285,22 @@ namespace xtd {
 
       /* ========================================================================
        * COMPARISON OPERATORS
+       *
+       * The same operators are provided in the host and device compilation passes.
+       * All comparisons involving a NaN are false, except for operator!=, which is true.
        * ===================================================================== */
       XTD_DEVICE_FUNCTION constexpr inline bool operator==(const float16_t& rhs) const noexcept {
-          if (std::isnan(static_cast<float>(*this)) || std::isnan(static_cast<float>(rhs))) {
-              return false;
-          }
-          return to_ordered_int(bits_) == to_ordered_int(rhs.bits_);
+          return not is_nan(bits_) and not is_nan(rhs.bits_) and to_ordered_int(bits_) == to_ordered_int(rhs.bits_);
       }
-#if defined(XTD_TARGET_CUDA) || defined(XTD_TARGET_HIP) || defined(XTD_TARGET_SYCL)
-      XTD_DEVICE_FUNCTION constexpr inline bool operator!=(const float16_t& rhs) const noexcept { return !(*this == rhs); }
-      XTD_DEVICE_FUNCTION constexpr inline bool operator>(const float16_t& rhs) const noexcept { return rhs < *this; }
-      XTD_DEVICE_FUNCTION constexpr inline bool operator<=(const float16_t& rhs) const noexcept { return !(rhs < *this); }
-      XTD_DEVICE_FUNCTION constexpr inline bool operator>=(const float16_t& rhs) const noexcept { return !(*this < rhs); }
+      XTD_DEVICE_FUNCTION constexpr inline bool operator!=(const float16_t& rhs) const noexcept { return not(*this == rhs); }
       XTD_DEVICE_FUNCTION constexpr inline bool operator<(const float16_t& rhs) const noexcept {
-          if (std::isnan(static_cast<float>(*this)) || std::isnan(static_cast<float>(rhs))) {
-              return false;
-          }
-          return to_ordered_int(bits_) < to_ordered_int(rhs.bits_);
+          return not is_nan(bits_) and not is_nan(rhs.bits_) and to_ordered_int(bits_) < to_ordered_int(rhs.bits_);
       }
-#else
-      XTD_DEVICE_FUNCTION constexpr std::partial_ordering operator<=>(const float16_t& rhs) const noexcept {
-          if (std::isnan(static_cast<float>(*this)) || std::isnan(static_cast<float>(rhs))) {
-              return std::partial_ordering::unordered;
-          }
-          return to_ordered_int(bits_) <=> to_ordered_int(rhs.bits_);
+      XTD_DEVICE_FUNCTION constexpr inline bool operator<=(const float16_t& rhs) const noexcept {
+          return not is_nan(bits_) and not is_nan(rhs.bits_) and to_ordered_int(bits_) <= to_ordered_int(rhs.bits_);
       }
-#endif
+      XTD_DEVICE_FUNCTION constexpr inline bool operator>(const float16_t& rhs) const noexcept { return rhs < *this; }
+      XTD_DEVICE_FUNCTION constexpr inline bool operator>=(const float16_t& rhs) const noexcept { return rhs <= *this; }
 
       /* ========================================================================
        * TEMPLATED COMPARISON OPERATORS
@@ -376,6 +370,8 @@ namespace xtd {
       }
 
   private:
+      XTD_DEVICE_FUNCTION constexpr static inline bool is_nan(std::uint16_t u) noexcept { return (u & 0x7fff) > 0x7c00; }
+
       // Needs initialization to be compatible with <C++20
       // uint16_t bits_{0};
       uint16_t bits_;
