@@ -26,8 +26,6 @@ TEST_CASE("xtd::max", "[max][cuda]") {
       DYNAMIC_SECTION("CUDA device " << device.index() << ": " << device.name()) {
         SECTION("xtd::float16_t xtd::max(xtd::float16_t, xtd::float16_t)") {
           // NVCC suffers from internal template mangling errors on stateless lambdas
-          // constexpr auto xtd::float16_t max = +[](xtd::float16_t a, xtd::float16_t b) -> xtd::float16_t { return xtd::float16_t(std::max(static_cast<float>(a), static_cast<float>(b))); };
-          // validate<xtd::float16_t, xtd::float16_t, xtd::max, xtd::float16_t max>(device);
           validate<xtd::float16_t, xtd::float16_t, xtd::max, byval::max>(device);
         }
 
