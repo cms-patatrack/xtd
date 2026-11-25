@@ -20,6 +20,8 @@
 #include <cuda_fp16.h>
 #elif defined(XTD_TARGET_HIP)
 #include <hip/hip_fp16.h>
+// HIP does not provide __double2half() (checked up to ROCm 10.2), so define it here.
+// The check below only detects a macro: if a future version provides it as a function, it will clash.
 #if defined(__HIP_PLATFORM_AMD__) && !defined(__double2half)
 __device__ inline __half __double2half(double d) {
     return static_cast<__half>(d);
@@ -400,8 +402,7 @@ namespace xtd {
 
       XTD_DEVICE_FUNCTION constexpr static inline bool is_nan(std::uint16_t u) noexcept { return (u & 0x7fff) > 0x7c00; }
 
-      // Needs initialization to be compatible with <C++20
-      // uint16_t bits_{0};
+      // Left uninitialised by the default constructor, like a float.
       uint16_t bits_;
 
       XTD_DEVICE_FUNCTION constexpr static inline std::int16_t to_ordered_int(std::uint16_t u) noexcept {

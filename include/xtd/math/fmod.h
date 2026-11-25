@@ -14,7 +14,7 @@
 
 namespace xtd {
 
-  /* Computes the floating-point remainder of the division between the two arguments, in single precision.
+  /* Computes the floating-point remainder of the division between the two arguments, in half precision.
    */
   XTD_DEVICE_FUNCTION inline constexpr float16_t fmod(float16_t x, float16_t y) {
 #if defined(XTD_TARGET_CUDA)

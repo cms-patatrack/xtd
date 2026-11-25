@@ -14,7 +14,7 @@
 
 namespace xtd {
 
-  /* Computes the hyperbolic sine of arg, in single precision.
+  /* Computes the hyperbolic sine of arg, in half precision.
    */
   XTD_DEVICE_FUNCTION inline constexpr float16_t sinh(float16_t arg) {
 #if defined(XTD_TARGET_CUDA)
