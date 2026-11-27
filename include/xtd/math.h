@@ -32,6 +32,7 @@
 #include "math/cbrt.h"
 #include "math/hypot.h"
 //hypot(x,y,z)
+#include "math/rsqrt.h"
 
 // Trigonometric functions
 #include "math/sin.h"
