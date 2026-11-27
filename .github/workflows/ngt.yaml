@@ -1,11 +1,19 @@
 name: RunUnitTest
 
-on: pull_request
+on:
+  pull_request:
+  workflow_dispatch:
+
+# A new push to the same PR cancels the previous run
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  run-tests:
+  gcc:
     strategy:
       fail-fast: false
+      max-parallel: 4
       matrix:
         runner:
           - cms-patatrack-h100-47gb
@@ -17,17 +25,16 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
-      - name: Update symlinks
-        run: |
-          sudo rm -f /usr/local/cuda
-          sudo ln -s /cvmfs/patatrack.cern.ch/externals/x86_64/rhel9/nvidia/cuda-12.9.1 /usr/local/cuda
-          sudo rm -f /opt/rocm
-          sudo ln -s /cvmfs/patatrack.cern.ch/externals/x86_64/rhel9/amd/rocm-7.1.0 /opt/rocm
-          sudo rm -f /opt/intel/oneapi
-          sudo mkdir -p /opt/intel
-          sudo ln -s /cvmfs/projects.cern.ch/intelsw/oneAPI/linux/x86_64/2025 /opt/intel/oneapi
+      - name: Setup toolchains
+        uses: ./.github/actions/setup-toolchains
+
+      - name: Restore external dependencies
+        uses: actions/cache@v6
+        with:
+          path: test/external
+          key: xtd-externals-${{ hashFiles('test/Makefile') }}
 
       - name: Build tests
         working-directory: test
@@ -40,3 +47,83 @@ jobs:
         run: |
           source /opt/intel/oneapi/setvars.sh
           make -k run
+
+  clang:
+    needs: gcc
+    name: clang (${{ matrix.std }}, ${{ matrix.runner }})
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        runner:
+          - cms-patatrack-h100-47gb
+          - cms-patatrack-l40s
+          - cms-patatrack-mi300x
+          - cms-patatrack-w7900
+        std:
+          - c++20
+          - c++23
+    runs-on: ${{ matrix.runner }}
+    container: registry.cern.ch/ngt/lxplus-like:9
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup toolchains
+        uses: ./.github/actions/setup-toolchains
+
+      - name: Setup clang
+        uses: ./.github/actions/setup-clang
+
+      - name: Restore external dependencies
+        uses: actions/cache@v6
+        with:
+          path: test/external
+          key: xtd-externals-${{ hashFiles('test/Makefile') }}
+
+      - name: Build tests with clang (${{ matrix.std }})
+        working-directory: test
+        run: |
+          source /opt/intel/oneapi/setvars.sh
+          make -k -j`nproc` build USE_CLANG=1 CXX_STD=${{ matrix.std }}
+
+      - name: Run tests with clang (${{ matrix.std }})
+        working-directory: test
+        run: |
+          source /opt/intel/oneapi/setvars.sh
+          make -k run USE_CLANG=1 CXX_STD=${{ matrix.std }}
+
+  clang-avx512fp16:
+    needs: gcc
+    name: clang compile-only (${{ matrix.std }}, -mavx512fp16)
+    strategy:
+      fail-fast: false
+      matrix:
+        std:
+          - c++20
+          - c++23
+    runs-on: cms-patatrack-l40s
+    container: registry.cern.ch/ngt/lxplus-like:9
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup toolchains
+        uses: ./.github/actions/setup-toolchains
+
+      - name: Setup clang
+        uses: ./.github/actions/setup-clang
+
+      - name: Restore external dependencies
+        uses: actions/cache@v6
+        with:
+          path: test/external
+          key: xtd-externals-${{ hashFiles('test/Makefile') }}
+
+      - name: Build tests with clang, ${{ matrix.std }} and -mavx512fp16 (compile only)
+        working-directory: test
+        run: |
+          source /opt/intel/oneapi/setvars.sh
+          make -k -j`nproc` build USE_CLANG=1 CXX_STD=${{ matrix.std }} CPU_FLAGS=-mavx512fp16

@@ -66,7 +66,7 @@ $(info Using $(CXX) host compiler installation at $(CXX_TOOLCHAIN) for target $(
 # CUDA
 CUDA_BASE := /usr/local/cuda
 # default to the list of all supported major architectures
-CUDA_ARCH := 60 70 80 90 100 120
+CUDA_ARCH := 80 90 100 120
 ifeq ($(wildcard $(CUDA_BASE)/bin/nvcc),)
   # CUDA platform not found
   $(info Cannot find an NVIDIA CUDA installation at $(CUDA_BASE), the CUDA tests will not be built.)
@@ -81,7 +81,8 @@ else
   ifneq ($(CUDA_DETECTED_ARCH),)
     CUDA_ARCH := $(CUDA_DETECTED_ARCH)
   endif
-  CUDA_CXXFLAGS := $(DEVICE_STD) $(COMMON_FLAGS) $(foreach ARCH,$(CUDA_ARCH),-gencode arch=compute_$(ARCH),code=[sm_$(ARCH),compute_$(ARCH)]) -Wno-deprecated-gpu-targets -Xcudafe --diag_suppress=esa_on_defaulted_function_ignored --prec-div true --prec-sqrt true --fmad true --expt-relaxed-constexpr --extended-lambda --generate-line-info --source-in-ptx --display-error-number --threads $(words $(CUDA_ARCH)) -ccbin $(CXX) --compiler-options '$(HOST_CXXFLAGS)' -I$(CUDA_BASE)/include
+  CUDA_HOST_CXX := g++
+  CUDA_CXXFLAGS := $(DEVICE_STD) $(COMMON_FLAGS) $(foreach ARCH,$(CUDA_ARCH),-gencode arch=compute_$(ARCH),code=[sm_$(ARCH),compute_$(ARCH)]) -Wno-deprecated-gpu-targets -Xcudafe --diag_suppress=esa_on_defaulted_function_ignored --prec-div true --prec-sqrt true --fmad true --expt-relaxed-constexpr --extended-lambda --generate-line-info --source-in-ptx --display-error-number --threads $(words $(CUDA_ARCH)) -ccbin $(CUDA_HOST_CXX) --compiler-options '$(HOST_CXXFLAGS)' -I$(CUDA_BASE)/include
   CUDA_LDFLAGS  := -L$(CUDA_LIBDIR) -L$(CUDA_LIBDIR)/stubs -lcudart -lcudadevrt -lnvidia-ml -Wl,-rpath,$(CUDA_LIBDIR) $(LDFLAGS)
 
   # Make sure the tests can find the CUDA libraries
