@@ -1,0 +1,15 @@
+name: Setup toolchains
+description: Link CUDA, ROCm and oneAPI from CVMFS
+runs:
+  using: composite
+  steps:
+    - name: Update symlinks
+      shell: bash
+      run: |
+        sudo rm -f /usr/local/cuda
+        sudo ln -s /cvmfs/patatrack.cern.ch/externals/x86_64/rhel9/nvidia/cuda-13.0.2 /usr/local/cuda
+        sudo rm -f /opt/rocm
+        sudo ln -s /cvmfs/patatrack.cern.ch/externals/x86_64/rhel9/amd/rocm-7.1.0 /opt/rocm
+        sudo rm -f /opt/intel/oneapi
+        sudo mkdir -p /opt/intel
+        sudo ln -s /cvmfs/projects.cern.ch/intelsw/oneAPI/linux/x86_64/2026 /opt/intel/oneapi

@@ -15,6 +15,9 @@
 // SYCL headers
 #include <sycl/sycl.hpp>
 
+// XTD concepts
+#include "xtd/concepts.h"
+
 // Catch2 headers
 #define CATCH_CONFIG_NO_POSIX_SIGNALS
 #include <catch.hpp>
@@ -37,7 +40,7 @@ namespace test::sycl {
     T value_;
   };
 
-  template <std::floating_point T>
+  template <xtd::floating_point T>
   std::ostream& operator<<(std::ostream& out, detailed<T> const& val) {
     std::ostringstream buffer;
     buffer << std::fixed << std::setprecision(std::numeric_limits<T>::max_digits10) << val.value_ << " ["
@@ -52,7 +55,7 @@ namespace test::sycl {
     return out;
   }
 
-  template <std::floating_point ResultType,
+  template <xtd::floating_point ResultType,
             typename InputType,
             ResultType (*XtdFunc)(InputType),
             ResultType (*RefFunc)(InputType)>
@@ -154,7 +157,7 @@ namespace test::sycl {
     std::exit(EXIT_FAILURE);
   }
 
-  template <std::floating_point ResultType,
+  template <xtd::floating_point ResultType,
             typename InputType,
             ResultType (*XtdFunc)(InputType, InputType),
             ResultType (*RefFunc)(InputType, InputType)>
@@ -169,7 +172,23 @@ namespace test::sycl {
     const Inputs& input = inputs(platform, device);
     unsigned int size = input.size();
     std::span<const InputType> values_h = input.values_h<InputType>();
-    std::span<const InputType> values_d = input.values_d<InputType>();
+
+    // Generate a low-discrepancy deterministic sequence over [0, size)×[0, size).
+    std::vector<InputType> input_x(size);
+    std::vector<InputType> input_y(size);
+
+    for (unsigned int t = 0; t < size; ++t) {
+      auto [i, j] = halton<2>(t, size);
+      input_x[t] = values_h[i];
+      input_y[t] = values_h[j];
+    }
+
+    InputType* buf_x = ::sycl::malloc_device<InputType>(size, device.queue());
+    InputType* buf_y = ::sycl::malloc_device<InputType>(size, device.queue());
+
+    device.queue().copy(input_x.data(), buf_x, size);
+    device.queue().copy(input_y.data(), buf_y, size);
+    device.queue().wait();
 
     // Allocate memory for the results and fill it with zeroes.
     std::vector<ResultType> result_h(size, 0);
@@ -179,22 +198,23 @@ namespace test::sycl {
     // Execute the xtd function on the SYCL device.
     device.queue().submit([&](::sycl::handler& cgh) {
       cgh.parallel_for(::sycl::range<1>(size), [=](::sycl::id<1> t) {
-        // Generate a low-discrepancy deterministic sequence over [0, size)×[0, size).
-        auto [i, j] = halton<2>(static_cast<size_t>(t), size);
-        result_d[t] = static_cast<ResultType>(XtdFunc(values_d[i], values_d[j]));
+        // Load a low-discrepancy deterministic sequence over [0, size)×[0, size).
+        result_d[t] = static_cast<ResultType>(XtdFunc(buf_x[t], buf_y[t]));
       });
     });
 
     // Copy the results back to the host and free the device memory.
     device.queue().copy(result_d, result_h.data(), size);
     device.queue().wait();
+
     ::sycl::free(result_d, device.queue());
+    ::sycl::free(buf_x, device.queue());
+    ::sycl::free(buf_y, device.queue());
 
     for (unsigned int t = 0; t < size; ++t) {
-      // Generate a low-discrepancy deterministic sequence over [0, size)×[0, size).
-      auto [i, j] = halton<2>(t, size);
-      InputType x = values_h[i];
-      InputType y = values_h[j];
+      // Load a low-discrepancy deterministic sequence over [0, size)×[0, size).
+      InputType x = input_x[t];
+      InputType y = input_y[t];
       // read the result of the xtd function
       ResultType result = result_h[t];
       // compute the reference
@@ -228,7 +248,23 @@ namespace test::sycl {
     const Inputs& input = inputs(platform, device);
     unsigned int size = input.size();
     std::span<const InputType> values_h = input.values_h<InputType>();
-    std::span<const InputType> values_d = input.values_d<InputType>();
+
+    // Generate a low-discrepancy deterministic sequence over [0, size)×[0, size).
+    std::vector<InputType> input_x(size);
+    std::vector<InputType> input_y(size);
+
+    for (unsigned int t = 0; t < size; ++t) {
+      auto [i, j] = halton<2>(t, size);
+      input_x[t] = values_h[i];
+      input_y[t] = values_h[j];
+    }
+
+    InputType* buf_x = ::sycl::malloc_device<InputType>(size, device.queue());
+    InputType* buf_y = ::sycl::malloc_device<InputType>(size, device.queue());
+
+    device.queue().copy(input_x.data(), buf_x, size);
+    device.queue().copy(input_y.data(), buf_y, size);
+    device.queue().wait();
 
     // Allocate memory for the results and fill it with zeroes.
     std::vector<ResultType> result_h(size, 0);
@@ -238,22 +274,23 @@ namespace test::sycl {
     // Execute the xtd function on the SYCL device.
     device.queue().submit([&](::sycl::handler& cgh) {
       cgh.parallel_for(::sycl::range<1>(size), [=](::sycl::id<1> t) {
-        // Generate a low-discrepancy deterministic sequence over [0, size)×[0, size).
-        auto [i, j] = halton<2>(static_cast<size_t>(t), size);
-        result_d[t] = static_cast<ResultType>(XtdFunc(values_d[i], values_d[j]));
+        // Load a low-discrepancy deterministic sequence over [0, size)×[0, size).
+        result_d[t] = static_cast<ResultType>(XtdFunc(buf_x[t], buf_y[t]));
       });
     });
 
     // Copy the results back to the host and free the device memory.
     device.queue().copy(result_d, result_h.data(), size);
     device.queue().wait();
+
     ::sycl::free(result_d, device.queue());
+    ::sycl::free(buf_x, device.queue());
+    ::sycl::free(buf_y, device.queue());
 
     for (unsigned int t = 0; t < size; ++t) {
-      // Generate a low-discrepancy deterministic sequence over [0, size)×[0, size).
-      auto [i, j] = halton<2>(t, size);
-      InputType x = values_h[i];
-      InputType y = values_h[j];
+      // Load a low-discrepancy deterministic sequence over [0, size)×[0, size).
+      InputType x = input_x[t];
+      InputType y = input_y[t];
       // read the result of the xtd function
       ResultType result = result_h[t];
       // compute the reference
@@ -272,7 +309,7 @@ namespace test::sycl {
     std::exit(EXIT_FAILURE);
   }
 
-  template <std::floating_point ResultType,
+  template <xtd::floating_point ResultType,
             typename InputType,
             ResultType (*XtdFunc)(InputType, InputType, InputType),
             ResultType (*RefFunc)(InputType, InputType, InputType)>
@@ -287,7 +324,27 @@ namespace test::sycl {
     const Inputs& input = inputs(platform, device);
     unsigned int size = input.size();
     std::span<const InputType> values_h = input.values_h<InputType>();
-    std::span<const InputType> values_d = input.values_d<InputType>();
+
+    // Generate a low-discrepancy deterministic sequence over [0, size)×[0, size)×[0, size).
+    std::vector<InputType> input_x(size);
+    std::vector<InputType> input_y(size);
+    std::vector<InputType> input_z(size);
+
+    for (unsigned int t = 0; t < size; ++t) {
+      auto [i, j, k] = halton<3>(t, size);
+      input_x[t] = values_h[i];
+      input_y[t] = values_h[j];
+      input_z[t] = values_h[k];
+    }
+
+    InputType* buf_x = ::sycl::malloc_device<InputType>(size, device.queue());
+    InputType* buf_y = ::sycl::malloc_device<InputType>(size, device.queue());
+    InputType* buf_z = ::sycl::malloc_device<InputType>(size, device.queue());
+
+    device.queue().copy(input_x.data(), buf_x, size);
+    device.queue().copy(input_y.data(), buf_y, size);
+    device.queue().copy(input_z.data(), buf_z, size);
+    device.queue().wait();
 
     // Allocate memory for the results and fill it with zeroes.
     std::vector<ResultType> result_h(size, 0);
@@ -297,23 +354,24 @@ namespace test::sycl {
     // Execute the xtd function on the SYCL device.
     device.queue().submit([&](::sycl::handler& cgh) {
       cgh.parallel_for(::sycl::range<1>(size), [=](::sycl::id<1> t) {
-        // Generate a low-discrepancy deterministic sequence over [0, size)×[0, size)×[0, size).
-        auto [i, j, k] = halton<3>(static_cast<size_t>(t), size);
-        result_d[t] = static_cast<ResultType>(XtdFunc(values_d[i], values_d[j], values_d[k]));
+        // Load a low-discrepancy deterministic sequence over [0, size)×[0, size)×[0, size).
+        result_d[t] = static_cast<ResultType>(XtdFunc(buf_x[t], buf_y[t], buf_z[t]));
       });
     });
 
     // Copy the results back to the host and free the device memory.
     device.queue().copy(result_d, result_h.data(), size);
     device.queue().wait();
+
     ::sycl::free(result_d, device.queue());
+    ::sycl::free(buf_x, device.queue());
+    ::sycl::free(buf_y, device.queue());
+    ::sycl::free(buf_z, device.queue());
 
     for (unsigned int t = 0; t < size; ++t) {
-      // Generate a low-discrepancy deterministic sequence over [0, size)×[0, size)×[0, size).
-      auto [i, j, k] = halton<3>(t, size);
-      InputType x = values_h[i];
-      InputType y = values_h[j];
-      InputType z = values_h[k];
+      InputType x = input_x[t];
+      InputType y = input_y[t];
+      InputType z = input_z[t];
       // read the result of the xtd function
       ResultType result = result_h[t];
       // compute the reference
@@ -347,7 +405,27 @@ namespace test::sycl {
     const Inputs& input = inputs(platform, device);
     unsigned int size = input.size();
     std::span<const InputType> values_h = input.values_h<InputType>();
-    std::span<const InputType> values_d = input.values_d<InputType>();
+
+    // Generate a low-discrepancy deterministic sequence over [0, size)×[0, size)×[0, size).
+    std::vector<InputType> input_x(size);
+    std::vector<InputType> input_y(size);
+    std::vector<InputType> input_z(size);
+
+    for (unsigned int t = 0; t < size; ++t) {
+      auto [i, j, k] = halton<3>(t, size);
+      input_x[t] = values_h[i];
+      input_y[t] = values_h[j];
+      input_z[t] = values_h[k];
+    }
+
+    InputType* buf_x = ::sycl::malloc_device<InputType>(size, device.queue());
+    InputType* buf_y = ::sycl::malloc_device<InputType>(size, device.queue());
+    InputType* buf_z = ::sycl::malloc_device<InputType>(size, device.queue());
+
+    device.queue().copy(input_x.data(), buf_x, size);
+    device.queue().copy(input_y.data(), buf_y, size);
+    device.queue().copy(input_z.data(), buf_z, size);
+    device.queue().wait();
 
     // Allocate memory for the results and fill it with zeroes.
     std::vector<ResultType> result_h(size, 0);
@@ -357,23 +435,25 @@ namespace test::sycl {
     // Execute the xtd function on the SYCL device.
     device.queue().submit([&](::sycl::handler& cgh) {
       cgh.parallel_for(::sycl::range<1>(size), [=](::sycl::id<1> t) {
-        // Generate a low-discrepancy deterministic sequence over [0, size)×[0, size)×[0, size).
-        auto [i, j, k] = halton<3>(static_cast<size_t>(t), size);
-        result_d[t] = static_cast<ResultType>(XtdFunc(values_d[i], values_d[j], values_d[k]));
+        // Load a low-discrepancy deterministic sequence over [0, size)×[0, size)×[0, size).
+        result_d[t] = static_cast<ResultType>(XtdFunc(buf_x[t], buf_y[t], buf_z[t]));
       });
     });
 
     // Copy the results back to the host and free the device memory.
     device.queue().copy(result_d, result_h.data(), size);
     device.queue().wait();
+
     ::sycl::free(result_d, device.queue());
+    ::sycl::free(buf_x, device.queue());
+    ::sycl::free(buf_y, device.queue());
+    ::sycl::free(buf_z, device.queue());
 
     for (unsigned int t = 0; t < size; ++t) {
-      // Generate a low-discrepancy deterministic sequence over [0, size)×[0, size)×[0, size).
-      auto [i, j, k] = halton<3>(t, size);
-      InputType x = values_h[i];
-      InputType y = values_h[j];
-      InputType z = values_h[k];
+      // Load a low-discrepancy deterministic sequence over [0, size)×[0, size).
+      InputType x = input_x[t];
+      InputType y = input_y[t];
+      InputType z = input_z[t];
       // read the result of the xtd function
       ResultType result = result_h[t];
       // compute the reference

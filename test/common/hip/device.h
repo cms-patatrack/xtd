@@ -34,7 +34,8 @@ namespace test::hip {
       HIP_CHECK(hipStreamSynchronize(queue_));
       HIP_CHECK(hipStreamDestroy(queue_));
       HIP_CHECK(hipSetDevice(index_));
-      HIP_CHECK(hipDeviceReset());
+      // INFO: Currently (ROCm 7.x) causes issue on AMD Instinct MI devices
+      // HIP_CHECK(hipDeviceReset());
     }
 
     Device(const Device&) = delete;

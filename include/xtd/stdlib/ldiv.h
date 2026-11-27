@@ -1,6 +1,7 @@
 /*
  * Copyright 2026 European Organization for Nuclear Research (CERN)
- * Authors: Andrea Bocci <andrea.bocci@cern.ch>, Aurora Perego <aurora.perego@cern.ch>, Simone Balducci <simone.balducci@cern.ch>
+ * Authors: Andrea Bocci <andrea.bocci@cern.ch>, Aurora Perego <aurora.perego@cern.ch>, Simone Balducci <simone.balducci@cern.ch>,
+ *          Patrick Kopper <patrick.kopper@cern.ch>
  * SPDX-License-Identifier: MPL-2.0
  */
 
@@ -17,14 +18,16 @@ namespace xtd {
    * If the denominator is 0, does not raise a floating point exception and returns { 0, 0 }.
    */
   XTD_DEVICE_FUNCTION inline constexpr ::ldiv_t ldiv(long numerator, long denominator) {
-    ::ldiv_t result;
-    if (denominator != 0) {
-      result.quot = numerator / denominator;
-      result.rem = numerator % denominator;
-    } else {
-      result.quot = 0;
-      result.rem = 0;
+    ::ldiv_t result{};
+    if (denominator == 0) {
+      return result;
     }
+    if (numerator == std::numeric_limits<long>::min() && denominator == -1) {
+      result.quot = std::numeric_limits<long>::min();
+      return result;
+    }
+    result.quot = numerator / denominator;
+    result.rem = numerator % denominator;
     return result;
   }
 

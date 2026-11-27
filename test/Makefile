@@ -1,5 +1,5 @@
 # Copyright 2026 European Organization for Nuclear Research (CERN)
-# Authors: Andrea Bocci <andrea.bocci@cern.ch>, Aurora Perego <aurora.perego@cern.ch>, Simone Balducci <simone.balducci@cern.ch>
+# Authors: Andrea Bocci <andrea.bocci@cern.ch>, Aurora Perego <aurora.perego@cern.ch>, Simone Balducci <simone.balducci@cern.ch>, Patrick Kopper <patrick.kopper@cern.ch>
 # SPDX-License-Identifier: MPL-2.0
 
 .DELETE_ON_ERROR:
@@ -30,8 +30,12 @@ endef
 space := $() $()
 comma := $(),$()
 
+# C++ standard for host (CPU) code; device code is always C++20
+CXX_STD ?= c++20
+DEVICE_STD := -std=c++20
+
 # compilation flags used by all compilers and backends
-COMMON_FLAGS := -std=c++20 -O2 -g
+COMMON_FLAGS := -O2 -g
 
 # Catch2 needs -Wno-unused-variable
 # mpfr::real needs -Wno-unused-parameter -Wno-self-assign-overloaded
@@ -40,18 +44,29 @@ HOST_CXXFLAGS := -march=native -Wall -Wextra -Werror -Wno-unused-variable -Wno-u
 # Compiler flags supported by GCC but not by the LLVM-based compilers (clang, hipcc, icpx, etc.)
 LLVM_UNSUPPORTED_CXXFLAGS := --param vect-max-version-for-alias-checks=50 -Werror=format-contains-nul -Wno-non-template-friend -Werror=return-local-addr -Werror=unused-but-set-variable
 
-# gcc
-CXX           := g++
-GCC_TOOLCHAIN := $(abspath $(dir $(shell which $(CXX)))/..)
-GCC_TARGET    := $(shell $(CXX) -dumpmachine)
-CXXFLAGS      := $(COMMON_FLAGS) $(HOST_CXXFLAGS)
+# Default compiler configuration
+USE_CLANG ?= 0
+
+ifeq ($(USE_CLANG),1)
+	# clang
+  CXX := clang++
+  CXXFLAGS := -std=$(CXX_STD) $(filter-out $(LLVM_UNSUPPORTED_CXXFLAGS),$(COMMON_FLAGS) $(CPU_FLAGS) $(HOST_CXXFLAGS))
+else
+	# gcc
+  CXX := g++
+  CXXFLAGS := -std=$(CXX_STD) $(COMMON_FLAGS) $(CPU_FLAGS) $(HOST_CXXFLAGS)
+endif
 LDFLAGS       := $(COMMON_FLAGS)
-$(info Using $(CXX) host compiler installation at $(GCC_TOOLCHAIN) for target $(GCC_TARGET))
+CPU_LDFLAGS   := -lm
+
+CXX_TOOLCHAIN := $(abspath $(dir $(shell which $(CXX)))/..)
+CXX_TARGET    := $(shell $(CXX) -dumpmachine)
+$(info Using $(CXX) host compiler installation at $(CXX_TOOLCHAIN) for target $(CXX_TARGET))
 
 # CUDA
 CUDA_BASE := /usr/local/cuda
 # default to the list of all supported major architectures
-CUDA_ARCH := 50 60 70 80 90 100 120
+CUDA_ARCH := 80 90 100 120
 ifeq ($(wildcard $(CUDA_BASE)/bin/nvcc),)
   # CUDA platform not found
   $(info Cannot find an NVIDIA CUDA installation at $(CUDA_BASE), the CUDA tests will not be built.)
@@ -66,7 +81,8 @@ else
   ifneq ($(CUDA_DETECTED_ARCH),)
     CUDA_ARCH := $(CUDA_DETECTED_ARCH)
   endif
-  CUDA_CXXFLAGS := $(COMMON_FLAGS) $(foreach ARCH,$(CUDA_ARCH),-gencode arch=compute_$(ARCH),code=[sm_$(ARCH),compute_$(ARCH)]) -Wno-deprecated-gpu-targets -Xcudafe --diag_suppress=esa_on_defaulted_function_ignored --prec-div true --prec-sqrt true --fmad true --expt-relaxed-constexpr --extended-lambda --generate-line-info --source-in-ptx --display-error-number --threads $(words $(CUDA_ARCH)) -ccbin $(CXX) --compiler-options '$(HOST_CXXFLAGS)' -I$(CUDA_BASE)/include
+  CUDA_HOST_CXX := g++
+  CUDA_CXXFLAGS := $(DEVICE_STD) $(COMMON_FLAGS) $(foreach ARCH,$(CUDA_ARCH),-gencode arch=compute_$(ARCH),code=[sm_$(ARCH),compute_$(ARCH)]) -Wno-deprecated-gpu-targets -Xcudafe --diag_suppress=esa_on_defaulted_function_ignored --prec-div true --prec-sqrt true --fmad true --expt-relaxed-constexpr --extended-lambda --generate-line-info --source-in-ptx --display-error-number --threads $(words $(CUDA_ARCH)) -ccbin $(CUDA_HOST_CXX) --compiler-options '$(HOST_CXXFLAGS)' -I$(CUDA_BASE)/include
   CUDA_LDFLAGS  := -L$(CUDA_LIBDIR) -L$(CUDA_LIBDIR)/stubs -lcudart -lcudadevrt -lnvidia-ml -Wl,-rpath,$(CUDA_LIBDIR) $(LDFLAGS)
 
   # Make sure the tests can find the CUDA libraries
@@ -91,7 +107,7 @@ else
     ROCM_ARCH := $(ROCM_DETECTED_ARCH)
   endif
   ROCM_CXX     := $(ROCM_BASE)/bin/hipcc
-  ROCM_CXXFLAGS := $(filter-out $(LLVM_UNSUPPORTED_CXXFLAGS),$(CXXFLAGS)) $(foreach ARCH,$(ROCM_ARCH),--offload-arch=$(ARCH)) -fhip-fp32-correctly-rounded-divide-sqrt --target=$(GCC_TARGET) --gcc-toolchain=$(GCC_TOOLCHAIN) -I$(ROCM_BASE)/include/hip
+  ROCM_CXXFLAGS := $(filter-out $(LLVM_UNSUPPORTED_CXXFLAGS) -std=%,$(CXXFLAGS)) $(DEVICE_STD) $(foreach ARCH,$(ROCM_ARCH),--offload-arch=$(ARCH)) -fhip-fp32-correctly-rounded-divide-sqrt --target=$(CXX_TARGET) --gcc-toolchain=$(CXX_TOOLCHAIN) -I$(ROCM_BASE)/include/hip
   ROCM_LDFLAGS  := -L$(ROCM_LIBDIR) -lamdhip64 -lrocm_smi64 -Wl,-rpath,$(ROCM_LIBDIR) $(LDFLAGS)
 
   # Make sure the tests can find the ROCm libraries
@@ -176,8 +192,9 @@ ifneq ($(ONEAPI_BASE),)
       SYCL_ROCM_FLAGS := --rocm-path=$(ROCM_BASE)
     endif
   endif
-  SYCL_CXXFLAGS     := $(filter-out $(LLVM_UNSUPPORTED_CXXFLAGS),$(CXXFLAGS)) -fsycl -fsycl-targets=$(subst $(space),$(comma),$(SYCL_TARGETS)) $(SYCL_CUDA_FLAGS) $(SYCL_ROCM_FLAGS) -fp-model=precise
-  SYCL_LDFLAGS      := $(LDFLAGS)
+  SYCL_CXXFLAGS     := $(filter-out $(LLVM_UNSUPPORTED_CXXFLAGS) -std=%,$(CXXFLAGS)) $(DEVICE_STD) -fsycl -fsycl-targets=$(subst $(space),$(comma),$(SYCL_TARGETS)) $(SYCL_CUDA_FLAGS) $(SYCL_ROCM_FLAGS) -fp-model=precise
+  SYCL_BUILTINS_LIB := $(shell $(SYCL_CXX) --rtlib=compiler-rt -print-libgcc-file-name 2> /dev/null)
+  SYCL_LDFLAGS      := $(LDFLAGS) $(if $(wildcard $(SYCL_BUILTINS_LIB)),$(SYCL_BUILTINS_LIB))
 
   # Check for Intel GPU existence
   #SYCL_LS := $(shell mktemp)
@@ -316,7 +333,7 @@ tmp/main.hip.cc.o: common/hip/main.hip.cc | prereq
 	$(ROCM_CXX) $(ROCM_CXXFLAGS) $(LIB_CFLAGS) -c $< -o $@
 
 bin/test_hip: tmp/main.hip.cc.o $(ROCM_OBJ) | prereq
-	$(CXX) $^ $(ROCM_LDFLAGS) $(LIB_LDFLAGS) -o $@
+	$(ROCM_CXX) $^ $(ROCM_LDFLAGS) $(LIB_LDFLAGS) -o $@
 
 .PHONY: build_hip
 build_hip: bin/test_hip

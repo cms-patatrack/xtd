@@ -6,6 +6,11 @@
 
 // C++ standard headers
 #include <concepts>
+#include "xtd/internal/defines.h"
+
+inline constexpr int reference_isnan(xtd::float16_t arg) {
+  return __builtin_isnan(static_cast<float>(arg)) ? 1 : 0;
+}
 
 inline constexpr int reference_isnan(std::floating_point auto arg) {
   return __builtin_isnan(arg) ? 1 : 0;

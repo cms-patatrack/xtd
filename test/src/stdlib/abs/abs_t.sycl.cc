@@ -1,6 +1,6 @@
 /*
  * Copyright 2026 European Organization for Nuclear Research (CERN)
- * Authors: Andrea Bocci <andrea.bocci@cern.ch>, Aurora Perego <aurora.perego@cern.ch>
+ * Authors: Andrea Bocci <andrea.bocci@cern.ch>, Aurora Perego <aurora.perego@cern.ch>, Patrick Kopper <patrick.kopper@cern.ch>
  * SPDX-License-Identifier: MPL-2.0
  */
 
@@ -18,12 +18,17 @@
 #include "common/sycl/device.h"
 #include "common/sycl/platform.h"
 #include "common/sycl/validate.h"
+#include "byval_abs.h"
 
 TEST_CASE("xtd::abs", "[abs][sycl]") {
   for (const auto &platform : test::sycl::platforms()) {
     DYNAMIC_SECTION("SYCL platform " << platform.index() << ": " << platform.name()) {
       for (const auto &device : platform.devices()) {
         DYNAMIC_SECTION("SYCL device " << platform.index() << '.' << device.index() << ": " << device.name()) {
+          SECTION("xtd::float16_t xtd::abs(xtd::float16_t)") {
+            validate<xtd::float16_t, xtd::float16_t, xtd::abs, byval::abs>(platform, device);
+          }
+
           SECTION("float xtd::abs(float)") {
             validate<float, float, xtd::abs, std::abs>(platform, device);
           }
@@ -32,16 +37,19 @@ TEST_CASE("xtd::abs", "[abs][sycl]") {
             validate<double, double, xtd::abs, std::abs>(platform, device);
           }
 
+          // std::abs is an overload set that doesn't resolve to RefFunc's function pointer type
           SECTION("int xtd::abs(int)") {
-            validate<int, int, xtd::abs, std::abs>(platform, device);
+            validate<int, int, xtd::abs, +[](int x) { return std::abs(x); }>(platform, device);
           }
 
+          // std::abs is an overload set that doesn't resolve to RefFunc's function pointer type
           SECTION("long xtd::abs(long)") {
-            validate<long, long, xtd::abs, std::abs>(platform, device);
+            validate<long, long, xtd::abs, +[](long x) { return std::abs(x); }>(platform, device);
           }
 
+          // std::abs is an overload set that doesn't resolve to RefFunc's function pointer type
           SECTION("long long xtd::abs(long long)") {
-            validate<long long, long long, xtd::abs, std::abs>(platform, device);
+            validate<long long, long long, xtd::abs, +[](long long x) { return std::abs(x); }>(platform, device);
           }
         }
       }

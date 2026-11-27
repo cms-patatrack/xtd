@@ -17,6 +17,7 @@
 #include "common/sycl/validate.h"
 #include "mpfr_acosh.h"
 
+constexpr int ulps_half = 1;
 constexpr int ulps_single = 4;
 constexpr int ulps_double = 4;
 
@@ -25,6 +26,10 @@ TEST_CASE("xtd::acosh", "[acosh][sycl]") {
     DYNAMIC_SECTION("SYCL platform " << platform.index() << ": " << platform.name()) {
       for (const auto &device : platform.devices()) {
         DYNAMIC_SECTION("SYCL device " << platform.index() << '.' << device.index() << ": " << device.name()) {
+        SECTION("xtd::float16_t xtd::acosh(xtd::float16_t)") {
+          validate<xtd::float16_t, xtd::float16_t, xtd::acosh, mpfr_acoshf16>(platform, device, ulps_half);
+        }
+
           SECTION("float xtd::acosh(float)") {
             validate<float, float, xtd::acosh, mpfr_acoshf>(platform, device, ulps_single);
           }
@@ -35,6 +40,10 @@ TEST_CASE("xtd::acosh", "[acosh][sycl]") {
 
           SECTION("double xtd::acosh(int)") {
             validate<double, int, xtd::acosh, mpfr_acosh>(platform, device, ulps_double);
+          }
+
+          SECTION("xtd::float16_t xtd::acoshf16(xtd::float16_t)") {
+            validate<xtd::float16_t, xtd::float16_t, xtd::acoshf16, mpfr_acoshf16>(platform, device, ulps_half);
           }
 
           SECTION("float xtd::acoshf(float)") {

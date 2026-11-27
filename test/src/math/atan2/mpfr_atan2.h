@@ -11,11 +11,17 @@
 #include <xtd/concepts/arithmetic.h>
 
 // test headers
+// #include "common/math_inputs.h"
 #include "common/mpfr.h"
 
 #ifdef mpfr_atan2
 #undef mpfr_atan2
 #endif
+
+// inline xtd::float16_t mpfr_atan2f16(xtd::float16_t x, xtd::float16_t y) {
+//   return test_half::reference(
+//       [](mpfr_ptr r, mpfr_srcptr a, mpfr_srcptr b, mpfr_rnd_t rnd) { return ::mpfr_atan2(r, a, b, rnd); }, x, y);
+// }
 
 inline float mpfr_atan2f(xtd::arithmetic auto y, xtd::arithmetic auto x) {
   float result;

@@ -1,6 +1,6 @@
 /*
  * Copyright 2026 European Organization for Nuclear Research (CERN)
- * Authors: Andrea Bocci <andrea.bocci@cern.ch>
+ * Authors: Andrea Bocci <andrea.bocci@cern.ch>, Patrick Kopper <patrick.kopper@cern.ch>
  * SPDX-License-Identifier: MPL-2.0
  */
 
@@ -9,10 +9,17 @@
 // C++ standard headers
 #include <iomanip>
 #include <iostream>
+#include <limits>
+#include <span>
+#include <sstream>
+#include <type_traits>
 #include <vector>
 
 // CUDA headers
 #include <cuda_runtime.h>
+
+// XTD concepts
+#include "xtd/concepts.h"
 
 // test headers
 #include "common/compare.h"
@@ -25,33 +32,36 @@
 namespace test::cuda {
 
   template <typename ResultType, typename InputType, ResultType (*XtdFunc)(InputType)>
-  __global__ static void kernel(InputType const* input, ResultType* result, int size) {
-    const int thread = blockDim.x * blockIdx.x + threadIdx.x;
-    const int stride = blockDim.x * gridDim.x;
-    for (int t = thread; t < size; t += stride) {
-      result[t] = XtdFunc(input[t]);
+  __global__ static void kernel(InputType const* input, ResultType* result, unsigned int size) {
+    const unsigned int thread = blockDim.x * blockIdx.x + threadIdx.x;
+    const unsigned int stride = blockDim.x * gridDim.x;
+    for (unsigned int t = thread; t < size; t += stride) {
+      result[t] = static_cast<ResultType>(XtdFunc(input[t]));
     }
   }
 
   template <typename ResultType, typename InputType, ResultType (*XtdFunc)(InputType, InputType)>
-  __global__ static void kernel(InputType const* input, ResultType* result, unsigned int size) {
-    const int thread = blockDim.x * blockIdx.x + threadIdx.x;
-    const int stride = blockDim.x * gridDim.x;
+  __global__ static void kernel(InputType const* buf_x,
+                                InputType const* buf_y,
+                                ResultType* result_d,
+                                unsigned int size) {
+    const unsigned int thread = blockDim.x * blockIdx.x + threadIdx.x;
+    const unsigned int stride = blockDim.x * gridDim.x;
     for (unsigned int t = thread; t < size; t += stride) {
-      // generate a low-discrepancy deterministic sequence over [0, size)*[0, size)
-      auto [i, j] = halton<2>(t, size);
-      result[t] = static_cast<ResultType>(XtdFunc(input[i], input[j]));
+      result_d[t] = static_cast<ResultType>(XtdFunc(buf_x[t], buf_y[t]));
     }
   }
 
   template <typename ResultType, typename InputType, ResultType (*XtdFunc)(InputType, InputType, InputType)>
-  __global__ static void kernel(InputType const* input, ResultType* result, unsigned int size) {
-    const int thread = blockDim.x * blockIdx.x + threadIdx.x;
-    const int stride = blockDim.x * gridDim.x;
+  __global__ static void kernel(InputType const* buf_x,
+                                InputType const* buf_y,
+                                InputType const* buf_z,
+                                ResultType* result_d,
+                                unsigned int size) {
+    const unsigned int thread = blockDim.x * blockIdx.x + threadIdx.x;
+    const unsigned int stride = blockDim.x * gridDim.x;
     for (unsigned int t = thread; t < size; t += stride) {
-      // generate a low-discrepancy deterministic sequence over [0, size)*[0, size)*[0, size)
-      auto [i, j, k] = halton<3>(t, size);
-      result[t] = static_cast<ResultType>(XtdFunc(input[i], input[j], input[k]));
+      result_d[t] = static_cast<ResultType>(XtdFunc(buf_x[t], buf_y[t], buf_z[t]));
     }
   }
 
@@ -63,7 +73,7 @@ namespace test::cuda {
     T value_;
   };
 
-  template <std::floating_point T>
+  template <xtd::floating_point T>
   std::ostream& operator<<(std::ostream& out, detailed<T> const& val) {
     std::ostringstream buffer;
     buffer << std::fixed << std::setprecision(std::numeric_limits<T>::max_digits10) << val.value_ << " ["
@@ -78,7 +88,7 @@ namespace test::cuda {
     return out;
   }
 
-  template <std::floating_point ResultType,
+  template <xtd::floating_point ResultType,
             typename InputType,
             ResultType (*XtdFunc)(InputType),
             ResultType (*RefFunc)(InputType)>
@@ -89,30 +99,31 @@ namespace test::cuda {
     std::span<const InputType> values_h = input.values_h<InputType>();
     std::span<const InputType> values_d = input.values_d<InputType>();
 
-    // allocate memory for the results and fill it with zeroes
+    // Allocate memory for the results and fill it with zeroes
     std::vector<ResultType> result_h(size, 0);
     ResultType* result_d;
     CUDA_CHECK(cudaMallocAsync(&result_d, size * sizeof(ResultType), queue));
     CUDA_CHECK(cudaMemsetAsync(result_d, 0x00, size * sizeof(ResultType), queue));
 
-    // execute the xtd function on the GPU
+    // Execute the xtd function on the CUDA device
     kernel<ResultType, InputType, XtdFunc><<<8, 64, 0, queue>>>(values_d.data(), result_d, size);
     CUDA_CHECK(cudaGetLastError());
 
-    // copy the results back to the host and free the GPU memory
+    // Copy the results back to the host and free the GPU memory
     CUDA_CHECK(cudaMemcpyAsync(result_h.data(), result_d, size * sizeof(ResultType), cudaMemcpyDeviceToHost, queue));
     CUDA_CHECK(cudaFreeAsync(result_d, queue));
     CUDA_CHECK(cudaStreamSynchronize(queue));
 
     for (unsigned int t = 0; t < size; ++t) {
       InputType x = values_h[t];
-      // read the result of the xtd function
+      // Read the result of the xtd function
       ResultType result = result_h[t];
-      // compare the result with the reference
+      // Compute the reference
       ResultType reference = RefFunc(x);
-      // log the comparison
+      // Log the comparison
       INFO("index: " << t << "\ninput:      " << detailed(x) << "\nxtd result: " << detailed(result)
                      << "\nreference:  " << detailed(reference) << '\n');
+      // Compare the result with the reference
       compare(result, reference, ulps);
     }
   }
@@ -128,35 +139,36 @@ namespace test::cuda {
     std::span<const InputType> values_h = input.values_h<InputType>();
     std::span<const InputType> values_d = input.values_d<InputType>();
 
-    // allocate memory for the results and fill it with zeroes
+    // Allocate memory for the results and fill it with zeroes
     std::vector<ResultType> result_h(size, 0);
     ResultType* result_d;
     CUDA_CHECK(cudaMallocAsync(&result_d, size * sizeof(ResultType), queue));
     CUDA_CHECK(cudaMemsetAsync(result_d, 0x00, size * sizeof(ResultType), queue));
 
-    // execute the xtd function on the GPU
+    // Execute the xtd function on the CUDA device
     kernel<ResultType, InputType, XtdFunc><<<8, 64, 0, queue>>>(values_d.data(), result_d, size);
     CUDA_CHECK(cudaGetLastError());
 
-    // copy the results back to the host and free the GPU memory
+    // Copy the results back to the host and free the GPU memory
     CUDA_CHECK(cudaMemcpyAsync(result_h.data(), result_d, size * sizeof(ResultType), cudaMemcpyDeviceToHost, queue));
     CUDA_CHECK(cudaFreeAsync(result_d, queue));
     CUDA_CHECK(cudaStreamSynchronize(queue));
 
     for (unsigned int t = 0; t < size; ++t) {
       InputType x = values_h[t];
-      // read the result of the xtd function
+      // Read the result of the xtd function
       ResultType result = result_h[t];
-      // compare the result with the reference
+      // Compute the reference
       ResultType reference = RefFunc(x);
-      // log the comparison
+      // Log the comparison
       INFO("index: " << t << "\ninput:      " << detailed(x) << "\nxtd result: " << detailed(result)
                      << "\nreference:  " << detailed(reference) << '\n');
+      // Compare the result with the reference
       compare(result, reference);
     }
   }
 
-  template <std::floating_point ResultType,
+  template <xtd::floating_point ResultType,
             typename InputType,
             ResultType (*XtdFunc)(InputType, InputType),
             ResultType (*RefFunc)(InputType, InputType)>
@@ -165,36 +177,54 @@ namespace test::cuda {
     const Inputs& input = inputs(device);
     unsigned int size = input.size();
     std::span<const InputType> values_h = input.values_h<InputType>();
-    std::span<const InputType> values_d = input.values_d<InputType>();
 
-    // allocate memory for the results and fill it with zeroes
+    // Generate a low-discrepancy deterministic sequence over [0, size) x [0, size)
+    std::vector<InputType> input_x(size);
+    std::vector<InputType> input_y(size);
+
+    for (unsigned int t = 0; t < size; ++t) {
+      auto [i, j] = halton<2>(t, size);
+      input_x[t] = values_h[i];
+      input_y[t] = values_h[j];
+    }
+
+    InputType* buf_x;
+    InputType* buf_y;
+    CUDA_CHECK(cudaMallocAsync(&buf_x, size * sizeof(InputType), queue));
+    CUDA_CHECK(cudaMallocAsync(&buf_y, size * sizeof(InputType), queue));
+
+    CUDA_CHECK(cudaMemcpyAsync(buf_x, input_x.data(), size * sizeof(InputType), cudaMemcpyHostToDevice, queue));
+    CUDA_CHECK(cudaMemcpyAsync(buf_y, input_y.data(), size * sizeof(InputType), cudaMemcpyHostToDevice, queue));
+    CUDA_CHECK(cudaStreamSynchronize(queue));
+
+    // Allocate memory for the results and fill it with zeroes
     std::vector<ResultType> result_h(size, 0);
     ResultType* result_d;
     CUDA_CHECK(cudaMallocAsync(&result_d, size * sizeof(ResultType), queue));
     CUDA_CHECK(cudaMemsetAsync(result_d, 0x00, size * sizeof(ResultType), queue));
 
-    // execute the xtd function on the GPU
-    kernel<ResultType, InputType, XtdFunc><<<8, 64, 0, queue>>>(values_d.data(), result_d, size);
+    // Execute the xtd function on the CUDA device
+    kernel<ResultType, InputType, XtdFunc><<<8, 64, 0, queue>>>(buf_x, buf_y, result_d, size);
     CUDA_CHECK(cudaGetLastError());
 
-    // copy the results back to the host and free the GPU memory
+    // Copy the results back to the host and free the GPU memory
     CUDA_CHECK(cudaMemcpyAsync(result_h.data(), result_d, size * sizeof(ResultType), cudaMemcpyDeviceToHost, queue));
     CUDA_CHECK(cudaFreeAsync(result_d, queue));
+    CUDA_CHECK(cudaFreeAsync(buf_x, queue));
+    CUDA_CHECK(cudaFreeAsync(buf_y, queue));
     CUDA_CHECK(cudaStreamSynchronize(queue));
 
     for (unsigned int t = 0; t < size; ++t) {
-      // generate a low-discrepancy deterministic sequence over [0, size)*[0, size)
-      auto [i, j] = halton<2>(t, size);
-      InputType x = values_h[i];
-      InputType y = values_h[j];
-      // read the result of the xtd function
+      InputType x = input_x[t];
+      InputType y = input_y[t];
+      // Read the result of the xtd function
       ResultType result = result_h[t];
-      // compute the reference
+      // Compute the reference
       ResultType reference = RefFunc(x, y);
-      // log the comparison
+      // Log the comparison
       INFO("index: " << t << "\ninput: " << detailed(x) << ", " << detailed(y) << "\nxtd result: " << detailed(result)
                      << "\nreference:  " << detailed(reference) << '\n');
-      // compare the result with the reference
+      // Compare the result with the reference
       compare(result, reference, ulps);
     }
   }
@@ -208,41 +238,59 @@ namespace test::cuda {
     const Inputs& input = inputs(device);
     unsigned int size = input.size();
     std::span<const InputType> values_h = input.values_h<InputType>();
-    std::span<const InputType> values_d = input.values_d<InputType>();
 
-    // allocate memory for the results and fill it with zeroes
+    // Generate a low-discrepancy deterministic sequence over [0, size) x [0, size)
+    std::vector<InputType> input_x(size);
+    std::vector<InputType> input_y(size);
+
+    for (unsigned int t = 0; t < size; ++t) {
+      auto [i, j] = halton<2>(t, size);
+      input_x[t] = values_h[i];
+      input_y[t] = values_h[j];
+    }
+
+    InputType* buf_x;
+    InputType* buf_y;
+    CUDA_CHECK(cudaMallocAsync(&buf_x, size * sizeof(InputType), queue));
+    CUDA_CHECK(cudaMallocAsync(&buf_y, size * sizeof(InputType), queue));
+
+    CUDA_CHECK(cudaMemcpyAsync(buf_x, input_x.data(), size * sizeof(InputType), cudaMemcpyHostToDevice, queue));
+    CUDA_CHECK(cudaMemcpyAsync(buf_y, input_y.data(), size * sizeof(InputType), cudaMemcpyHostToDevice, queue));
+    CUDA_CHECK(cudaStreamSynchronize(queue));
+
+    // Allocate memory for the results and fill it with zeroes
     std::vector<ResultType> result_h(size, 0);
     ResultType* result_d;
     CUDA_CHECK(cudaMallocAsync(&result_d, size * sizeof(ResultType), queue));
     CUDA_CHECK(cudaMemsetAsync(result_d, 0x00, size * sizeof(ResultType), queue));
 
-    // execute the xtd function on the GPU
-    kernel<ResultType, InputType, XtdFunc><<<8, 64, 0, queue>>>(values_d.data(), result_d, size);
+    // Execute the xtd function on the CUDA device
+    kernel<ResultType, InputType, XtdFunc><<<8, 64, 0, queue>>>(buf_x, buf_y, result_d, size);
     CUDA_CHECK(cudaGetLastError());
 
-    // copy the results back to the host and free the GPU memory
+    // Copy the results back to the host and free the GPU memory
     CUDA_CHECK(cudaMemcpyAsync(result_h.data(), result_d, size * sizeof(ResultType), cudaMemcpyDeviceToHost, queue));
     CUDA_CHECK(cudaFreeAsync(result_d, queue));
+    CUDA_CHECK(cudaFreeAsync(buf_x, queue));
+    CUDA_CHECK(cudaFreeAsync(buf_y, queue));
     CUDA_CHECK(cudaStreamSynchronize(queue));
 
     for (unsigned int t = 0; t < size; ++t) {
-      // generate a low-discrepancy deterministic sequence over [0, size)*[0, size)
-      auto [i, j] = halton<2>(t, size);
-      InputType x = values_h[i];
-      InputType y = values_h[j];
-      // read the result of the xtd function
+      InputType x = input_x[t];
+      InputType y = input_y[t];
+      // Read the result of the xtd function
       ResultType result = result_h[t];
-      // compute the reference
+      // Compute the reference
       ResultType reference = RefFunc(x, y);
-      // log the comparison
+      // Log the comparison
       INFO("index: " << t << "\ninput: " << detailed(x) << ", " << detailed(y) << "\nxtd result: " << detailed(result)
                      << "\nreference:  " << detailed(reference) << '\n');
-      // compare the result with the reference
+      // Compare the result with the reference
       compare(result, reference);
     }
   }
 
-  template <std::floating_point ResultType,
+  template <xtd::floating_point ResultType,
             typename InputType,
             ResultType (*XtdFunc)(InputType, InputType, InputType),
             ResultType (*RefFunc)(InputType, InputType, InputType)>
@@ -251,37 +299,61 @@ namespace test::cuda {
     const Inputs& input = inputs(device);
     unsigned int size = input.size();
     std::span<const InputType> values_h = input.values_h<InputType>();
-    std::span<const InputType> values_d = input.values_d<InputType>();
 
-    // allocate memory for the results and fill it with zeroes
+    // Generate a low-discrepancy deterministic sequence over [0, size) x [0, size) x [0, size)
+    std::vector<InputType> input_x(size);
+    std::vector<InputType> input_y(size);
+    std::vector<InputType> input_z(size);
+
+    for (unsigned int t = 0; t < size; ++t) {
+      auto [i, j, k] = halton<3>(t, size);
+      input_x[t] = values_h[i];
+      input_y[t] = values_h[j];
+      input_z[t] = values_h[k];
+    }
+
+    InputType* buf_x;
+    InputType* buf_y;
+    InputType* buf_z;
+    CUDA_CHECK(cudaMallocAsync(&buf_x, size * sizeof(InputType), queue));
+    CUDA_CHECK(cudaMallocAsync(&buf_y, size * sizeof(InputType), queue));
+    CUDA_CHECK(cudaMallocAsync(&buf_z, size * sizeof(InputType), queue));
+
+    CUDA_CHECK(cudaMemcpyAsync(buf_x, input_x.data(), size * sizeof(InputType), cudaMemcpyHostToDevice, queue));
+    CUDA_CHECK(cudaMemcpyAsync(buf_y, input_y.data(), size * sizeof(InputType), cudaMemcpyHostToDevice, queue));
+    CUDA_CHECK(cudaMemcpyAsync(buf_z, input_z.data(), size * sizeof(InputType), cudaMemcpyHostToDevice, queue));
+    CUDA_CHECK(cudaStreamSynchronize(queue));
+
+    // Allocate memory for the results and fill it with zeroes
     std::vector<ResultType> result_h(size, 0);
     ResultType* result_d;
     CUDA_CHECK(cudaMallocAsync(&result_d, size * sizeof(ResultType), queue));
     CUDA_CHECK(cudaMemsetAsync(result_d, 0x00, size * sizeof(ResultType), queue));
 
-    // execute the xtd function on the GPU
-    kernel<ResultType, InputType, XtdFunc><<<8, 64, 0, queue>>>(values_d.data(), result_d, size);
+    // Execute the xtd function on the CUDA device
+    kernel<ResultType, InputType, XtdFunc><<<8, 64, 0, queue>>>(buf_x, buf_y, buf_z, result_d, size);
     CUDA_CHECK(cudaGetLastError());
 
-    // copy the results back to the host and free the GPU memory
+    // Copy the results back to the host and free the GPU memory
     CUDA_CHECK(cudaMemcpyAsync(result_h.data(), result_d, size * sizeof(ResultType), cudaMemcpyDeviceToHost, queue));
     CUDA_CHECK(cudaFreeAsync(result_d, queue));
+    CUDA_CHECK(cudaFreeAsync(buf_x, queue));
+    CUDA_CHECK(cudaFreeAsync(buf_y, queue));
+    CUDA_CHECK(cudaFreeAsync(buf_z, queue));
     CUDA_CHECK(cudaStreamSynchronize(queue));
 
     for (unsigned int t = 0; t < size; ++t) {
-      // generate a low-discrepancy deterministic sequence over [0, size)*[0, size)*[0, size)
-      auto [i, j, k] = halton<3>(t, size);
-      InputType x = values_h[i];
-      InputType y = values_h[j];
-      InputType z = values_h[k];
-      // read the result of the xtd function
+      InputType x = input_x[t];
+      InputType y = input_y[t];
+      InputType z = input_z[t];
+      // Read the result of the xtd function
       ResultType result = result_h[t];
-      // compute the reference
+      // Compute the reference
       ResultType reference = RefFunc(x, y, z);
-      // log the comparison
+      // Log the comparison
       INFO("index: " << t << "\ninput: " << detailed(x) << ", " << detailed(y) << ", " << detailed(z)
                      << "\nxtd result: " << detailed(result) << "\nreference:  " << detailed(reference) << '\n');
-      // compare the result with the reference
+      // Compare the result with the reference
       compare(result, reference, ulps);
     }
   }
@@ -295,37 +367,61 @@ namespace test::cuda {
     const Inputs& input = inputs(device);
     unsigned int size = input.size();
     std::span<const InputType> values_h = input.values_h<InputType>();
-    std::span<const InputType> values_d = input.values_d<InputType>();
 
-    // allocate memory for the results and fill it with zeroes
+    // Generate a low-discrepancy deterministic sequence over [0, size) x [0, size) x [0, size)
+    std::vector<InputType> input_x(size);
+    std::vector<InputType> input_y(size);
+    std::vector<InputType> input_z(size);
+
+    for (unsigned int t = 0; t < size; ++t) {
+      auto [i, j, k] = halton<3>(t, size);
+      input_x[t] = values_h[i];
+      input_y[t] = values_h[j];
+      input_z[t] = values_h[k];
+    }
+
+    InputType* buf_x;
+    InputType* buf_y;
+    InputType* buf_z;
+    CUDA_CHECK(cudaMallocAsync(&buf_x, size * sizeof(InputType), queue));
+    CUDA_CHECK(cudaMallocAsync(&buf_y, size * sizeof(InputType), queue));
+    CUDA_CHECK(cudaMallocAsync(&buf_z, size * sizeof(InputType), queue));
+
+    CUDA_CHECK(cudaMemcpyAsync(buf_x, input_x.data(), size * sizeof(InputType), cudaMemcpyHostToDevice, queue));
+    CUDA_CHECK(cudaMemcpyAsync(buf_y, input_y.data(), size * sizeof(InputType), cudaMemcpyHostToDevice, queue));
+    CUDA_CHECK(cudaMemcpyAsync(buf_z, input_z.data(), size * sizeof(InputType), cudaMemcpyHostToDevice, queue));
+    CUDA_CHECK(cudaStreamSynchronize(queue));
+
+    // Allocate memory for the results and fill it with zeroes
     std::vector<ResultType> result_h(size, 0);
     ResultType* result_d;
     CUDA_CHECK(cudaMallocAsync(&result_d, size * sizeof(ResultType), queue));
     CUDA_CHECK(cudaMemsetAsync(result_d, 0x00, size * sizeof(ResultType), queue));
 
-    // execute the xtd function on the GPU
-    kernel<ResultType, InputType, XtdFunc><<<8, 64, 0, queue>>>(values_d.data(), result_d, size);
+    // Execute the xtd function on the CUDA device
+    kernel<ResultType, InputType, XtdFunc><<<8, 64, 0, queue>>>(buf_x, buf_y, buf_z, result_d, size);
     CUDA_CHECK(cudaGetLastError());
 
-    // copy the results back to the host and free the GPU memory
+    // Copy the results back to the host and free the GPU memory
     CUDA_CHECK(cudaMemcpyAsync(result_h.data(), result_d, size * sizeof(ResultType), cudaMemcpyDeviceToHost, queue));
     CUDA_CHECK(cudaFreeAsync(result_d, queue));
+    CUDA_CHECK(cudaFreeAsync(buf_x, queue));
+    CUDA_CHECK(cudaFreeAsync(buf_y, queue));
+    CUDA_CHECK(cudaFreeAsync(buf_z, queue));
     CUDA_CHECK(cudaStreamSynchronize(queue));
 
     for (unsigned int t = 0; t < size; ++t) {
-      // generate a low-discrepancy deterministic sequence over [0, size)*[0, size)*[0, size)
-      auto [i, j, k] = halton<3>(t, size);
-      InputType x = values_h[i];
-      InputType y = values_h[j];
-      InputType z = values_h[k];
-      // read the result of the xtd function
+      InputType x = input_x[t];
+      InputType y = input_y[t];
+      InputType z = input_z[t];
+      // Read the result of the xtd function
       ResultType result = result_h[t];
-      // compute the reference
+      // Compute the reference
       ResultType reference = RefFunc(x, y, z);
-      // log the comparison
+      // Log the comparison
       INFO("index: " << t << "\ninput: " << detailed(x) << ", " << detailed(y) << ", " << detailed(z)
                      << "\nxtd result: " << detailed(result) << "\nreference:  " << detailed(reference) << '\n');
-      // compare the result with the reference
+      // Compare the result with the reference
       compare(result, reference);
     }
   }

@@ -11,11 +11,17 @@
 #include <xtd/concepts/arithmetic.h>
 
 // test headers
+#include "common/math_inputs.h"
 #include "common/mpfr.h"
 
 #ifdef mpfr_sin
 #undef mpfr_sin
 #endif
+
+inline xtd::float16_t mpfr_sinf16(xtd::float16_t x) {
+  return test_half::reference(
+      [](mpfr_ptr r, mpfr_srcptr a, mpfr_rnd_t rnd) { return ::mpfr_sin(r, a, rnd); }, x);
+}
 
 inline float mpfr_sinf(xtd::arithmetic auto arg) {
   float result;

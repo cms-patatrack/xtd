@@ -1,0 +1,28 @@
+name: Setup clang
+description: Install clang with dnf, caching metadata and RPMs weekly
+runs:
+  using: composite
+  steps:
+    - name: Compute cache week
+      id: week
+      shell: bash
+      run: echo "week=$(date -u +%G-W%V)" >> "$GITHUB_OUTPUT"
+
+    - name: Restore dnf cache
+      uses: actions/cache@v6
+      with:
+        path: ${{ runner.temp }}/dnf-cache
+        key: dnf-v1-clang-alma9-${{ steps.week.outputs.week }}
+
+    - name: Setup clang
+      shell: bash
+      run: |
+        if ! command -v clang++ >/dev/null 2>&1; then
+          sudo dnf install -y \
+            --setopt=cachedir="$RUNNER_TEMP/dnf-cache" \
+            --setopt=keepcache=True \
+            clang
+          # dnf ran as root, so give the cache back to the runner user
+          sudo chown -R "$(id -u):$(id -g)" "$RUNNER_TEMP/dnf-cache"
+        fi
+        clang++ --version

@@ -8,5 +8,6 @@
 
 #include "xtd/algorithm.h"
 #include "xtd/concepts.h"
+#include "xtd/internal/limits.h"
 #include "xtd/math.h"
 #include "xtd/stdlib.h"
